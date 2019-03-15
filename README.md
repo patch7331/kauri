@@ -1,13 +1,17 @@
-<div align="center">
-  <h1>
-    Kauri<br>
-    <small>It's time to rethink document processing.</small>
-  </h1>
-</div>
+<h1 align="center">Kauri</h1>
 
 Kauri (working title) is an experimental, desktop document processor currently
 in the design stage. It aims to bring a much need breath of fresh air to a
 stagnant industry.
+
+
+## Contributing
+
+If you'd like to contribute to the project, please read the [contribution
+guide](https://github.com/sean0x42/kauri/blob/master/.github/CONTRIBUTING.md)
+first. The guide contains helpful resources which nudge you in the right
+direction for branching, code quality and more.
+
 
 ## Who are we
 
