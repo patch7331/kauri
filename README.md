@@ -1,4 +1,11 @@
-<h1 align="center">Kauri</h1>
+<div align="center">
+  <h1>Kauri</h1>
+ 
+  <a href="https://travis-ci.com/sean0x42/kauri" title="Build Status">
+    <img alt="Build Status" src="https://travis-ci.com/sean0x42/kauri.svg?token=y4PzktMpXpMzBmaZHNGq&branch=master" />
+  </a>
+  <br/>
+</div>
 
 Kauri (working title) is an experimental, desktop document processor currently
 in the design stage. It aims to bring a much need breath of fresh air to a
