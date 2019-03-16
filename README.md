@@ -1,10 +1,9 @@
 <div align="center">
   <h1>Kauri</h1>
- 
-  <a href="https://travis-ci.com/sean0x42/kauri" title="Build Status">
-    <img alt="Build Status" src="https://travis-ci.com/sean0x42/kauri.svg?token=y4PzktMpXpMzBmaZHNGq&branch=master" />
-  </a>
-  <br/>
+
+  [![Build Status](https://travis-ci.com/sean0x42/kauri.svg?token=y4PzktMpXpMzBmaZHNGq&branch=master)](https://travis-ci.com/sean0x42/kauri)
+  [![GitHub release](https://img.shields.io/github/release/sean0x42/kauri.svg)](https://github.com/sean0x42/kauri/releases/)
+  [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
 </div>
 
 Kauri (working title) is an experimental, desktop document processor currently
