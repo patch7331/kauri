@@ -1,5 +1,8 @@
 language: rust
 cache: cargo
+dist: xenial
+before_install:
+- sudo apt-get install libexpat-dev libfreetype6-dev libxcb-xkb-dev libfontconfig1-dev libgles2-mesa-dev
 sudo: required
 before_script:
   - rustup component add rustfmt
