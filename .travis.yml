@@ -1,8 +1,17 @@
 language: rust
 cache: cargo
+sudo: required
 before_script:
   - rustup component add rustfmt
 script:
   - cargo fmt --all -- --check
   - cargo build --verbose
   - cargo test --verbose
+  - cargo doc --no-deps --document-private-items
+after_success: |
+  [ $TRAVIS_BRANCH = develop ] && # only do this on the develop branch
+  [ $TRAVIS_PULL_REQUEST = false ] && #only do this if it is not a pull request, should comment out to test after the token is added and before merging
+  echo "<meta http-equiv=refresh content=0;url=`echo $TRAVIS_REPO_SLUG | cut -d '/' -f 2`/index.html>" > target/doc/index.html &&
+  sudo pip install ghp-import &&
+  ghp-import -n target/doc &&
+  git push -fq https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git gh-pages
