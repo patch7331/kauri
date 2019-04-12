@@ -1,10 +1,7 @@
 /** @format */
 
+import "styles/application.scss";
 import { h, render } from "preact";
+import App from "components/App";
 
-render(
-  <div class="test">
-    <button onClick={e => alert("hi!")}>Click me!</button>
-  </div>,
-  document.body
-);
+render(<App />, document.body);

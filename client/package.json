@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "scripts": {
     "start": "electron .",
-    "build": "webpack --progress --colors"
+    "build": "webpack --progress --colors",
+    "clean": "yarn prettier --write \"src/**/*.js?(x)\" webpack.config.js"
   },
   "main": "main.js",
   "devDependencies": {
