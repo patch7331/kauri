@@ -1,4 +1,6 @@
-import Node from "dom/node";
+/** @format */
+
+import Node from "dom/Node";
 
 /**
  * A highly accessible list of {@link Node}s.
@@ -21,8 +23,8 @@ export default class NodeList {
    * Returns an iterator over each of the {@link Node}s.
    * @return {Iterator}
    */
-  [ Symbol.iterator ]() {
-    return this._nodes[ Symbol.iterator ]();
+  [Symbol.iterator]() {
+    return this._nodes[Symbol.iterator]();
   }
 
   /**

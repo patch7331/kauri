@@ -3,9 +3,12 @@
 import "./styles.scss";
 
 import { h, Component } from "preact";
-import { Dom, HeadingElement, ParagraphElement, TextNode } from "dom";
+import Document from "dom/Document";
 import Editor from "components/Editor";
 import Header from "components/Header";
+import HeadingElement from "dom/elements/HeadingElement";
+import ParagraphElement from "dom/elements/ParagraphElement";
+import TextNode from "dom/TextNode";
 
 export default class App extends Component {
   /**
@@ -15,14 +18,12 @@ export default class App extends Component {
   constructor(props) {
     super(props);
 
-    let dom = new Dom();
-    let heading = new HeadingElement(new TextNode("Hello World"));
-    dom.appendChild(heading);
-
-    let paragraph = new ParagraphElement(
-      new TextNode("Kauri is a next generation document processor.")
+    let dom = new Document(
+      new HeadingElement(1, new TextNode("Hello World")),
+      new ParagraphElement(
+        new TextNode("Kauri is a next generation document processor.")
+      )
     );
-    dom.appendChild(paragraph);
 
     this.state = { dom };
   }

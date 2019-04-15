@@ -18,7 +18,10 @@ export default class Editor extends Component {
    */
   constructor(props) {
     super(props);
-    this.dom = props.dom;
+  }
+
+  componentDidMount() {
+    document.execCommand("defaultParagraphSeparator", false, "p");
   }
 
   /**
@@ -30,12 +33,12 @@ export default class Editor extends Component {
     const { data } = event;
     fetch(POST_URI, { method: "POST", body: data })
       .then(resp => console.log(resp))
-      .catch(e => alert(e));
+      .catch(e => console.err(e));
   }
 
   render() {
     return (
-      <div class="editor" contenteditable="false" oninput={this._handleInput}>
+      <div class="editor" contenteditable="true" oninput={this._handleInput}>
         {renderDom(this.props.dom)}
       </div>
     );

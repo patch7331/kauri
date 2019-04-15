@@ -13,7 +13,7 @@ export default class Node {
    * @abstract
    * @param {Map} attrs Node's attributes.
    */
-  constructor(attrs) {
+  constructor(attrs = new Map()) {
     // Enforce abstract nature of Node
     if (new.target === Node) {
       throw new TypeError("Cannot construct abstract instance (Node) directly");
@@ -43,10 +43,50 @@ export default class Node {
   }
 
   /**
+   * Determines the point that this node starts within the parent node.
+   * @return {?number}
+   */
+  get offset() {
+    if (!this.parent) {
+      return null;
+    }
+
+    return this.parent.getChildOffset(this);
+  }
+
+  /**
+   * Returns the offset of this Node.
+   *
+   * The offset should be a positive integer (n > 0), that represents the size
+   * of the node's content. Most of the time, this is 1. However for nodes with
+   * textual content, the offset size should be equal to the length of the text.
+   * @return {number}
+   */
+  get offsetSize() {
+    return 1;
+  }
+
+  /**
+   * Returns the unique path to this node within the DOM.
+   * @return {number[]}
+   */
+  getPath() {
+    const path = [];
+    let current = this;
+
+    while (current.parent) {
+      path.unshift(current.offset);
+      current = current.parent;
+    }
+
+    return path;
+  }
+
+  /**
    * Retrieves the immediately adjacent sibling node or null.
    * @return {?Node}
    */
-  get nextSibling() {
+  nextSibling() {
     return this.parent.getChild(this.index + 1);
   }
 
@@ -54,7 +94,7 @@ export default class Node {
    * Retrieves the immediately previous sibling node or null.
    * @return {?Node}
    */
-  get previousSibling() {
+  previousSibling() {
     return this.parent.getChild(this.index - 1);
   }
 

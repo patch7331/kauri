@@ -2,8 +2,8 @@
  * @format
  */
 
-import Node from "dom/node";
-import NodeList from "dom/nodelist";
+import Node from "dom/Node";
+import NodeList from "dom/NodeList";
 
 /**
  * An abstract {@link Node} that has children.
@@ -18,9 +18,11 @@ export default class Element extends Node {
   constructor(attrs, ...children) {
     // Ensure element is not constructed directly
     if (new.target === Element) {
-      throw new TypeError("Cannot construct abstract instance (Element) directly");
+      throw new TypeError(
+        "Cannot construct abstract instance (Element) directly"
+      );
     }
-    
+
     super(attrs);
 
     /**
@@ -36,6 +38,6 @@ export default class Element extends Node {
    * @return {Iterator}
    */
   children() {
-    return this._children[ Symbol.iterator]();
+    return this._children[Symbol.iterator]();
   }
 }
