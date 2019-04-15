@@ -10,7 +10,7 @@ module.exports = {
     filename: "application.bundle.js",
   },
   target: "electron-renderer",
-  mode: "production",
+  mode: "development",
   module: {
     rules: [
       {
