@@ -8,9 +8,9 @@ import Node from "dom/Node";
 export default class NodeList {
   /**
    * Constructs a new node list.
-   * @param {...Node} nodes A collection of nodes to seed the list with.
+   * @param {Node[]} nodes A collection of nodes to seed the list with.
    */
-  constructor(...nodes) {
+  constructor(nodes) {
     /**
      * An internal array of nodes.
      * @type {Node[]}
@@ -32,6 +32,6 @@ export default class NodeList {
    * @return {number}
    */
   get length() {
-    this._nodes.length;
+    return this._nodes.length;
   }
 }

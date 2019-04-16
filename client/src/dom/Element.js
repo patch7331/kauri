@@ -13,9 +13,9 @@ export default class Element extends Node {
    * Constructs a new element.
    * @abstract
    * @param {Map} attrs Element attributes.
-   * @param {...Node} children Child nodes.
+   * @param {Node[]} children Child nodes.
    */
-  constructor(attrs, ...children) {
+  constructor(attrs, children) {
     // Ensure element is not constructed directly
     if (new.target === Element) {
       throw new TypeError(
@@ -37,7 +37,7 @@ export default class Element extends Node {
    * Returns an iterator over the element's children.
    * @return {Iterator}
    */
-  children() {
+  get children() {
     return this._children[Symbol.iterator]();
   }
 }
