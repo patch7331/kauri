@@ -1,5 +1,8 @@
 language: rust
-cache: cargo
+cache:
+  cargo: true
+  directories:
+    - $HOME/.yarn-cache
 dist: xenial
 before_install:
   - curl -sL https://deb.nodesource.com/setup_11.x | sudo -E bash -
