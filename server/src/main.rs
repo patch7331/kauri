@@ -23,7 +23,8 @@ fn handle_request(req: Request<Body>) -> BoxFuture {
             //     }
             // });
             let mapping = req.into_body().map(|chunk| {
-                chunk.iter()
+                chunk
+                    .iter()
                     .map(|byte| {
                         println!("{}", *byte as char);
                         byte.to_ascii_uppercase()
