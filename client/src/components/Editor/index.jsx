@@ -3,12 +3,14 @@
 import "./styles.scss";
 
 import { h, Component } from "preact";
-import { renderDom } from "dom/render";
+import { renderDocumentNodes } from "dom/render";
+import ToolBar from "components/Editor/ToolBar";
 
 const POST_URI = "http://127.0.0.1:3000/key";
 
 /**
  * A document editing component.
+ * @extends Component
  */
 export default class Editor extends Component {
   /**
@@ -20,26 +22,21 @@ export default class Editor extends Component {
     super(props);
   }
 
+  /**
+   * @private
+   */
   componentDidMount() {
     document.execCommand("defaultParagraphSeparator", false, "p");
   }
 
-  /**
-   * Handles inputs on the contenteditable dic.
-   * @param {Event} event Input event.
-   * @private
-   */
-  _handleInput(event) {
-    const { data } = event;
-    fetch(POST_URI, { method: "POST", body: data })
-      .then(resp => console.log(resp))
-      .catch(e => console.err(e));
-  }
-
-  render() {
+  render(props) {
     return (
-      <div class="editor" contenteditable="true" oninput={this._handleInput}>
-        {renderDom(this.props.dom)}
+      <div>
+        <ToolBar />
+
+        <div class="editor" contenteditable="true">
+          {renderDocumentNodes(props.dom.children)}
+        </div>
       </div>
     );
   }

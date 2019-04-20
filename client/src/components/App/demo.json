@@ -1,0 +1,27 @@
+{
+  "document": {
+    "title": "Kauri (Working Title)",
+    "paper": "A4",
+    "children": [
+      {
+        "type": "heading",
+        "level": 1,
+        "children": [
+          {
+            "type": "text",
+            "content": "Hello, world!"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "type": "text",
+            "content": "Kauri (working title) is a next generation document processor."
+          }
+        ]
+      }
+    ]
+  }
+}
