@@ -4,8 +4,8 @@
   "scripts": {
     "start": "electron .",
     "build": "webpack --progress --colors",
-    "clean": "yarn prettier --write \"src/**/*.js?(x)\" webpack.config.js",
-    "clean-check": "yarn prettier --check \"src/**/*.js?(x)\" webpack.config.js"
+    "clean": "yarn prettier --write \"src/**/*.js?(x)\" *.js",
+    "clean-check": "yarn prettier --check \"src/**/*.js?(x)\" *.js"
   },
   "main": "main.js",
   "devDependencies": {
