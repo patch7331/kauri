@@ -1,4 +1,6 @@
-const {app, BrowserWindow} = require("electron");
+/** @format */
+
+const { app, BrowserWindow } = require("electron");
 
 // Keep a global reference to the window object to prevent it from being
 // destroyed by the garbage collector.
@@ -10,11 +12,11 @@ function createWindow() {
     width: 800,
     webPreferences: {
       nodeIntegration: true,
-    }
+    },
   });
 
   mainWindow.loadFile("index.html");
-  mainWindow.on("closed", () => mainWindow = null);
+  mainWindow.on("closed", () => (mainWindow = null));
 }
 
 app.on("ready", createWindow);
