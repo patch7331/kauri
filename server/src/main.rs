@@ -1,6 +1,7 @@
 extern crate futures;
 extern crate hyper;
 extern crate zip;
+extern crate xml;
 
 use futures::future;
 use hyper::rt::{Future, Stream};
@@ -8,6 +9,7 @@ use hyper::service::service_fn;
 use hyper::{Body, Method, Request, Response, Server, StatusCode};
 use std::fs;
 use std::io;
+use xml::reader::{EventReader, XmlEvent};
 
 type BoxFuture = Box<Future<Item = Response<Body>, Error = hyper::Error> + Send>;
 
@@ -74,7 +76,44 @@ fn read_odt(filename: &str) {
         let file = fs::File::open(&file).unwrap();
         let mut archive = zip::ZipArchive::new(file).unwrap();
         let content_xml = archive.by_name("content.xml").unwrap();
-        println!("{}", content_xml.size());
+        let content_xml = io::BufReader::new(content_xml);
+
+		let parser = EventReader::new(content_xml);
+		for e in parser {
+			match e {
+				Ok(XmlEvent::StartElement { name, .. }) => {
+					if let Some(prefix) = name.prefix {
+						if prefix == "office" && name.local_name == "body" {
+							println!("Begin body");
+						}
+						else if prefix == "text" && name.local_name == "h" {
+							println!("Begin h");
+						}
+						else if prefix == "text" && name.local_name == "p" {
+							println!("Begin p");
+						}
+					}
+				},
+				Ok(XmlEvent::EndElement { name }) => {
+					if let Some(prefix) = name.prefix {
+						if prefix == "office" && name.local_name == "body" {
+							println!("End body");
+						}
+						else if prefix == "text" && name.local_name == "h" {
+							println!("End h");
+						}
+						else if prefix == "text" && name.local_name == "p" {
+							println!("End p");
+						}
+					}
+				}
+				Err(e) => {
+	                println!("Error: {}", e);
+	                break;
+	            },
+	            _ => {}
+			}
+		}
     } else {
         println!("{:?}", fs::metadata(file));
     }
