@@ -1,12 +1,16 @@
 extern crate futures;
 extern crate hyper;
-extern crate zip;
+extern crate serde_json;
 extern crate xml;
+extern crate zip;
 
 use futures::future;
 use hyper::rt::{Future, Stream};
 use hyper::service::service_fn;
 use hyper::{Body, Method, Request, Response, Server, StatusCode};
+use serde_json::map::Map;
+use serde_json::value::Value;
+use serde_json::Number;
 use std::fs;
 use std::io;
 use xml::reader::{EventReader, XmlEvent};
@@ -78,42 +82,101 @@ fn read_odt(filename: &str) {
         let content_xml = archive.by_name("content.xml").unwrap();
         let content_xml = io::BufReader::new(content_xml);
 
-		let parser = EventReader::new(content_xml);
-		for e in parser {
-			match e {
-				Ok(XmlEvent::StartElement { name, .. }) => {
-					if let Some(prefix) = name.prefix {
-						if prefix == "office" && name.local_name == "body" {
-							println!("Begin body");
-						}
-						else if prefix == "text" && name.local_name == "h" {
-							println!("Begin h");
-						}
-						else if prefix == "text" && name.local_name == "p" {
-							println!("Begin p");
-						}
-					}
-				},
-				Ok(XmlEvent::EndElement { name }) => {
-					if let Some(prefix) = name.prefix {
-						if prefix == "office" && name.local_name == "body" {
-							println!("End body");
-						}
-						else if prefix == "text" && name.local_name == "h" {
-							println!("End h");
-						}
-						else if prefix == "text" && name.local_name == "p" {
-							println!("End p");
-						}
-					}
-				}
-				Err(e) => {
-	                println!("Error: {}", e);
-	                break;
-	            },
-	            _ => {}
-			}
-		}
+        let parser = EventReader::new(content_xml);
+        let mut begin = false;
+        let mut document_contents: Map<String, Value> = Map::new(); //value of the "document" key
+        document_contents.insert(
+            "title".to_string(),
+            Value::String("Kauri (Working title)".to_string()),
+        );
+        document_contents.insert("paper".to_string(), Value::String("A4".to_string()));
+        document_contents.insert("children".to_string(), Value::Array(Vec::new()));
+        let mut document_hierarchy: Vec<Value> = Vec::new(); //in case of nested tags, not actually handled yet
+        let mut current_value = Value::Null;
+        document_hierarchy.push(Value::Object(document_contents));
+
+        for e in parser {
+            match e {
+                Ok(XmlEvent::StartElement { name, .. }) => {
+                    if let Some(prefix) = name.prefix {
+                        if prefix == "office" && name.local_name == "body" {
+                            begin = true;
+                        } else if begin {
+                            if prefix == "text" && name.local_name == "h" {
+                                let mut map: Map<String, Value> = Map::new();
+                                map.insert(
+                                    "type".to_string(),
+                                    Value::String("heading".to_string()),
+                                );
+                                map.insert(
+                                    "level".to_string(),
+                                    Value::Number(Number::from_f64(f64::from(1)).unwrap()),
+                                ); //make sure to actually get the level
+                                map.insert("children".to_string(), Value::Array(Vec::new()));
+                                current_value = Value::Object(map);
+                            } else if prefix == "text" && name.local_name == "p" {
+                                let mut map: Map<String, Value> = Map::new();
+                                map.insert(
+                                    "type".to_string(),
+                                    Value::String("paragraph".to_string()),
+                                );
+                                map.insert("children".to_string(), Value::Array(Vec::new()));
+                                current_value = Value::Object(map);
+                            }
+                        }
+                    }
+                }
+                Ok(XmlEvent::Characters(contents)) => {
+                    let mut map: Map<String, Value> = Map::new();
+                    map.insert("type".to_string(), Value::String("text".to_string()));
+                    map.insert("content".to_string(), Value::String(contents));
+                    current_value
+                        .as_object_mut()
+                        .unwrap()
+                        .get_mut("children")
+                        .unwrap()
+                        .as_array_mut()
+                        .unwrap()
+                        .push(Value::Object(map));
+                }
+                Ok(XmlEvent::EndElement { name }) => {
+                    if begin {
+                        if let Some(prefix) = name.prefix {
+                            if prefix == "office" && name.local_name == "body" {
+                                break;
+                            } else if prefix == "text"
+                                && (name.local_name == "h" || name.local_name == "p")
+                            {
+                                document_hierarchy
+                                    .last_mut()
+                                    .unwrap()
+                                    .as_object_mut()
+                                    .unwrap()
+                                    .get_mut("children")
+                                    .unwrap()
+                                    .as_array_mut()
+                                    .unwrap()
+                                    .push(current_value);
+                                current_value = Value::Null;
+                            }
+                        }
+                    }
+                }
+                Err(e) => {
+                    println!("Error: {}", e);
+                    break;
+                }
+                _ => {}
+            }
+        }
+
+        let mut document_object: Map<String, Value> = Map::new();
+        document_object.insert("document".to_string(), document_hierarchy.pop().unwrap());
+        let document_object = Value::Object(document_object);
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&document_object).unwrap()
+        );
     } else {
         println!("{:?}", fs::metadata(file));
     }
