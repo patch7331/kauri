@@ -77,17 +77,18 @@ fn file_read_testing() {
 fn read_odt(filename: &str) {
     let file = std::path::Path::new(&filename);
     if !file.exists() {
+        //make sure the file actually exists
         println!("{:?}", fs::metadata(file));
-		return;
+        return;
     }
 
-	let file = fs::File::open(&file).unwrap();
+    let file = fs::File::open(&file).unwrap();
     let mut archive = zip::ZipArchive::new(file).unwrap();
-    let content_xml = archive.by_name("content.xml").unwrap();
+    let content_xml = archive.by_name("content.xml").unwrap(); //returns a ZipFile struct which implements Read
     let content_xml = io::BufReader::new(content_xml);
 
     let parser = EventReader::new(content_xml);
-    let mut begin = false;
+    let mut begin = false; //used to ignore all the other tags before office:body for now
     let mut document_contents: Map<String, Value> = Map::new(); //value of the "document" key
     document_contents.insert(
         "title".to_string(),
@@ -100,6 +101,7 @@ fn read_odt(filename: &str) {
     document_hierarchy.push(Value::Object(document_contents));
 
     for e in parser {
+        //iterate through the XML
         match e {
             Ok(XmlEvent::StartElement {
                 name, attributes, ..
@@ -109,8 +111,10 @@ fn read_odt(filename: &str) {
                         begin = true;
                     } else if begin {
                         if prefix == "text" && name.local_name == "h" {
+                            //heading
                             let mut level = 0.0; //because JS numbers are always floats apparently
                             for i in attributes {
+                                //attributes is a Vec, so need to search for the level
                                 if i.name.prefix.unwrap() == "text"
                                     && i.name.local_name == "outline-level"
                                 {
@@ -118,22 +122,16 @@ fn read_odt(filename: &str) {
                                 }
                             }
                             let mut map: Map<String, Value> = Map::new();
-                            map.insert(
-                                "type".to_string(),
-                                Value::String("heading".to_string()),
-                            );
+                            map.insert("type".to_string(), Value::String("heading".to_string()));
                             map.insert(
                                 "level".to_string(),
                                 Value::Number(Number::from_f64(level).unwrap()),
-                            ); //make sure to actually get the level
+                            );
                             map.insert("children".to_string(), Value::Array(Vec::new()));
                             current_value = Value::Object(map);
                         } else if prefix == "text" && name.local_name == "p" {
                             let mut map: Map<String, Value> = Map::new();
-                            map.insert(
-                                "type".to_string(),
-                                Value::String("paragraph".to_string()),
-                            );
+                            map.insert("type".to_string(), Value::String("paragraph".to_string()));
                             map.insert("children".to_string(), Value::Array(Vec::new()));
                             current_value = Value::Object(map);
                         }
@@ -141,6 +139,7 @@ fn read_odt(filename: &str) {
                 }
             }
             Ok(XmlEvent::Characters(contents)) => {
+                //the contents of a tag
                 let mut map: Map<String, Value> = Map::new();
                 map.insert("type".to_string(), Value::String("text".to_string()));
                 map.insert("content".to_string(), Value::String(contents));
@@ -178,7 +177,7 @@ fn read_odt(filename: &str) {
             }
             Err(e) => {
                 println!("Error: {}", e);
-                break;
+                return;
             }
             _ => {}
         }
