@@ -97,12 +97,18 @@ fn read_odt(filename: &str) {
 
         for e in parser {
             match e {
-                Ok(XmlEvent::StartElement { name, .. }) => {
+                Ok(XmlEvent::StartElement { name, attributes, .. }) => {
                     if let Some(prefix) = name.prefix {
                         if prefix == "office" && name.local_name == "body" {
                             begin = true;
                         } else if begin {
                             if prefix == "text" && name.local_name == "h" {
+								let mut level = 0.0; //because JS numbers are always floats apparently
+								for i in attributes {
+									if i.name.prefix.unwrap() == "text" && i.name.local_name == "outline-level" {
+										level = i.value.parse::<f64>().unwrap();
+									}
+								}
                                 let mut map: Map<String, Value> = Map::new();
                                 map.insert(
                                     "type".to_string(),
@@ -110,7 +116,7 @@ fn read_odt(filename: &str) {
                                 );
                                 map.insert(
                                     "level".to_string(),
-                                    Value::Number(Number::from_f64(f64::from(1)).unwrap()),
+                                    Value::Number(Number::from_f64(level).unwrap()),
                                 ); //make sure to actually get the level
                                 map.insert("children".to_string(), Value::Array(Vec::new()));
                                 current_value = Value::Object(map);
