@@ -1,10 +1,13 @@
 extern crate futures;
 extern crate hyper;
+extern crate zip;
 
 use futures::future;
 use hyper::rt::{Future, Stream};
 use hyper::service::service_fn;
 use hyper::{Body, Method, Request, Response, Server, StatusCode};
+use std::fs;
+use std::io;
 
 type BoxFuture = Box<Future<Item = Response<Body>, Error = hyper::Error> + Send>;
 
@@ -44,6 +47,8 @@ fn handle_request(req: Request<Body>) -> BoxFuture {
 }
 
 fn main() {
+    file_read_testing();
+
     let addr = ([127, 0, 0, 1], 3000).into();
 
     let server = Server::bind(&addr)
@@ -52,4 +57,25 @@ fn main() {
 
     println!("Listening on http://{}", addr);
     hyper::rt::run(server);
+}
+
+fn file_read_testing() {
+    println!("File to read:");
+    let mut input = String::new();
+    io::stdin()
+        .read_line(&mut input)
+        .expect("Failed to read input from stdin");
+    read_odt(input.trim()); //trim to get rid of the newline at the end
+}
+
+fn read_odt(filename: &str) {
+    let file = std::path::Path::new(&filename);
+    if file.exists() {
+        let file = fs::File::open(&file).unwrap();
+        let mut archive = zip::ZipArchive::new(file).unwrap();
+        let content_xml = archive.by_name("content.xml").unwrap();
+        println!("{}", content_xml.size());
+    } else {
+        println!("{:?}", fs::metadata(file));
+    }
 }
