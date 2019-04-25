@@ -97,18 +97,22 @@ fn read_odt(filename: &str) {
 
         for e in parser {
             match e {
-                Ok(XmlEvent::StartElement { name, attributes, .. }) => {
+                Ok(XmlEvent::StartElement {
+                    name, attributes, ..
+                }) => {
                     if let Some(prefix) = name.prefix {
                         if prefix == "office" && name.local_name == "body" {
                             begin = true;
                         } else if begin {
                             if prefix == "text" && name.local_name == "h" {
-								let mut level = 0.0; //because JS numbers are always floats apparently
-								for i in attributes {
-									if i.name.prefix.unwrap() == "text" && i.name.local_name == "outline-level" {
-										level = i.value.parse::<f64>().unwrap();
-									}
-								}
+                                let mut level = 0.0; //because JS numbers are always floats apparently
+                                for i in attributes {
+                                    if i.name.prefix.unwrap() == "text"
+                                        && i.name.local_name == "outline-level"
+                                    {
+                                        level = i.value.parse::<f64>().unwrap();
+                                    }
+                                }
                                 let mut map: Map<String, Value> = Map::new();
                                 map.insert(
                                     "type".to_string(),
