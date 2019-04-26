@@ -43,7 +43,9 @@ fn handle_request(req: Request<Body>) -> BoxFuture {
 
             *response.body_mut() = Body::wrap_stream(mapping);
         }
-
+		(&Method::POST, "/load") => {
+            *response.body_mut() = Body::from(file_read_testing());
+        }
         _ => {
             *response.status_mut() = StatusCode::NOT_FOUND;
         }
@@ -53,8 +55,6 @@ fn handle_request(req: Request<Body>) -> BoxFuture {
 }
 
 fn main() {
-    file_read_testing();
-
     let addr = ([127, 0, 0, 1], 3000).into();
 
     let server = Server::bind(&addr)
@@ -65,21 +65,21 @@ fn main() {
     hyper::rt::run(server);
 }
 
-fn file_read_testing() {
+fn file_read_testing() -> String {
     println!("File to read:");
     let mut input = String::new();
     io::stdin()
         .read_line(&mut input)
         .expect("Failed to read input from stdin");
-    read_odt(input.trim()); //trim to get rid of the newline at the end
+    read_odt(input.trim())
 }
 
-fn read_odt(filename: &str) {
+fn read_odt(filename: &str) -> String {
     let file = std::path::Path::new(&filename);
     if !file.exists() {
         //make sure the file actually exists
         println!("{:?}", fs::metadata(file));
-        return;
+        return serde_json::to_string(&Value::Null).unwrap()
     }
 
     let file = fs::File::open(&file).unwrap();
@@ -177,7 +177,7 @@ fn read_odt(filename: &str) {
             }
             Err(e) => {
                 println!("Error: {}", e);
-                return;
+                return serde_json::to_string(&Value::Null).unwrap()
             }
             _ => {}
         }
@@ -186,8 +186,5 @@ fn read_odt(filename: &str) {
     let mut document_object: Map<String, Value> = Map::new();
     document_object.insert("document".to_string(), document_hierarchy.pop().unwrap());
     let document_object = Value::Object(document_object);
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&document_object).unwrap()
-    );
+    serde_json::to_string_pretty(&document_object).unwrap()
 }
