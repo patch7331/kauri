@@ -26,7 +26,11 @@ export default class App extends Component {
     });
     fetch(POST_URI_OPEN_FILE, { method: "POST", body: filePath[0] })
       .then(resp => {
-        this.setState(resp.json());
+        return resp.json();
+      })
+      .then(json => {
+        console.log(json);
+        this.setState(json);
       })
       .catch(e => console.log(e));
   }
