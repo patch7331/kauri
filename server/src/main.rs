@@ -62,9 +62,18 @@ fn read_odt(filename: &str) -> String {
     }
 
     let file = fs::File::open(&file).unwrap();
-    let mut archive = zip::ZipArchive::new(file).unwrap();
-    let content_xml = archive.by_name("content.xml").unwrap(); //returns a ZipFile struct which implements Read
-    let content_xml = io::BufReader::new(content_xml);
+    let archive = zip::ZipArchive::new(file);
+    if let Err(e) = archive { //handle case where the file is not even a zip file
+        println!("{}", e);
+        return serde_json::to_string(&Value::Null).unwrap();
+    }
+    let mut archive = archive.unwrap();
+    let content_xml = archive.by_name("content.xml"); //returns a ZipFile struct which implements Read if the file is in the archive
+	if let Err(e) = content_xml { //handle case where there is no content.xml (so probably not actually an ODT file)
+		println!("{}", e);
+        return serde_json::to_string(&Value::Null).unwrap();
+	}
+    let content_xml = io::BufReader::new(content_xml.unwrap());
 
     let parser = EventReader::new(content_xml);
     let mut begin = false; //used to ignore all the other tags before office:body for now
