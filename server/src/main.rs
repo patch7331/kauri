@@ -1,13 +1,8 @@
-extern crate futures;
-extern crate hyper;
+extern crate tiny_http;
 extern crate serde_json;
 extern crate xml;
 extern crate zip;
 
-use futures::future;
-use hyper::rt::{Future, Stream};
-use hyper::service::service_fn;
-use hyper::{Body, Method, Request, Response, Server, StatusCode};
 use serde_json::map::Map;
 use serde_json::value::Value;
 use serde_json::Number;
@@ -15,54 +10,18 @@ use std::fs;
 use std::io;
 use xml::reader::{EventReader, XmlEvent};
 
-type BoxFuture = Box<Future<Item = Response<Body>, Error = hyper::Error> + Send>;
-
-/// This is our service handler. It receives a `Request` and routes it
-/// according to its path.
-fn handle_request(req: Request<Body>) -> BoxFuture {
-    let mut response = Response::new(Body::empty());
-
-    match (req.method(), req.uri().path()) {
-        (&Method::POST, "/key") => {
-            // *response.body_mut() = req.into_body();
-            // req.into_body().then(|result| {
-            //     match result {
-            //         Ok(e) => println!("{:?}", e),
-            //         Err(e) => println!("Error: {}", e)
-            //     }
-            // });
-            let mapping = req.into_body().map(|chunk| {
-                chunk
-                    .iter()
-                    .map(|byte| {
-                        println!("{}", *byte as char);
-                        byte.to_ascii_uppercase()
-                    })
-                    .collect::<Vec<u8>>()
-            });
-
-            *response.body_mut() = Body::wrap_stream(mapping);
-        }
-		(&Method::POST, "/load") => {
-            *response.body_mut() = Body::from(file_read_testing());
-        }
-        _ => {
-            *response.status_mut() = StatusCode::NOT_FOUND;
-        }
-    };
-
-    Box::new(future::ok(response))
-}
-
 fn main() {
-    let addr = ([127, 0, 0, 1], 3000).into();
-
-    let server = Server::bind(&addr)
-        .serve(|| service_fn(handle_request))
-        .map_err(|e| eprintln!("Server error: {}", e));
-
-    println!("Listening on http://{}", addr);
-    hyper::rt::run(server);
+    let addr = "127.0.0.1:3000";
+    let server = tiny_http::Server::http(addr).unwrap();
+	println!("Listening on http://{}", addr);
+	
+	loop {
+		let request = match server.recv() {
+	        Ok(rq) => rq,
+	        Err(e) => { println!("error: {}", e); break }
+	    };
+		println!("url:{}", request.url());
+	}
 }
 
 fn file_read_testing() -> String {
