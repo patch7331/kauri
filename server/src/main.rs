@@ -1,5 +1,5 @@
-extern crate tiny_http;
 extern crate serde_json;
+extern crate tiny_http;
 extern crate xml;
 extern crate zip;
 
@@ -13,37 +13,44 @@ use xml::reader::{EventReader, XmlEvent};
 fn main() {
     let addr = "127.0.0.1:3000";
     let server = tiny_http::Server::http(addr).unwrap();
-	println!("Listening on http://{}", addr);
-	
-	loop {
-		let request = match server.recv() {
-	        Ok(rq) => rq,
-	        Err(e) => { println!("error: {}", e); break }
-	    };
-		match request.url() {
-			"/load" => {
-				let response = tiny_http::Response::from_string(file_read_testing());
-				if let Err(e) = request.respond(response) {
-					println!("error: {}", e); break
-				}
-			},
-			_ => {
-				let response = tiny_http::Response::empty(404);
-				if let Err(e) = request.respond(response) {
-					println!("error: {}", e); break
-				}
-			}
-		}
-	}
-}
+    println!("Listening on http://{}", addr);
 
-fn file_read_testing() -> String {
-    println!("File to read:");
-    let mut input = String::new();
-    io::stdin()
-        .read_line(&mut input)
-        .expect("Failed to read input from stdin");
-    read_odt(input.trim())
+    loop {
+        let mut request = match server.recv() {
+            Ok(rq) => rq,
+            Err(e) => {
+                println!("error: {}", e);
+                break;
+            }
+        };
+        match request.url() {
+            "/load" => {
+                let req_reader = request.as_reader();
+                let mut body_bytes: Vec<u8> = Vec::new();
+                if let Err(e) = req_reader.read_to_end(&mut body_bytes) {
+                    println!("error: {}", e);
+                    continue;
+                }
+                let body_str = std::str::from_utf8(&body_bytes);
+                if let Err(e) = body_str {
+                    println!("error: {}", e);
+                    continue;
+                }
+                let response = tiny_http::Response::from_string(read_odt(body_str.unwrap()));
+                if let Err(e) = request.respond(response) {
+                    println!("error: {}", e);
+                    continue;
+                }
+            }
+            _ => {
+                let response = tiny_http::Response::empty(404);
+                if let Err(e) = request.respond(response) {
+                    println!("error: {}", e);
+                    continue;
+                }
+            }
+        }
+    }
 }
 
 fn read_odt(filename: &str) -> String {
@@ -51,7 +58,7 @@ fn read_odt(filename: &str) -> String {
     if !file.exists() {
         //make sure the file actually exists
         println!("{:?}", fs::metadata(file));
-        return serde_json::to_string(&Value::Null).unwrap()
+        return serde_json::to_string(&Value::Null).unwrap();
     }
 
     let file = fs::File::open(&file).unwrap();
@@ -149,7 +156,7 @@ fn read_odt(filename: &str) -> String {
             }
             Err(e) => {
                 println!("Error: {}", e);
-                return serde_json::to_string(&Value::Null).unwrap()
+                return serde_json::to_string(&Value::Null).unwrap();
             }
             _ => {}
         }
