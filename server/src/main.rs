@@ -20,7 +20,20 @@ fn main() {
 	        Ok(rq) => rq,
 	        Err(e) => { println!("error: {}", e); break }
 	    };
-		println!("url:{}", request.url());
+		match request.url() {
+			"/load" => {
+				let response = tiny_http::Response::from_string(file_read_testing());
+				if let Err(e) = request.respond(response) {
+					println!("error: {}", e); break
+				}
+			},
+			_ => {
+				let response = tiny_http::Response::empty(404);
+				if let Err(e) = request.respond(response) {
+					println!("error: {}", e); break
+				}
+			}
+		}
 	}
 }
 
