@@ -17,6 +17,7 @@ fn main() {
 
     loop {
         let mut request = match server.recv() {
+            //server.recv() blocks until a request actually comes
             Ok(rq) => rq,
             Err(e) => {
                 println!("error: {}", e);
@@ -24,6 +25,7 @@ fn main() {
             }
         };
         match request.url() {
+            //check the URL and respond accordingly
             "/load" => {
                 let req_reader = request.as_reader();
                 let mut body_bytes: Vec<u8> = Vec::new();
@@ -53,8 +55,10 @@ fn main() {
     }
 }
 
-fn read_odt(filename: &str) -> String {
-    let file = std::path::Path::new(&filename);
+/// Reads an ODT file referred to by the given path
+/// and returns a JSON string containing
+fn read_odt(filepath: &str) -> String {
+    let file = std::path::Path::new(&filepath);
     if !file.exists() {
         //make sure the file actually exists
         println!("{:?}", fs::metadata(file));
@@ -63,16 +67,18 @@ fn read_odt(filename: &str) -> String {
 
     let file = fs::File::open(&file).unwrap();
     let archive = zip::ZipArchive::new(file);
-    if let Err(e) = archive { //handle case where the file is not even a zip file
+    if let Err(e) = archive {
+        //handle case where the file is not even a zip file
         println!("{}", e);
         return serde_json::to_string(&Value::Null).unwrap();
     }
     let mut archive = archive.unwrap();
     let content_xml = archive.by_name("content.xml"); //returns a ZipFile struct which implements Read if the file is in the archive
-	if let Err(e) = content_xml { //handle case where there is no content.xml (so probably not actually an ODT file)
-		println!("{}", e);
+    if let Err(e) = content_xml {
+        //handle case where there is no content.xml (so probably not actually an ODT file)
+        println!("{}", e);
         return serde_json::to_string(&Value::Null).unwrap();
-	}
+    }
     let content_xml = io::BufReader::new(content_xml.unwrap());
 
     let parser = EventReader::new(content_xml);
@@ -174,5 +180,5 @@ fn read_odt(filename: &str) -> String {
     let mut document_object: Map<String, Value> = Map::new();
     document_object.insert("document".to_string(), document_hierarchy.pop().unwrap());
     let document_object = Value::Object(document_object);
-    serde_json::to_string_pretty(&document_object).unwrap()
+    serde_json::to_string(&document_object).unwrap()
 }
