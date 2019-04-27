@@ -56,7 +56,7 @@ fn main() {
 }
 
 /// Reads an ODT file referred to by the given path
-/// and returns a JSON string containing
+/// and returns a JSON string containing a DOM
 fn read_odt(filepath: &str) -> String {
     let file = std::path::Path::new(&filepath);
     if !file.exists() {
