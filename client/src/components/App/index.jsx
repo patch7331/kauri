@@ -29,7 +29,6 @@ export default class App extends Component {
         return resp.json();
       })
       .then(json => {
-        console.log(json);
         this.setState(json);
       })
       .catch(e => console.log(e));
