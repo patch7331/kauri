@@ -2,7 +2,7 @@
 
 import "./styles.scss";
 import demo from "./demo.json";
-import { h, Component } from "preact";
+import { h, Component, createRef } from "preact";
 import Editor from "components/Editor";
 import Header from "components/Header";
 
@@ -17,6 +17,7 @@ export default class App extends Component {
     super(props);
     this.state = { document: demo.document };
     this.loadFile = this.loadFile.bind(this);
+    this.editor = createRef();
   }
 
   loadFile() {
@@ -29,6 +30,7 @@ export default class App extends Component {
         return resp.json();
       })
       .then(json => {
+        this.editor.current.clearContentEditable();
         this.setState(json);
       })
       .catch(e => console.log(e));
@@ -39,7 +41,7 @@ export default class App extends Component {
       <div class="app">
         <button onClick={this.loadFile}>Load</button>
         <Header title={this.state.document.title} />
-        <Editor dom={this.state.document} />
+        <Editor ref={this.editor} dom={this.state.document} />
       </div>
     );
   }
