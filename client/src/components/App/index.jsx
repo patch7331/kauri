@@ -20,6 +20,9 @@ export default class App extends Component {
     this.editor = createRef();
   }
 
+  /**
+   * Opens a file selection dialog, sends the file path to the server, then parse the server's response and use it as the new state.
+   */
   loadFile() {
     const { dialog } = require("electron").remote;
     var filePath = dialog.showOpenDialog({

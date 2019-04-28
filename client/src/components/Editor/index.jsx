@@ -30,6 +30,9 @@ export default class Editor extends Component {
     document.execCommand("defaultParagraphSeparator", false, "p");
   }
 
+  /**
+   * Clears the contents of the contenteditable div, designed for use before loading a new file.
+   */
   clearContentEditable() {
     this.contentEditableDiv.current.innerHTML = "";
   }
