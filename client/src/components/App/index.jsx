@@ -5,6 +5,7 @@ import demo from "./demo.json";
 import { h, Component, createRef } from "preact";
 import Editor from "components/Editor";
 import Header from "components/Header";
+import { remote } from "electron";
 
 const POST_URI_OPEN_FILE = "http://127.0.0.1:3000/load";
 
@@ -24,8 +25,7 @@ export default class App extends Component {
    * Opens a file selection dialog, sends the file path to the server, then parse the server's response and use it as the new state.
    */
   loadFile() {
-    const { dialog } = require("electron").remote;
-    var filePath = dialog.showOpenDialog({
+    var filePath = remote.dialog.showOpenDialog({
       properties: ["openFile"],
     });
     fetch(POST_URI_OPEN_FILE, { method: "POST", body: filePath[0] })
@@ -39,11 +39,11 @@ export default class App extends Component {
       .catch(e => console.log(e));
   }
 
-   render(props, state) {
+  render(props, state) {
     return (
       <div class="app">
         <button onClick={this.loadFile}>Load</button>
-         <Header title={state.document.title} />
+        <Header title={state.document.title} />
         <Editor ref={this.editor} dom={state.document} />
       </div>
     );
