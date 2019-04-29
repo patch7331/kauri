@@ -21,6 +21,7 @@ export default class Editor extends Component {
   constructor(props) {
     super(props);
     this.contentEditableDiv = createRef();
+    this.clearContentEditable = this.clearContentEditable.bind(this);
   }
 
   /**
