@@ -39,7 +39,7 @@ export default class App extends Component {
       .catch(e => console.log(e));
   }
 
-  render() {
+   render(props, state) {
     return (
       <div class="app">
         <button onClick={this.loadFile}>Load</button>
