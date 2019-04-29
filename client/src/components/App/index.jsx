@@ -29,9 +29,7 @@ export default class App extends Component {
       properties: ["openFile"],
     });
     fetch(POST_URI_OPEN_FILE, { method: "POST", body: filePath[0] })
-      .then(resp => {
-        return resp.json();
-      })
+      .then(resp => resp.json())
       .then(json => {
         this.editor.current.clearContentEditable();
         this.setState(json);
