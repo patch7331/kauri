@@ -43,7 +43,7 @@ export default class App extends Component {
     return (
       <div class="app">
         <button onClick={this.loadFile}>Load</button>
-        <Header title={this.state.document.title} />
+         <Header title={state.document.title} />
         <Editor ref={this.editor} dom={state.document} />
       </div>
     );
