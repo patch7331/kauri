@@ -6,7 +6,7 @@ import { remote } from "electron";
  * Sets up the global application menu.
  * @param {Object} mainApp The App React component to be used.
  */
-export default function setApplicationMenu(mainApp) {
+export default function setApplicationMenu(loadFileFunction) {
   // The menu template object here is based on the sample in the electron docs, with the Help menu removed
   const menuTemplate = [
     // Application menu for macOS
@@ -34,9 +34,9 @@ export default function setApplicationMenu(mainApp) {
       submenu: [
         {
           label: "Open ODT",
-          data: mainApp,
+          loadFile: loadFileFunction,
           click(menuItem, browserWindow, event) {
-            menuItem.data.loadFile();
+            loadFileFunction();
           },
         },
         process.platform === "darwin" ? { role: "close" } : { role: "quit" },

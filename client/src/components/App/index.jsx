@@ -20,7 +20,7 @@ export default class App extends Component {
     this.state = { document: demo.document };
     this.loadFile = this.loadFile.bind(this);
     this.editor = createRef();
-    setApplicationMenu(this);
+    setApplicationMenu(this.loadFile);
   }
 
   /**
