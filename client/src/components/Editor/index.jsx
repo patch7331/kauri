@@ -2,7 +2,7 @@
 
 import "./styles.scss";
 
-import { h, Component } from "preact";
+import { h, Component, createRef } from "preact";
 import { renderDocumentNodes } from "dom/render";
 import ToolBar from "components/Editor/ToolBar";
 
@@ -20,6 +20,8 @@ export default class Editor extends Component {
    */
   constructor(props) {
     super(props);
+    this.contentEditableDiv = createRef();
+    this.clearContentEditable = this.clearContentEditable.bind(this);
   }
 
   /**
@@ -29,12 +31,23 @@ export default class Editor extends Component {
     document.execCommand("defaultParagraphSeparator", false, "p");
   }
 
+  /**
+   * Clears the contents of the contenteditable div, designed for use before loading a new file.
+   */
+  clearContentEditable() {
+    this.contentEditableDiv.current.innerHTML = "";
+  }
+
   render(props) {
     return (
       <div>
         <ToolBar />
 
-        <div class="editor" contenteditable="true">
+        <div
+          ref={this.contentEditableDiv}
+          class="editor"
+          contenteditable="true"
+        >
           {renderDocumentNodes(props.dom.children)}
         </div>
       </div>
