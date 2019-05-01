@@ -6,7 +6,7 @@ import { h, Component, createRef } from "preact";
 import Editor from "components/Editor";
 import Header from "components/Header";
 import { remote } from "electron";
-import setApplicationMenu from "./MenuConfigurator.jsx";
+import setApplicationMenu from "util/MenuConfigurator.js";
 
 const POST_URI_OPEN_FILE = "http://127.0.0.1:3000/load";
 
