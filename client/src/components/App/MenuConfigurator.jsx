@@ -34,10 +34,7 @@ export default function setApplicationMenu(loadFileFunction) {
       submenu: [
         {
           label: "Open ODT",
-          loadFile: loadFileFunction,
-          click(menuItem, browserWindow, event) {
-            loadFileFunction();
-          },
+          click: loadFileFunction,
         },
         process.platform === "darwin" ? { role: "close" } : { role: "quit" },
       ],
