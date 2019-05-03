@@ -89,6 +89,9 @@ fn read_odt(filepath: &str) -> String {
     let mut current_style_value = Value::Null;
     let mut current_style_name = String::new();
 
+    let mut is_span = false;
+    let mut current_span_style = String::new();
+
     let mut document_contents: Map<String, Value> = Map::new(); //value of the "document" key
     document_contents.insert(
         "title".to_string(),
@@ -112,18 +115,19 @@ fn read_odt(filepath: &str) -> String {
                     } else if body_begin {
                         if prefix == "text" && name.local_name == "h" {
                             let (mut map, style_name) = heading_begin(attributes);
-                            map.insert(
-                                "style".to_string(),
-                                auto_styles.remove(&style_name).unwrap(),
-                            );
+                            let style_object = auto_styles.remove(&style_name).unwrap(); //can't just make a clone of the Value directly from the map, so we need to take it out
+                            map.insert("style".to_string(), style_object.clone()); //then put a copy in here
+                            auto_styles.insert(style_name, style_object); //and put the original back in
                             current_value = Value::Object(map);
                         } else if prefix == "text" && name.local_name == "p" {
                             let (mut map, style_name) = paragraph_begin(attributes);
-                            map.insert(
-                                "style".to_string(),
-                                auto_styles.remove(&style_name).unwrap(),
-                            );
+                            let style_object = auto_styles.remove(&style_name).unwrap();
+                            map.insert("style".to_string(), style_object.clone());
+                            auto_styles.insert(style_name, style_object);
                             current_value = Value::Object(map);
+                        } else if prefix == "text" && name.local_name == "span" {
+                            is_span = true;
+                            current_span_style = span_begin(attributes);
                         }
                     } else if prefix == "office" && name.local_name == "automatic-styles" {
                         styles_begin = true;
@@ -142,6 +146,13 @@ fn read_odt(filepath: &str) -> String {
                 let mut map: Map<String, Value> = Map::new();
                 map.insert("type".to_string(), Value::String("text".to_string()));
                 map.insert("content".to_string(), Value::String(contents));
+                if is_span {
+                    let style_object = auto_styles.remove(&current_span_style).unwrap();
+                    map.insert("style".to_string(), style_object.clone());
+                    auto_styles.insert(current_span_style, style_object);
+                    current_span_style = String::new();
+                    is_span = false;
+                }
                 current_value
                     .as_object_mut()
                     .unwrap()
@@ -195,12 +206,6 @@ fn read_odt(filepath: &str) -> String {
     let mut document_object: Map<String, Value> = Map::new();
     document_object.insert("document".to_string(), document_hierarchy.pop().unwrap());
     let document_object = Value::Object(document_object);
-
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&document_object).unwrap()
-    );
-
     serde_json::to_string(&document_object).unwrap()
 }
 
@@ -244,6 +249,18 @@ fn paragraph_begin(
     map.insert("type".to_string(), Value::String("paragraph".to_string()));
     map.insert("children".to_string(), Value::Array(Vec::new()));
     (map, style_name)
+}
+
+/// Takes the set of attributes of a text:span tag in the ODT's content.xml
+/// and returns the value of the text:style-name attribute of the tag
+fn span_begin(attributes: Vec<xml::attribute::OwnedAttribute>) -> String {
+    let mut style_name = String::new();
+    for i in attributes {
+        if i.name.prefix.unwrap() == "text" && i.name.local_name == "style-name" {
+            style_name = i.value;
+        }
+    }
+    style_name
 }
 
 /// Takes the set of attributes of a style:style tag in the ODT's content.xml,
