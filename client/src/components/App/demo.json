@@ -7,7 +7,7 @@
         "type": "heading",
         "level": 1,
         "style": {
-          "text-decoration": "underline"
+          "textDecoration": "underline"
         },
         "children": [
           {
@@ -20,7 +20,7 @@
       {
         "type": "paragraph",
         "style": {
-          "font-style": "italic"
+          "fontStyle": "italic"
         },
         "children": [
           {
@@ -30,7 +30,7 @@
           {
             "type": "text",
             "style": {
-              "font-weight": "bold"
+              "fontWeight": "bold"
             },
             "content": " (working title) is a next generation document processor."
           }
