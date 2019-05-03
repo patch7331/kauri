@@ -6,19 +6,33 @@
       {
         "type": "heading",
         "level": 1,
+        "style": {
+          "text-decoration": "underline"
+        },
         "children": [
           {
             "type": "text",
+            "style": null,
             "content": "Hello, world!"
           }
         ]
       },
       {
         "type": "paragraph",
+        "style": {
+          "font-style": "italic"
+        },
         "children": [
           {
             "type": "text",
-            "content": "Kauri (working title) is a next generation document processor."
+            "content": "Kauri"
+          },
+          {
+            "type": "text",
+            "style": {
+              "font-weight": "bold"
+            },
+            "content": " (working title) is a next generation document processor."
           }
         ]
       }

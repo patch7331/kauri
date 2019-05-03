@@ -32,11 +32,15 @@ export function renderDocumentNodes(nodes) {
 export function renderDocumentNode(node) {
   switch (node.type) {
     case "heading":
-      return <Heading node={node} />;
+      return <Heading node={node} style={node.style} />;
     case "paragraph":
-      return <Paragraph node={node} />;
+      return <Paragraph node={node} style={node.style} />;
     case "text":
-      return node.content;
+      if (node.style === null) {
+        return node.content;
+      } else {
+        return <span style={node.style}>{node.content}</span>;
+      }
     default:
       throw new RenderError(node, `Unknown type '${node.type}'.`);
   }
