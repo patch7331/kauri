@@ -87,7 +87,7 @@ fn read_odt(filepath: &str) -> String {
 
     let mut auto_styles: Map<String, Value> = Map::new(); //map of automatic style names in the ODT to its contents in JSON form (automatic meaning the user did not explicitly name it)
     let mut current_style_value = Value::Null;
-    let mut current_style_name = String::from("");
+    let mut current_style_name = String::new();
 
     let mut document_contents: Map<String, Value> = Map::new(); //value of the "document" key
     document_contents.insert(
@@ -111,9 +111,19 @@ fn read_odt(filepath: &str) -> String {
                         body_begin = true;
                     } else if body_begin {
                         if prefix == "text" && name.local_name == "h" {
-                            current_value = Value::Object(heading_begin(attributes));
+                            let (mut map, style_name) = heading_begin(attributes);
+                            map.insert(
+                                "style".to_string(),
+                                auto_styles.remove(&style_name).unwrap(),
+                            );
+                            current_value = Value::Object(map);
                         } else if prefix == "text" && name.local_name == "p" {
-                            current_value = Value::Object(paragraph_begin());
+                            let (mut map, style_name) = paragraph_begin(attributes);
+                            map.insert(
+                                "style".to_string(),
+                                auto_styles.remove(&style_name).unwrap(),
+                            );
+                            current_value = Value::Object(map);
                         }
                     } else if prefix == "office" && name.local_name == "automatic-styles" {
                         styles_begin = true;
@@ -128,7 +138,7 @@ fn read_odt(filepath: &str) -> String {
             }
             Ok(XmlEvent::Characters(contents)) => {
                 //currently the only type of tag expected to emit this event is the ones in the body,
-				//in which case they will contain the document text
+                //in which case they will contain the document text
                 let mut map: Map<String, Value> = Map::new();
                 map.insert("type".to_string(), Value::String("text".to_string()));
                 map.insert("content".to_string(), Value::String(contents));
@@ -185,20 +195,27 @@ fn read_odt(filepath: &str) -> String {
     let mut document_object: Map<String, Value> = Map::new();
     document_object.insert("document".to_string(), document_hierarchy.pop().unwrap());
     let document_object = Value::Object(document_object);
+
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&document_object).unwrap()
+    );
+
     serde_json::to_string(&document_object).unwrap()
 }
 
 /// Takes the set of attributes of a text:h tag in the ODT's content.xml,
-/// and creates a map for use in a Value::Object enum that represents a heading element based on the attributes
-fn heading_begin(attributes: Vec<xml::attribute::OwnedAttribute>) -> Map<String, Value> {
+/// and returns a map for use in a Value::Object enum that represents a heading element based on the attributes,
+/// together with the value of the text:style-name attribute of the tag
+fn heading_begin(attributes: Vec<xml::attribute::OwnedAttribute>) -> (Map<String, Value>, String) {
     let mut level = 0.0; //because JS numbers are always floats apparently
+    let mut style_name = String::new();
     for i in attributes {
-        //attributes is a Vec, so need to search for the level
-        if i.name.prefix.unwrap() == "text"
-            && i.name.local_name == "outline-level"
-        {
+        let prefix = i.name.prefix.unwrap();
+        if prefix == "text" && i.name.local_name == "outline-level" {
             level = i.value.parse::<f64>().unwrap();
-            break;
+        } else if prefix == "text" && i.name.local_name == "style-name" {
+            style_name = i.value;
         }
     }
     let mut map: Map<String, Value> = Map::new();
@@ -208,44 +225,50 @@ fn heading_begin(attributes: Vec<xml::attribute::OwnedAttribute>) -> Map<String,
         Value::Number(Number::from_f64(level).unwrap()),
     );
     map.insert("children".to_string(), Value::Array(Vec::new()));
-	map
+    (map, style_name)
 }
 
-/// Creates a map for use in a Value::Object enum that represents a paragraph element
-fn paragraph_begin() -> Map<String, Value> {
+/// Takes the set of attributes of a text:p tag in the ODT's content.xml,
+/// and returns a map for use in a Value::Object enum that represents a heading element
+/// together with the value of the text:style-name attribute of the tag
+fn paragraph_begin(
+    attributes: Vec<xml::attribute::OwnedAttribute>,
+) -> (Map<String, Value>, String) {
+    let mut style_name = String::new();
+    for i in attributes {
+        if i.name.prefix.unwrap() == "text" && i.name.local_name == "style-name" {
+            style_name = i.value;
+        }
+    }
     let mut map: Map<String, Value> = Map::new();
     map.insert("type".to_string(), Value::String("paragraph".to_string()));
     map.insert("children".to_string(), Value::Array(Vec::new()));
-	map
+    (map, style_name)
 }
 
 /// Takes the set of attributes of a style:style tag in the ODT's content.xml,
 /// and returns the name of the style
 fn style_begin(attributes: Vec<xml::attribute::OwnedAttribute>) -> String {
-	for i in attributes {
-	    if i.name.prefix.unwrap() == "style" && i.name.local_name == "name"
-	    {
-	        return i.value;
-	    }
-	};
-	String::new()
+    for i in attributes {
+        if i.name.prefix.unwrap() == "style" && i.name.local_name == "name" {
+            return i.value;
+        }
+    }
+    String::new()
 }
 
 /// Takes the set of attributes of a style:text-properties tag in the ODT's content.xml,
 /// and creates a map for use in a Value::Object enum that represents a style object based on the attributes
 fn text_properties_begin(attributes: Vec<xml::attribute::OwnedAttribute>) -> Map<String, Value> {
-	let mut map: Map<String, Value> = Map::new();
+    let mut map: Map<String, Value> = Map::new();
     for i in attributes {
         let prefix = i.name.prefix.unwrap();
         if prefix == "fo" && i.name.local_name == "font-weight" {
             map.insert("fontWeight".to_string(), Value::String(i.value)); //all valid values for this attribute is also valid in the CSS equivalent, so just use it as is
-        } else if prefix == "fo"
-            && i.name.local_name == "font-style"
-            && i.value != "backslant"
-        {
+        } else if prefix == "fo" && i.name.local_name == "font-style" && i.value != "backslant" {
             //backslant is not valid in CSS, but all the other ones are
             map.insert("fontStyle".to_string(), Value::String(i.value));
         }
     }
-	map
+    map
 }
