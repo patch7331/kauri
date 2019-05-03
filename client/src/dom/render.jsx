@@ -36,7 +36,7 @@ export function renderDocumentNode(node) {
     case "paragraph":
       return <Paragraph node={node} style={node.style} />;
     case "text":
-      if (node.style === null) {
+      if (node.style == null) {
         return node.content;
       } else {
         return <span style={node.style}>{node.content}</span>;
