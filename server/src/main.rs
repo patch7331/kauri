@@ -82,7 +82,13 @@ fn read_odt(filepath: &str) -> String {
     let content_xml = io::BufReader::new(content_xml.unwrap());
 
     let parser = EventReader::new(content_xml);
-    let mut begin = false; //used to ignore all the other tags before office:body for now
+    let mut body_begin = false;
+    let mut styles_begin = false;
+
+    let mut auto_styles: Map<String, Value> = Map::new(); //map of automatic style names in the ODT to its contents in JSON form (automatic meaning the user did not explicitly name it)
+    let mut current_style_value = Value::Null;
+    let mut current_style_name = String::from("");
+
     let mut document_contents: Map<String, Value> = Map::new(); //value of the "document" key
     document_contents.insert(
         "title".to_string(),
@@ -102,8 +108,8 @@ fn read_odt(filepath: &str) -> String {
             }) => {
                 if let Some(prefix) = name.prefix {
                     if prefix == "office" && name.local_name == "body" {
-                        begin = true;
-                    } else if begin {
+                        body_begin = true;
+                    } else if body_begin {
                         if prefix == "text" && name.local_name == "h" {
                             //heading
                             let mut level = 0.0; //because JS numbers are always floats apparently
@@ -113,6 +119,7 @@ fn read_odt(filepath: &str) -> String {
                                     && i.name.local_name == "outline-level"
                                 {
                                     level = i.value.parse::<f64>().unwrap();
+                                    break;
                                 }
                             }
                             let mut map: Map<String, Value> = Map::new();
@@ -128,6 +135,33 @@ fn read_odt(filepath: &str) -> String {
                             map.insert("type".to_string(), Value::String("paragraph".to_string()));
                             map.insert("children".to_string(), Value::Array(Vec::new()));
                             current_value = Value::Object(map);
+                        }
+                    } else if prefix == "office" && name.local_name == "automatic-styles" {
+                        styles_begin = true;
+                    } else if styles_begin {
+                        if prefix == "style" && name.local_name == "style" {
+                            for i in attributes {
+                                if i.name.prefix.unwrap() == "style" && i.name.local_name == "name"
+                                {
+                                    current_style_name = i.value;
+                                    break;
+                                }
+                            }
+                        } else if prefix == "style" && name.local_name == "text-properties" {
+                            let mut map: Map<String, Value> = Map::new();
+                            for i in attributes {
+                                let prefix = i.name.prefix.unwrap();
+                                if prefix == "fo" && i.name.local_name == "font-weight" {
+                                    map.insert("fontWeight".to_string(), Value::String(i.value)); //all valid values for this attribute is also valid in the CSS equivalent, so just use it as is
+                                } else if prefix == "fo"
+                                    && i.name.local_name == "font-style"
+                                    && i.value != "backslant"
+                                {
+                                    //backslant is not valid in CSS, but all the other ones are
+                                    map.insert("fontStyle".to_string(), Value::String(i.value));
+                                }
+                            }
+                            current_style_value = Value::Object(map);
                         }
                     }
                 }
@@ -147,7 +181,7 @@ fn read_odt(filepath: &str) -> String {
                     .push(Value::Object(map));
             }
             Ok(XmlEvent::EndElement { name }) => {
-                if begin {
+                if body_begin {
                     if let Some(prefix) = name.prefix {
                         if prefix == "office" && name.local_name == "body" {
                             break;
@@ -165,6 +199,16 @@ fn read_odt(filepath: &str) -> String {
                                 .unwrap()
                                 .push(current_value);
                             current_value = Value::Null;
+                        }
+                    }
+                } else if styles_begin {
+                    if let Some(prefix) = name.prefix {
+                        if prefix == "office" && name.local_name == "automatic-styles" {
+                            styles_begin = false;
+                        } else if prefix == "style" && name.local_name == "style" {
+                            auto_styles.insert(current_style_name, current_style_value);
+                            current_style_name = String::from("");
+                            current_style_value = Value::Null;
                         }
                     }
                 }
