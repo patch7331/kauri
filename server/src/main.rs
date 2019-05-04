@@ -115,11 +115,17 @@ fn read_odt(filepath: &str) -> String {
                     } else if body_begin {
                         if prefix == "text" && name.local_name == "h" {
                             let (mut map, style_name) = heading_begin(attributes);
-                            map.insert("style".to_string(), auto_styles.get(&style_name).unwrap().clone());
+                            map.insert(
+                                "style".to_string(),
+                                auto_styles.get(&style_name).unwrap().clone(),
+                            );
                             current_value = Value::Object(map);
                         } else if prefix == "text" && name.local_name == "p" {
                             let (mut map, style_name) = paragraph_begin(attributes);
-                            map.insert("style".to_string(), auto_styles.get(&style_name).unwrap().clone());
+                            map.insert(
+                                "style".to_string(),
+                                auto_styles.get(&style_name).unwrap().clone(),
+                            );
                             current_value = Value::Object(map);
                         } else if prefix == "text" && name.local_name == "span" {
                             is_span = true;
@@ -143,7 +149,10 @@ fn read_odt(filepath: &str) -> String {
                 map.insert("type".to_string(), Value::String("text".to_string()));
                 map.insert("content".to_string(), Value::String(contents));
                 if is_span {
-                    map.insert("style".to_string(), auto_styles.get(&current_span_style).unwrap().clone());
+                    map.insert(
+                        "style".to_string(),
+                        auto_styles.get(&current_span_style).unwrap().clone(),
+                    );
                     current_span_style = String::new();
                     is_span = false;
                 }
