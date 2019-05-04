@@ -115,15 +115,11 @@ fn read_odt(filepath: &str) -> String {
                     } else if body_begin {
                         if prefix == "text" && name.local_name == "h" {
                             let (mut map, style_name) = heading_begin(attributes);
-                            let style_object = auto_styles.remove(&style_name).unwrap(); //can't just make a clone of the Value directly from the map, so we need to take it out
-                            map.insert("style".to_string(), style_object.clone()); //then put a copy in here
-                            auto_styles.insert(style_name, style_object); //and put the original back in
+                            map.insert("style".to_string(), auto_styles.get(&style_name).unwrap().clone());
                             current_value = Value::Object(map);
                         } else if prefix == "text" && name.local_name == "p" {
                             let (mut map, style_name) = paragraph_begin(attributes);
-                            let style_object = auto_styles.remove(&style_name).unwrap();
-                            map.insert("style".to_string(), style_object.clone());
-                            auto_styles.insert(style_name, style_object);
+                            map.insert("style".to_string(), auto_styles.get(&style_name).unwrap().clone());
                             current_value = Value::Object(map);
                         } else if prefix == "text" && name.local_name == "span" {
                             is_span = true;
@@ -147,9 +143,7 @@ fn read_odt(filepath: &str) -> String {
                 map.insert("type".to_string(), Value::String("text".to_string()));
                 map.insert("content".to_string(), Value::String(contents));
                 if is_span {
-                    let style_object = auto_styles.remove(&current_span_style).unwrap();
-                    map.insert("style".to_string(), style_object.clone());
-                    auto_styles.insert(current_span_style, style_object);
+                    map.insert("style".to_string(), auto_styles.get(&current_span_style).unwrap().clone());
                     current_span_style = String::new();
                     is_span = false;
                 }
