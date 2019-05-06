@@ -325,6 +325,16 @@ fn text_properties_begin(attributes: Vec<xml::attribute::OwnedAttribute>) -> Map
             && i.value == "double"
         {
             is_double_underline = true;
+        } else if prefix == "style" && i.name.local_name == "text-underline-color" {
+            if i.value == "font-color" {
+                map.insert(
+                    "textDecorationColor".to_string(),
+                    Value::String("currentcolor".to_string()),
+                );
+            } else {
+                //the other valid values are all in hex format
+                map.insert("textDecorationColor".to_string(), Value::String(i.value));
+            }
         }
     }
     if is_double_underline {
