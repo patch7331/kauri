@@ -281,7 +281,7 @@ fn style_begin(attributes: Vec<xml::attribute::OwnedAttribute>) -> String {
 /// and creates a map for use in a Value::Object enum that represents a style object based on the attributes
 fn text_properties_begin(attributes: Vec<xml::attribute::OwnedAttribute>) -> Map<String, Value> {
     let mut map: Map<String, Value> = Map::new();
-	let mut is_double_underline = false;
+    let mut is_double_underline = false;
     for i in attributes {
         let prefix = i.name.prefix.unwrap();
         if prefix == "fo" && i.name.local_name == "font-weight" {
@@ -320,14 +320,20 @@ fn text_properties_begin(attributes: Vec<xml::attribute::OwnedAttribute>) -> Map
                     ),
                 };
             }
-        } else if prefix == "style" && i.name.local_name == "text-underline-type" && i.value == "double" {
-			is_double_underline = true;
-		}
+        } else if prefix == "style"
+            && i.name.local_name == "text-underline-type"
+            && i.value == "double"
+        {
+            is_double_underline = true;
+        }
     }
-	if is_double_underline {
-		//the ODF standard supports double underlines of any kind (solid, dotted, etc), while CSS only supports double solid underlines,
-		//so prioritize the double over the line style?
-		map.insert("textDecorationStyle".to_string(), Value::String("double".to_string()));
-	}
+    if is_double_underline {
+        //the ODF standard supports double underlines of any kind (solid, dotted, etc), while CSS only supports double solid underlines,
+        //so prioritize the double over the line style?
+        map.insert(
+            "textDecorationStyle".to_string(),
+            Value::String("double".to_string()),
+        );
+    }
     map
 }
