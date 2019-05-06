@@ -292,6 +292,8 @@ fn text_properties_begin(attributes: Vec<xml::attribute::OwnedAttribute>) -> Map
                 map.insert("fontStyle".to_string(), Value::String(i.value));
             } else if i.name.local_name == "color" {
                 map.insert("color".to_string(), Value::String(i.value));
+            } else if i.name.local_name == "font-size" {
+                map.insert("font-size".to_string(), Value::String(i.value));
             }
         } else if prefix == "style" {
             if i.name.local_name == "text-underline-style" {
