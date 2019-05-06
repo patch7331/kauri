@@ -284,56 +284,57 @@ fn text_properties_begin(attributes: Vec<xml::attribute::OwnedAttribute>) -> Map
     let mut is_double_underline = false;
     for i in attributes {
         let prefix = i.name.prefix.unwrap();
-        if prefix == "fo" && i.name.local_name == "font-weight" {
-            map.insert("fontWeight".to_string(), Value::String(i.value)); //all valid values for this attribute is also valid in the CSS equivalent, so just use it as is
-        } else if prefix == "fo" && i.name.local_name == "font-style" && i.value != "backslant" {
-            //backslant is not valid in CSS, but all the other ones are
-            map.insert("fontStyle".to_string(), Value::String(i.value));
-        } else if prefix == "style" && i.name.local_name == "text-underline-style" {
-            if i.value == "none" {
-                map.insert(
-                    "textDecorationLine".to_string(),
-                    Value::String("none".to_string()),
-                );
-            } else {
-                map.insert(
-                    "textDecorationLine".to_string(),
-                    Value::String("underline".to_string()),
-                );
-                match i.value.as_ref() {
-                    "dash" => map.insert(
-                        "textDecorationStyle".to_string(),
-                        Value::String("dashed".to_string()),
-                    ),
-                    "dotted" => map.insert(
-                        "textDecorationStyle".to_string(),
-                        Value::String("dotted".to_string()),
-                    ),
-                    "wave" => map.insert(
-                        "textDecorationStyle".to_string(),
-                        Value::String("wavy".to_string()),
-                    ),
-                    //there are a few possible styles in ODF that aren't present in CSS (dot-dash, dot-dot-dash, long-dash), so just put in a basic underline?
-                    "solid" | _ => map.insert(
-                        "textDecorationStyle".to_string(),
-                        Value::String("solid".to_string()),
-                    ),
-                };
+        if prefix == "fo" {
+            if i.name.local_name == "font-weight" {
+                map.insert("fontWeight".to_string(), Value::String(i.value)); //all valid values for this attribute is also valid in the CSS equivalent, so just use it as is
+            } else if i.name.local_name == "font-style" && i.value != "backslant" {
+                //backslant is not valid in CSS, but all the other ones are
+                map.insert("fontStyle".to_string(), Value::String(i.value));
             }
-        } else if prefix == "style"
-            && i.name.local_name == "text-underline-type"
-            && i.value == "double"
-        {
-            is_double_underline = true;
-        } else if prefix == "style" && i.name.local_name == "text-underline-color" {
-            if i.value == "font-color" {
-                map.insert(
-                    "textDecorationColor".to_string(),
-                    Value::String("currentcolor".to_string()),
-                );
-            } else {
-                //the other valid values are all in hex format
-                map.insert("textDecorationColor".to_string(), Value::String(i.value));
+        } else if prefix == "style" {
+            if i.name.local_name == "text-underline-style" {
+                if i.value == "none" {
+                    map.insert(
+                        "textDecorationLine".to_string(),
+                        Value::String("none".to_string()),
+                    );
+                } else {
+                    map.insert(
+                        "textDecorationLine".to_string(),
+                        Value::String("underline".to_string()),
+                    );
+                    match i.value.as_ref() {
+                        "dash" => map.insert(
+                            "textDecorationStyle".to_string(),
+                            Value::String("dashed".to_string()),
+                        ),
+                        "dotted" => map.insert(
+                            "textDecorationStyle".to_string(),
+                            Value::String("dotted".to_string()),
+                        ),
+                        "wave" => map.insert(
+                            "textDecorationStyle".to_string(),
+                            Value::String("wavy".to_string()),
+                        ),
+                        //there are a few possible styles in ODF that aren't present in CSS (dot-dash, dot-dot-dash, long-dash), so just put in a basic underline?
+                        "solid" | _ => map.insert(
+                            "textDecorationStyle".to_string(),
+                            Value::String("solid".to_string()),
+                        ),
+                    };
+                }
+            } else if i.name.local_name == "text-underline-type" && i.value == "double" {
+                is_double_underline = true;
+            } else if i.name.local_name == "text-underline-color" {
+                if i.value == "font-color" {
+                    map.insert(
+                        "textDecorationColor".to_string(),
+                        Value::String("currentcolor".to_string()),
+                    );
+                } else {
+                    //the other valid values are all in hex format
+                    map.insert("textDecorationColor".to_string(), Value::String(i.value));
+                }
             }
         }
     }
