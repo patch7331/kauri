@@ -290,6 +290,8 @@ fn text_properties_begin(attributes: Vec<xml::attribute::OwnedAttribute>) -> Map
             } else if i.name.local_name == "font-style" && i.value != "backslant" {
                 //backslant is not valid in CSS, but all the other ones are
                 map.insert("fontStyle".to_string(), Value::String(i.value));
+            } else if i.name.local_name == "color" {
+                map.insert("color".to_string(), Value::String(i.value));
             }
         } else if prefix == "style" {
             if i.name.local_name == "text-underline-style" {
