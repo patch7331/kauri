@@ -308,16 +308,12 @@ fn text_properties_begin(attributes: Vec<xml::attribute::OwnedAttribute>) -> Map
                         "textDecorationStyle".to_string(),
                         Value::String("dotted".to_string()),
                     ),
-                    "solid" => map.insert(
-                        "textDecorationStyle".to_string(),
-                        Value::String("solid".to_string()),
-                    ),
                     "wave" => map.insert(
                         "textDecorationStyle".to_string(),
                         Value::String("wavy".to_string()),
                     ),
                     //there are a few possible styles in ODF that aren't present in CSS (dot-dash, dot-dot-dash, long-dash), so just put in a basic underline?
-                    _ => map.insert(
+                    "solid" | _ => map.insert(
                         "textDecorationStyle".to_string(),
                         Value::String("solid".to_string()),
                     ),
