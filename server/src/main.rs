@@ -337,6 +337,8 @@ fn text_properties_begin(attributes: Vec<xml::attribute::OwnedAttribute>) -> Map
                     //the other valid values are all in hex format
                     map.insert("textDecorationColor".to_string(), Value::String(i.value));
                 }
+            } else if i.name.local_name == "font-name" {
+                map.insert("fontFamily".to_string(), Value::String(i.value));
             }
         }
     }
