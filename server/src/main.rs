@@ -92,6 +92,9 @@ fn read_odt(filepath: &str) -> String {
     let mut is_span = false;
     let mut current_span_style = String::new();
 
+    let mut set_children_underline = false;
+    let mut ensure_children_no_underline = false;
+
     let mut document_contents: Map<String, Value> = Map::new(); //value of the "document" key
     document_contents.insert(
         "title".to_string(),
@@ -115,17 +118,39 @@ fn read_odt(filepath: &str) -> String {
                     } else if body_begin {
                         if prefix == "text" && name.local_name == "h" {
                             let (mut map, style_name) = heading_begin(attributes);
-                            map.insert(
-                                "style".to_string(),
-                                auto_styles.get(&style_name).unwrap().clone(),
-                            );
+                            let style = auto_styles.get(&style_name).unwrap().clone();
+                            let style_map = style.as_object().unwrap();
+                            let underline = style_map.get("textDecorationLine");
+                            let underline_color = style_map.get("textDecorationColor");
+                            if let Some(x) = underline {
+                                if x.as_str().unwrap() == "underline" {
+                                    ensure_children_no_underline = true;
+                                    if let Some(x) = underline_color {
+                                        if x.as_str().unwrap() == "currentcolor" {
+                                            set_children_underline = true;
+                                        }
+                                    }
+                                }
+                            }
+                            map.insert("style".to_string(), style);
                             current_value = Value::Object(map);
                         } else if prefix == "text" && name.local_name == "p" {
                             let (mut map, style_name) = paragraph_begin(attributes);
-                            map.insert(
-                                "style".to_string(),
-                                auto_styles.get(&style_name).unwrap().clone(),
-                            );
+                            let style = auto_styles.get(&style_name).unwrap().clone();
+                            let style_map = style.as_object().unwrap();
+                            let underline = style_map.get("textDecorationLine");
+                            let underline_color = style_map.get("textDecorationColor");
+                            if let Some(x) = underline {
+                                if x.as_str().unwrap() == "underline" {
+                                    ensure_children_no_underline = true;
+                                    if let Some(x) = underline_color {
+                                        if x.as_str().unwrap() == "currentcolor" {
+                                            set_children_underline = true;
+                                        }
+                                    }
+                                }
+                            }
+                            map.insert("style".to_string(), style);
                             current_value = Value::Object(map);
                         } else if prefix == "text" && name.local_name == "span" {
                             is_span = true;
@@ -143,16 +168,48 @@ fn read_odt(filepath: &str) -> String {
                 }
             }
             Ok(XmlEvent::Characters(contents)) => {
-                //currently the only type of tag expected to emit this event is the ones in the body,
-                //in which case they will contain the document text
+                /*
+                    Currently the only type of tag expected to emit this event is the ones in the body,
+                    in which case they will contain the document text
+                */
                 let mut map: Map<String, Value> = Map::new();
                 map.insert("type".to_string(), Value::String("text".to_string()));
                 map.insert("content".to_string(), Value::String(contents));
                 if is_span {
-                    map.insert(
-                        "style".to_string(),
-                        auto_styles.get(&current_span_style).unwrap().clone(),
-                    );
+                    let mut style = auto_styles.get(&current_span_style).unwrap().clone();
+                    let style_map = style.as_object_mut().unwrap();
+                    if set_children_underline {
+                        if let Some(x) = style_map.get("textDecorationLine") {
+                            if x.as_str().unwrap() != "none" {
+                                style_map.insert(
+                                    "textDecorationLine".to_string(),
+                                    Value::String("underline".to_string()),
+                                );
+                            } else if ensure_children_no_underline {
+                                //need this to make sure the underline is actually not there, because CSS things
+                                style_map.insert(
+                                    "display".to_string(),
+                                    Value::String("inline-block".to_string()),
+                                );
+                            }
+                        } else {
+                            style_map.insert(
+                                "textDecoration".to_string(),
+                                Value::String("underline".to_string()),
+                            );
+                        }
+                    } else if ensure_children_no_underline {
+                        if let Some(x) = style_map.get("textDecorationLine") {
+                            if x.as_str().unwrap() == "none" {
+                                //need this to make sure the underline is actually not there, because CSS things
+                                style_map.insert(
+                                    "display".to_string(),
+                                    Value::String("inline-block".to_string()),
+                                );
+                            }
+                        }
+                    }
+                    map.insert("style".to_string(), style);
                     current_span_style = String::new();
                     is_span = false;
                 }
@@ -184,6 +241,8 @@ fn read_odt(filepath: &str) -> String {
                                 .unwrap()
                                 .push(current_value);
                             current_value = Value::Null;
+                            set_children_underline = false;
+                            ensure_children_no_underline = false;
                         }
                     }
                 } else if styles_begin {
