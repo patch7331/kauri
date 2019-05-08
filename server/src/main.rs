@@ -247,6 +247,10 @@ fn read_odt(filepath: &str) -> String {
     serde_json::to_string(&document_object).unwrap()
 }
 
+/// Takes the results of either heading_begin() or paragraph_begin() (called params)
+/// and a reference to the map of automatic style names to the JSON style object,
+/// and returns the map from params together with the values for ensure_children_no_underline
+/// and set_children_underline in parse_odt()
 fn check_underline(
     params: (Map<String, Value>, String),
     auto_styles: &Map<String, Value>,
