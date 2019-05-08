@@ -117,40 +117,16 @@ fn read_odt(filepath: &str) -> String {
                         body_begin = true;
                     } else if body_begin {
                         if prefix == "text" && name.local_name == "h" {
-                            let (mut map, style_name) = heading_begin(attributes);
-                            let style = auto_styles.get(&style_name).unwrap().clone();
-                            let style_map = style.as_object().unwrap();
-                            let underline = style_map.get("textDecorationLine");
-                            let underline_color = style_map.get("textDecorationColor");
-                            if let Some(x) = underline {
-                                if x.as_str().unwrap() == "underline" {
-                                    ensure_children_no_underline = true;
-                                    if let Some(x) = underline_color {
-                                        if x.as_str().unwrap() == "currentcolor" {
-                                            set_children_underline = true;
-                                        }
-                                    }
-                                }
-                            }
-                            map.insert("style".to_string(), style);
+                            let (map, ensure_children_no_underline_new, set_children_underline_new) =
+                                check_underline(heading_begin(attributes), &auto_styles);
+                            ensure_children_no_underline = ensure_children_no_underline_new;
+                            set_children_underline = set_children_underline_new;
                             current_value = Value::Object(map);
                         } else if prefix == "text" && name.local_name == "p" {
-                            let (mut map, style_name) = paragraph_begin(attributes);
-                            let style = auto_styles.get(&style_name).unwrap().clone();
-                            let style_map = style.as_object().unwrap();
-                            let underline = style_map.get("textDecorationLine");
-                            let underline_color = style_map.get("textDecorationColor");
-                            if let Some(x) = underline {
-                                if x.as_str().unwrap() == "underline" {
-                                    ensure_children_no_underline = true;
-                                    if let Some(x) = underline_color {
-                                        if x.as_str().unwrap() == "currentcolor" {
-                                            set_children_underline = true;
-                                        }
-                                    }
-                                }
-                            }
-                            map.insert("style".to_string(), style);
+                            let (map, ensure_children_no_underline_new, set_children_underline_new) =
+                                check_underline(paragraph_begin(attributes), &auto_styles);
+                            ensure_children_no_underline = ensure_children_no_underline_new;
+                            set_children_underline = set_children_underline_new;
                             current_value = Value::Object(map);
                         } else if prefix == "text" && name.local_name == "span" {
                             is_span = true;
@@ -269,6 +245,31 @@ fn read_odt(filepath: &str) -> String {
     document_object.insert("document".to_string(), document_hierarchy.pop().unwrap());
     let document_object = Value::Object(document_object);
     serde_json::to_string(&document_object).unwrap()
+}
+
+fn check_underline(
+    params: (Map<String, Value>, String),
+    auto_styles: &Map<String, Value>,
+) -> (Map<String, Value>, bool, bool) {
+    let mut ensure_children_no_underline = false;
+    let mut set_children_underline = false;
+    let (mut map, style_name) = params;
+    let style = auto_styles.get(&style_name).unwrap().clone();
+    let style_map = style.as_object().unwrap();
+    let underline = style_map.get("textDecorationLine");
+    let underline_color = style_map.get("textDecorationColor");
+    if let Some(x) = underline {
+        if x.as_str().unwrap() == "underline" {
+            ensure_children_no_underline = true;
+            if let Some(x) = underline_color {
+                if x.as_str().unwrap() == "currentcolor" {
+                    set_children_underline = true;
+                }
+            }
+        }
+    }
+    map.insert("style".to_string(), style);
+    (map, ensure_children_no_underline, set_children_underline)
 }
 
 /// Takes the set of attributes of a text:h tag in the ODT's content.xml,
