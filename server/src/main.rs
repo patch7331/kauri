@@ -154,37 +154,11 @@ fn read_odt(filepath: &str) -> String {
                 if is_span {
                     let mut style = auto_styles.get(&current_span_style).unwrap().clone();
                     let style_map = style.as_object_mut().unwrap();
-                    if set_children_underline {
-                        if let Some(x) = style_map.get("textDecorationLine") {
-                            if x.as_str().unwrap() != "none" {
-                                style_map.insert(
-                                    "textDecorationLine".to_string(),
-                                    Value::String("underline".to_string()),
-                                );
-                            } else if ensure_children_no_underline {
-                                //need this to make sure the underline is actually not there, because CSS things
-                                style_map.insert(
-                                    "display".to_string(),
-                                    Value::String("inline-block".to_string()),
-                                );
-                            }
-                        } else {
-                            style_map.insert(
-                                "textDecoration".to_string(),
-                                Value::String("underline".to_string()),
-                            );
-                        }
-                    } else if ensure_children_no_underline {
-                        if let Some(x) = style_map.get("textDecorationLine") {
-                            if x.as_str().unwrap() == "none" {
-                                //need this to make sure the underline is actually not there, because CSS things
-                                style_map.insert(
-                                    "display".to_string(),
-                                    Value::String("inline-block".to_string()),
-                                );
-                            }
-                        }
-                    }
+                    handle_underline(
+                        style_map,
+                        set_children_underline,
+                        ensure_children_no_underline,
+                    );
                     map.insert("style".to_string(), style);
                     current_span_style = String::new();
                     is_span = false;
@@ -274,6 +248,47 @@ fn check_underline(
     }
     map.insert("style".to_string(), style);
     (map, ensure_children_no_underline, set_children_underline)
+}
+
+/// Takes a mutable reference to a map of CSS style properties to values and 2 booleans
+/// (the boolean results of check_underline()), and adds an extra CSS property to
+/// handle some special cases related to underlines if needed depending on the booleans
+fn handle_underline(
+    style_map: &mut Map<String, Value>,
+    set_children_underline: bool,
+    ensure_children_no_underline: bool,
+) {
+    if set_children_underline {
+        if let Some(x) = style_map.get("textDecorationLine") {
+            if x.as_str().unwrap() != "none" {
+                style_map.insert(
+                    "textDecorationLine".to_string(),
+                    Value::String("underline".to_string()),
+                );
+            } else if ensure_children_no_underline {
+                //need this to make sure the underline is actually not there, because CSS things
+                style_map.insert(
+                    "display".to_string(),
+                    Value::String("inline-block".to_string()),
+                );
+            }
+        } else {
+            style_map.insert(
+                "textDecoration".to_string(),
+                Value::String("underline".to_string()),
+            );
+        }
+    } else if ensure_children_no_underline {
+        if let Some(x) = style_map.get("textDecorationLine") {
+            if x.as_str().unwrap() == "none" {
+                //need this to make sure the underline is actually not there, because CSS things
+                style_map.insert(
+                    "display".to_string(),
+                    Value::String("inline-block".to_string()),
+                );
+            }
+        }
+    }
 }
 
 /// Takes the set of attributes of a text:h tag in the ODT's content.xml,
