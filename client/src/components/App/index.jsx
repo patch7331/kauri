@@ -21,6 +21,7 @@ export default class App extends Component {
     this.loadFile = this.loadFile.bind(this);
     this.editor = createRef();
     setApplicationMenu(this.loadFile);
+    document.execCommand("styleWithCSS", false, true);
   }
 
   /**

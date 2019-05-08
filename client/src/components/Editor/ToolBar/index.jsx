@@ -4,6 +4,7 @@ import "./styles.scss";
 
 import { h } from "preact";
 import StyleSelector from "components/Editor/ToolBar/StyleSelector";
+import StyleButtons from "components/Editor/ToolBar/StyleButtons";
 
 /**
  * A tool bar component which sits above the editor interface.
@@ -19,6 +20,7 @@ export default function ToolBar() {
   return (
     <div class="toolbar">
       <StyleSelector />
+      <StyleButtons />
     </div>
   );
 }
