@@ -4,7 +4,7 @@ import { h, Component } from "preact";
 
 /**
  * A component for adding some styling (bold, italic, underline) to currently selected text.
- * @return {PreactElement} A rendered style selector element.
+ * @return {PreactElement} A rendered style buttons element.
  */
 export default class StyleButtons extends Component {
   /**

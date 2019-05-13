@@ -17,13 +17,11 @@ export default class FontSizeSelector extends Component {
     target.value = "";
   }
 
-    render() {
-        var options = [];
-        for (var i = 1; i <= 7; i++) {
-            options.push(
-                <option>{i}</option>
-            );
-        }
+  render() {
+    var options = [];
+    for (var i = 1; i <= 7; i++) {
+      options.push(<option>{i}</option>);
+    }
     return (
       <select class="toolbar__style-select" onchange={this._handleChange}>
         <option value="" selected>

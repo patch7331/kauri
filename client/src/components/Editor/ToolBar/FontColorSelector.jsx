@@ -4,7 +4,7 @@ import { h, Component } from "preact";
 
 /**
  * A component for changing the color of currently selected text.
- * @return {PreactElement} A rendered style selector element.
+ * @return {PreactElement} A rendered font color selector element.
  */
 export default class FontColorSelector extends Component {
   /**
