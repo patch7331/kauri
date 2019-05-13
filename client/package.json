@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "scripts": {
     "start": "electron .",
-    "build": "webpack --progress --colors",
+    "build": "webpack --progress --colors && yarn electron-rebuild",
     "clean": "yarn prettier --write \"src/**/*.js?(x)\" *.js",
     "clean-check": "yarn prettier --check \"src/**/*.js?(x)\" *.js"
   },
