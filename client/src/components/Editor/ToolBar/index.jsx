@@ -6,6 +6,7 @@ import { h } from "preact";
 import StyleSelector from "components/Editor/ToolBar/StyleSelector";
 import StyleButtons from "components/Editor/ToolBar/StyleButtons";
 import FontSelector from "components/Editor/ToolBar/FontSelector";
+import FontColorSelector from "components/Editor/ToolBar/FontColorSelector";
 
 /**
  * A tool bar component which sits above the editor interface.
@@ -23,6 +24,7 @@ export default function ToolBar() {
       <StyleSelector />
       <StyleButtons />
       <FontSelector />
+      <FontColorSelector />
     </div>
   );
 }
