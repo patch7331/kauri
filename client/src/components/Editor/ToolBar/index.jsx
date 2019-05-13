@@ -7,6 +7,7 @@ import StyleSelector from "components/Editor/ToolBar/StyleSelector";
 import StyleButtons from "components/Editor/ToolBar/StyleButtons";
 import FontSelector from "components/Editor/ToolBar/FontSelector";
 import FontColorSelector from "components/Editor/ToolBar/FontColorSelector";
+import FontSizeSelector from "components/Editor/ToolBar/FontSizeSelector";
 
 /**
  * A tool bar component which sits above the editor interface.
@@ -25,6 +26,7 @@ export default function ToolBar() {
       <StyleButtons />
       <FontSelector />
       <FontColorSelector />
+      <FontSizeSelector />
     </div>
   );
 }
