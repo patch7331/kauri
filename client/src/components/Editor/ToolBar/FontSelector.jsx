@@ -27,7 +27,7 @@ export default class FontSelector extends Component {
     target.value = "";
   }
 
-  render() {
+  render(props, state) {
     var options = [];
     for (var i = 0; i < this.state.fontList.length; i++) {
       options.push(<option>{this.state.fontList[i]}</option>);
@@ -37,7 +37,7 @@ export default class FontSelector extends Component {
         <option value="" selected>
           [Font]
         </option>
-        {options}
+        {state.fontList.map(font => <option>{font}</option>}
       </select>
     );
   }
