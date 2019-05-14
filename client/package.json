@@ -26,7 +26,7 @@
     }
   },
   "scripts": {
-    "start": "yarn electron-rebuild && electron-webpack dev",
+    "start": "electron-webpack dev",
     "build": "electron-webpack",
     "dist": "yarn build && electron-builder",
     "pack": "yarn build --dir && electron-builder",
@@ -40,7 +40,6 @@
     "babel-loader": "^8.0.5",
     "css-loader": "^2.1.1",
     "electron": "^4.1.4",
-    "electron-rebuild": "^1.8.4",
     "electron-builder": "^20.40.2",
     "electron-webpack": "^2.6.2",
     "node-sass": "^4.11.0",
@@ -50,8 +49,8 @@
     "webpack-cli": "^3.3.0"
   },
   "dependencies": {
-    "font-manager": "^0.3.0",
     "preact": "^8.4.2",
-    "source-map-support": "^0.5.12"
+    "source-map-support": "^0.5.12",
+    "system-font-families": "^0.4.1"
   }
 }

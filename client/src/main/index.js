@@ -1,11 +1,12 @@
 /** @format */
 
 import { app, BrowserWindow, ipcMain } from "electron";
-import fontManager from "font-manager"
+import SystemFonts from "system-font-families";
 import { format as formatUrl } from "url";
 import * as path from "path";
 
 const isDevelopment = process.env.NODE_ENV !== "production";
+const systemFonts = new SystemFonts();
 
 // Keep a global reference to the window object to prevent it from being
 // destroyed by the garbage collector.
@@ -51,11 +52,13 @@ app.on("activate", () => {
 });
 
 ipcMain.on("getFontList", (event, args) => {
-  fontManager.getAvailableFonts(fonts => {
-    const fontArray = fonts
-      .map(font => font.family)
-      .filter((font, index, arr) => arr.indexOf(font) === index)
-      .sort();
-    event.sender.send("fontList", fontArray);
-  });
+  systemFonts.getFonts().then(
+    res => {
+      const fontArray = res
+        .filter((font, index, arr) => arr.indexOf(font) === index)
+        .sort();
+      event.sender.send("fontList", fontArray);
+    },
+    err => console.log(err)
+  );
 });
