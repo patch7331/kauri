@@ -34,17 +34,12 @@ app.on("activate", () => {
   if (mainWindow === null) createWindow();
 });
 
-function onlyUnique(value, index, self) {
-  return self.indexOf(value) === index;
-}
-
 ipcMain.on("getFontList", (event, args) => {
-  var fontArray = [];
-  var fonts = fontManager.getAvailableFontsSync(); //there is an async version that takes a function, not sure how to use that here
-  for (var i = 0; i < fonts.length; i++) {
-    fontArray.push(fonts[i].family);
-  }
-  var uniqueFontArray = fontArray.filter(onlyUnique);
-  uniqueFontArray.sort();
-  event.sender.send("fontList", uniqueFontArray);
+  fontManager.getAvailableFonts(fonts => {
+    const fontArray = fonts
+      .map(font => font.family)
+      .filter((font, index, arr) => arr.indexOf(font) === index)
+      .sort();
+    event.sender.send("fontList", fontArray);
+  });
 });
