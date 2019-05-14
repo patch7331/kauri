@@ -32,9 +32,9 @@ export function renderDocumentNodes(nodes) {
 export function renderDocumentNode(node) {
   switch (node.type) {
     case "heading":
-      return <Heading node={node} style={node.style} />;
+      return <Heading node={node} />;
     case "paragraph":
-      return <Paragraph node={node} style={node.style} />;
+      return <Paragraph node={node} />;
     case "text":
       if (node.style == null) {
         return node.content;

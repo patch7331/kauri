@@ -18,16 +18,15 @@ export default class FontSizeSelector extends Component {
   }
 
   render() {
-    var options = [];
-    for (var i = 1; i <= 7; i++) {
-      options.push(<option>{i}</option>);
-    }
+    const options = [1, 2, 3, 4, 5, 6, 7];
     return (
       <select class="toolbar__style-select" onchange={this._handleChange}>
         <option value="" selected>
           [Font size (1-7)]
         </option>
-        {options}
+        {options.map(size => (
+          <option>{size}</option>
+        ))}
       </select>
     );
   }

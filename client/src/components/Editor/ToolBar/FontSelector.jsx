@@ -31,10 +31,6 @@ export default class FontSelector extends Component {
   }
 
   render(props, state) {
-    var options = [];
-    for (var i = 0; i < this.state.fontList.length; i++) {
-      options.push(<option>{this.state.fontList[i]}</option>);
-    }
     return (
       <select class="toolbar__style-select" onchange={this._handleChange}>
         <option value="" selected>
