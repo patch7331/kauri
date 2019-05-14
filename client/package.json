@@ -2,6 +2,7 @@
   "name": "kauri",
   "description": "A next generation document processor.",
   "homepage": "https://github.com/sean0x42/kauri",
+  "author": "Sean Bailey <sean@seanbailey.io>",
   "contributors": [
     "Sean Bailey <sean@seanbailey.io>"
   ],
@@ -11,6 +12,9 @@
     "productName": "kauri",
     "mac": {
       "category": "public.app-category.productivity"
+    },
+    "linux": {
+      "category": "Office"
     }
   },
   "electronWebpack": {
@@ -45,6 +49,7 @@
     "webpack-cli": "^3.3.0"
   },
   "dependencies": {
-    "preact": "^8.4.2"
+    "preact": "^8.4.2",
+    "source-map-support": "^0.5.12"
   }
 }
