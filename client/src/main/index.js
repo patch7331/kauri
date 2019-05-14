@@ -1,10 +1,12 @@
 /** @format */
 
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, ipcMain } from "electron";
+import SystemFonts from "system-font-families";
 import { format as formatUrl } from "url";
 import * as path from "path";
 
 const isDevelopment = process.env.NODE_ENV !== "production";
+const systemFonts = new SystemFonts();
 
 // Keep a global reference to the window object to prevent it from being
 // destroyed by the garbage collector.
@@ -47,4 +49,16 @@ app.on("activate", () => {
   // On Mac OS it is common to re-create a window in the app when the dock icon
   // is clicked and there are no other windows open.
   if (mainWindow === null) createWindow();
+});
+
+ipcMain.on("getFontList", (event, args) => {
+  systemFonts.getFonts().then(
+    res => {
+      const fontArray = res
+        .filter((font, index, arr) => arr.indexOf(font) === index)
+        .sort();
+      event.sender.send("fontList", fontArray);
+    },
+    err => console.log(err)
+  );
 });

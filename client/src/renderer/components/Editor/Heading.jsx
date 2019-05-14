@@ -11,13 +11,17 @@ import RenderError from "dom/RenderError";
  * @return {PreactElement} A rendered preact element.
  */
 export default function Heading(props) {
-  const { children = [], level = 1 } = props.node;
-  const tag = `h${level}`;
+  const { children = [], level = 1, style = {} } = props.node;
+  const Tag = `h${level}`;
 
   // Ensure level is within valid range
   if (level < 1 || level > 6) {
     throw new RenderError(props.node, `Invalid heading level ${level}`);
   }
 
-  return h(tag, { class: "editor__heading" }, renderDocumentNodes(children));
+  return (
+    <Tag class="editor__heading" style={style}>
+      {renderDocumentNodes(children)}
+    </Tag>
+  );
 }

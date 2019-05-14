@@ -50,6 +50,7 @@
   },
   "dependencies": {
     "preact": "^8.4.2",
-    "source-map-support": "^0.5.12"
+    "source-map-support": "^0.5.12",
+    "system-font-families": "^0.4.1"
   }
 }
