@@ -1,16 +1,9 @@
 /** @format */
 
 const path = require("path");
-const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 
 module.exports = {
-  entry: "./src/app.jsx",
-  output: {
-    path: path.resolve(__dirname, "dist"),
-    filename: "application.bundle.js",
-  },
   target: "electron-renderer",
-  mode: "development",
   module: {
     rules: [
       {
@@ -22,21 +15,12 @@ module.exports = {
           plugins: [["@babel/plugin-transform-react-jsx", { pragma: "h" }]],
         },
       },
-      {
-        test: /\.s?css$/,
-        use: [MiniCssExtractPlugin.loader, "css-loader", "sass-loader"],
-      },
     ],
   },
-  plugins: [
-    new MiniCssExtractPlugin({
-      filename: "application.bundle.css",
-    }),
-  ],
   resolve: {
     extensions: [".js", ".jsx"],
     modules: [
-      path.resolve(__dirname, "src"),
+      path.resolve(__dirname, "src/renderer"),
       path.resolve(__dirname, "node_modules"),
     ],
   },
