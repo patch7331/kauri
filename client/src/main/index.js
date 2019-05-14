@@ -1,22 +1,38 @@
 /** @format */
 
-const { app, BrowserWindow } = require("electron");
+import { app, BrowserWindow } from "electron";
+import { format as formatUrl } from "url";
+import * as path from "path";
+
+const isDevelopment = process.env.NODE_ENV !== "production";
 
 // Keep a global reference to the window object to prevent it from being
 // destroyed by the garbage collector.
 let mainWindow;
 
 function createWindow() {
-  mainWindow = new BrowserWindow({
-    height: 600,
-    width: 800,
-    webPreferences: {
-      nodeIntegration: true,
-    },
-  });
+  mainWindow = new BrowserWindow();
 
-  mainWindow.loadFile("index.html");
+  if (isDevelopment) {
+    mainWindow.webContents.openDevTools();
+    mainWindow.loadURL(
+      `http://localhost:${process.env.ELECTRON_WEBPACK_WDS_PORT}`
+    );
+  } else {
+    mainWindow.loadURL(
+      formatUrl({
+        pathname: path.join(__dirname, "index.html"),
+        protocol: "file",
+        slashes: true,
+      })
+    );
+  }
+
   mainWindow.on("closed", () => (mainWindow = null));
+  mainWindow.webContents.on("devtools-opened", () => {
+    mainWindow.focus();
+    setImmediate(() => mainWindow.focus());
+  });
 }
 
 app.on("ready", createWindow);
