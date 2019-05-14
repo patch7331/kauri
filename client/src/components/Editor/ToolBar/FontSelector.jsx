@@ -11,6 +11,9 @@ export default class FontSelector extends Component {
   constructor(props) {
     super(props);
     this.state = { fontList: [] };
+  }
+
+  componentDidMount() {
     ipcRenderer.send("getFontList");
     ipcRenderer.on("fontList", (event, args) => {
       this.setState({ fontList: args });
@@ -37,7 +40,9 @@ export default class FontSelector extends Component {
         <option value="" selected>
           [Font]
         </option>
-        {state.fontList.map(font => <option>{font}</option>}
+        {state.fontList.map(font => (
+          <option>{font}</option>
+        ))}
       </select>
     );
   }
