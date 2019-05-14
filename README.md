@@ -18,6 +18,8 @@ guide](https://github.com/sean0x42/kauri/blob/master/.github/CONTRIBUTING.md)
 first. The guide contains helpful resources which nudge you in the right
 direction for branching, code quality and more.
 
+You may also wish to view Kauri's [documentation](https://www.seanbailey.io/kauri/).
+
 
 ## Who are we
 
