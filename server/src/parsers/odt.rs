@@ -12,18 +12,17 @@ pub struct ODTParser {
     body_begin: bool,
     styles_begin: bool,
     auto_styles: Map<String, Value>,
-    current_style_name: String,
-    current_style_value: Value,
     is_span: bool,
     current_span_style: String,
     set_children_underline: bool,
     ensure_children_no_underline: bool,
     document_hierarchy: Vec<Value>,
-    current_value: Value,
     archive: zip::ZipArchive<std::fs::File>,
 }
 
 impl ODTParser {
+    /// Initialises the struct's members given the path of an ODT file,
+    /// can return an error if there is an issue with the file
     pub fn new(filepath: &str) -> Result<ODTParser, String> {
         let archive = get_archive(filepath);
         if let Err(e) = archive {
@@ -46,25 +45,27 @@ impl ODTParser {
             body_begin: false,
             styles_begin: false,
             auto_styles: Map::new(),
-            current_style_name: String::new(),
-            current_style_value: Value::Null,
             is_span: false,
             current_span_style: String::new(),
             set_children_underline: false,
             ensure_children_no_underline: false,
             document_hierarchy,
-            current_value: Value::Null,
             archive,
         })
     }
 
+    /// Actually parses the ODT file and returns a JSON representation of it
     pub fn parse(&mut self) -> Result<String, String> {
         let content_xml = self.archive.by_name("content.xml"); //returns a ZipFile struct which implements Read if the file is in the archive
         if let Err(e) = content_xml {
             //handle case where there is no content.xml (so probably not actually an ODT file)
-            println!("{}", e);
             return Err(e.to_string());
         }
+
+        //these are here instead of the struct because we may need to move the contents of these somewhere else
+        let mut current_value = Value::Null;
+        let mut current_style_name = String::new();
+        let mut current_style_value = Value::Null;
 
         let parser = EventReader::new(content_xml.unwrap());
         for e in parser {
@@ -83,18 +84,20 @@ impl ODTParser {
                                     ensure_children_no_underline_new,
                                     set_children_underline_new,
                                 ) = check_underline(heading_begin(attributes), &self.auto_styles);
-                                self.ensure_children_no_underline = ensure_children_no_underline_new;
+                                self.ensure_children_no_underline =
+                                    ensure_children_no_underline_new;
                                 self.set_children_underline = set_children_underline_new;
-                                self.current_value = Value::Object(map);
+                                current_value = Value::Object(map);
                             } else if prefix == "text" && name.local_name == "p" {
                                 let (
                                     map,
                                     ensure_children_no_underline_new,
                                     set_children_underline_new,
                                 ) = check_underline(paragraph_begin(attributes), &self.auto_styles);
-                                self.ensure_children_no_underline = ensure_children_no_underline_new;
+                                self.ensure_children_no_underline =
+                                    ensure_children_no_underline_new;
                                 self.set_children_underline = set_children_underline_new;
-                                self.current_value = Value::Object(map);
+                                current_value = Value::Object(map);
                             } else if prefix == "text" && name.local_name == "span" {
                                 self.is_span = true;
                                 self.current_span_style = span_begin(attributes);
@@ -103,9 +106,9 @@ impl ODTParser {
                             self.styles_begin = true;
                         } else if self.styles_begin {
                             if prefix == "style" && name.local_name == "style" {
-                                self.current_style_name = style_begin(attributes);
+                                current_style_name = style_begin(attributes);
                             } else if prefix == "style" && name.local_name == "text-properties" {
-                                self.current_style_value =
+                                current_style_value =
                                     Value::Object(text_properties_begin(attributes));
                             }
                         }
@@ -120,7 +123,11 @@ impl ODTParser {
                     map.insert("type".to_string(), Value::String("text".to_string()));
                     map.insert("content".to_string(), Value::String(contents));
                     if self.is_span {
-                        let mut style = self.auto_styles.get(&self.current_span_style).unwrap().clone();
+                        let mut style = self
+                            .auto_styles
+                            .get(&self.current_span_style)
+                            .unwrap()
+                            .clone();
                         let style_map = style.as_object_mut().unwrap();
                         handle_underline(
                             style_map,
@@ -131,7 +138,7 @@ impl ODTParser {
                         self.current_span_style = String::new();
                         self.is_span = false;
                     }
-                    self.current_value
+                    current_value
                         .as_object_mut()
                         .unwrap()
                         .get_mut("children")
@@ -157,8 +164,8 @@ impl ODTParser {
                                     .unwrap()
                                     .as_array_mut()
                                     .unwrap()
-                                    .push(self.current_value);
-                                self.current_value = Value::Null;
+                                    .push(current_value);
+                                current_value = Value::Null;
                                 self.set_children_underline = false;
                                 self.ensure_children_no_underline = false;
                             }
@@ -168,183 +175,30 @@ impl ODTParser {
                             if prefix == "office" && name.local_name == "automatic-styles" {
                                 self.styles_begin = false;
                             } else if prefix == "style" && name.local_name == "style" {
-                                self.auto_styles.insert(self.current_style_name, self.current_style_value);
-                                self.current_style_name = String::from("");
-                                self.current_style_value = Value::Null;
+                                self.auto_styles
+                                    .insert(current_style_name, current_style_value);
+                                current_style_name = String::from("");
+                                current_style_value = Value::Null;
                             }
                         }
                     }
                 }
                 Err(e) => {
                     println!("Error: {}", e);
-                    return Err(e);
+                    return Err(e.to_string());
                 }
                 _ => {}
             }
         }
 
         let mut document_object: Map<String, Value> = Map::new();
-        document_object.insert("document".to_string(), self.document_hierarchy.pop().unwrap());
+        document_object.insert(
+            "document".to_string(),
+            self.document_hierarchy.pop().unwrap(),
+        );
         let document_object = Value::Object(document_object);
         Ok(serde_json::to_string(&document_object).unwrap())
     }
-}
-
-/// Reads an ODT file referred to by the given path
-/// and returns a JSON string containing a DOM
-pub fn read_odt(filepath: &str) -> String {
-    let archive = get_archive(filepath);
-    if let Err(e) = archive {
-        println!("{}", e);
-        return serde_json::to_string(&Value::Null).unwrap();
-    }
-
-    let mut archive = archive.unwrap();
-    let content_xml = archive.by_name("content.xml"); //returns a ZipFile struct which implements Read if the file is in the archive
-    if let Err(e) = content_xml {
-        //handle case where there is no content.xml (so probably not actually an ODT file)
-        println!("{}", e);
-        return serde_json::to_string(&Value::Null).unwrap();
-    }
-
-    let parser = EventReader::new(content_xml.unwrap());
-    let mut body_begin = false;
-    let mut styles_begin = false;
-
-    let mut auto_styles: Map<String, Value> = Map::new(); //map of automatic style names in the ODT to its contents in JSON form (automatic meaning the user did not explicitly name it)
-    let mut current_style_value = Value::Null;
-    let mut current_style_name = String::new();
-
-    let mut is_span = false;
-    let mut current_span_style = String::new();
-
-    let mut set_children_underline = false;
-    let mut ensure_children_no_underline = false;
-
-    let mut document_contents: Map<String, Value> = Map::new(); //value of the "document" key
-    document_contents.insert(
-        "title".to_string(),
-        Value::String("Kauri (Working title)".to_string()),
-    );
-    document_contents.insert("paper".to_string(), Value::String("A4".to_string()));
-    document_contents.insert("children".to_string(), Value::Array(Vec::new()));
-    let mut document_hierarchy: Vec<Value> = Vec::new(); //in case of nested tags, not actually handled yet
-    let mut current_value = Value::Null;
-    document_hierarchy.push(Value::Object(document_contents));
-
-    for e in parser {
-        //iterate through the XML
-        match e {
-            Ok(XmlEvent::StartElement {
-                name, attributes, ..
-            }) => {
-                if let Some(prefix) = name.prefix {
-                    if prefix == "office" && name.local_name == "body" {
-                        body_begin = true;
-                    } else if body_begin {
-                        if prefix == "text" && name.local_name == "h" {
-                            let (map, ensure_children_no_underline_new, set_children_underline_new) =
-                                check_underline(heading_begin(attributes), &auto_styles);
-                            ensure_children_no_underline = ensure_children_no_underline_new;
-                            set_children_underline = set_children_underline_new;
-                            current_value = Value::Object(map);
-                        } else if prefix == "text" && name.local_name == "p" {
-                            let (map, ensure_children_no_underline_new, set_children_underline_new) =
-                                check_underline(paragraph_begin(attributes), &auto_styles);
-                            ensure_children_no_underline = ensure_children_no_underline_new;
-                            set_children_underline = set_children_underline_new;
-                            current_value = Value::Object(map);
-                        } else if prefix == "text" && name.local_name == "span" {
-                            is_span = true;
-                            current_span_style = span_begin(attributes);
-                        }
-                    } else if prefix == "office" && name.local_name == "automatic-styles" {
-                        styles_begin = true;
-                    } else if styles_begin {
-                        if prefix == "style" && name.local_name == "style" {
-                            current_style_name = style_begin(attributes);
-                        } else if prefix == "style" && name.local_name == "text-properties" {
-                            current_style_value = Value::Object(text_properties_begin(attributes));
-                        }
-                    }
-                }
-            }
-            Ok(XmlEvent::Characters(contents)) => {
-                /*
-                    Currently the only type of tag expected to emit this event is the ones in the body,
-                    in which case they will contain the document text
-                */
-                let mut map: Map<String, Value> = Map::new();
-                map.insert("type".to_string(), Value::String("text".to_string()));
-                map.insert("content".to_string(), Value::String(contents));
-                if is_span {
-                    let mut style = auto_styles.get(&current_span_style).unwrap().clone();
-                    let style_map = style.as_object_mut().unwrap();
-                    handle_underline(
-                        style_map,
-                        set_children_underline,
-                        ensure_children_no_underline,
-                    );
-                    map.insert("style".to_string(), style);
-                    current_span_style = String::new();
-                    is_span = false;
-                }
-                current_value
-                    .as_object_mut()
-                    .unwrap()
-                    .get_mut("children")
-                    .unwrap()
-                    .as_array_mut()
-                    .unwrap()
-                    .push(Value::Object(map));
-            }
-            Ok(XmlEvent::EndElement { name }) => {
-                if body_begin {
-                    if let Some(prefix) = name.prefix {
-                        if prefix == "office" && name.local_name == "body" {
-                            break;
-                        } else if prefix == "text"
-                            && (name.local_name == "h" || name.local_name == "p")
-                        {
-                            document_hierarchy
-                                .last_mut()
-                                .unwrap()
-                                .as_object_mut()
-                                .unwrap()
-                                .get_mut("children")
-                                .unwrap()
-                                .as_array_mut()
-                                .unwrap()
-                                .push(current_value);
-                            current_value = Value::Null;
-                            set_children_underline = false;
-                            ensure_children_no_underline = false;
-                        }
-                    }
-                } else if styles_begin {
-                    if let Some(prefix) = name.prefix {
-                        if prefix == "office" && name.local_name == "automatic-styles" {
-                            styles_begin = false;
-                        } else if prefix == "style" && name.local_name == "style" {
-                            auto_styles.insert(current_style_name, current_style_value);
-                            current_style_name = String::from("");
-                            current_style_value = Value::Null;
-                        }
-                    }
-                }
-            }
-            Err(e) => {
-                println!("Error: {}", e);
-                return serde_json::to_string(&Value::Null).unwrap();
-            }
-            _ => {}
-        }
-    }
-
-    let mut document_object: Map<String, Value> = Map::new();
-    document_object.insert("document".to_string(), document_hierarchy.pop().unwrap());
-    let document_object = Value::Object(document_object);
-    serde_json::to_string(&document_object).unwrap()
 }
 
 /// Takes a path to a file and returns a ZipArchive representation of it

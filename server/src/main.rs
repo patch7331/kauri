@@ -2,6 +2,8 @@ extern crate tiny_http;
 
 mod parsers;
 
+use parsers::odt::ODTParser;
+
 fn main() {
     let addr = "127.0.0.1:3000";
     let server = tiny_http::Server::http(addr).unwrap();
@@ -30,8 +32,17 @@ fn main() {
                     println!("error: {}", e);
                     continue;
                 }
-                let response =
-                    tiny_http::Response::from_string(parsers::odt::read_odt(body_str.unwrap()));
+                let parser = ODTParser::new(body_str.unwrap());
+                if let Err(e) = parser {
+                    println!("error: {}", e);
+                    continue;
+                }
+                let parsed_odt = parser.unwrap().parse();
+                if let Err(e) = parsed_odt {
+                    println!("error: {}", e);
+                    continue;
+                }
+                let response = tiny_http::Response::from_string(parsed_odt.unwrap());
                 if let Err(e) = request.respond(response) {
                     println!("error: {}", e);
                     continue;
