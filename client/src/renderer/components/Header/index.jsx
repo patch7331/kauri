@@ -3,6 +3,7 @@
 import "./styles.scss";
 
 import { h, Component } from "preact";
+import Clipboard from "components/Clipboard";
 
 /**
  * Constructs a new application header.
@@ -16,6 +17,7 @@ export default function Header(props) {
   return (
     <div class="header">
       <h1>{title}</h1>
+      <Clipboard />
     </div>
   );
 }
