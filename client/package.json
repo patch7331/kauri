@@ -1,13 +1,38 @@
 {
-  "name": "kauri-client",
-  "version": "0.1.0",
+  "name": "kauri",
+  "description": "A next generation document processor.",
+  "homepage": "https://github.com/sean0x42/kauri",
+  "author": "Sean Bailey <sean@seanbailey.io>",
+  "contributors": [
+    "Sean Bailey <sean@seanbailey.io>"
+  ],
+  "version": "0.1.0-alpha",
+  "build": {
+    "appId": "io.seanbailey.kauri",
+    "productName": "kauri",
+    "mac": {
+      "category": "public.app-category.productivity"
+    },
+    "linux": {
+      "category": "Office"
+    }
+  },
+  "electronWebpack": {
+    "whiteListedModules": [
+      "preact"
+    ],
+    "renderer": {
+      "webpackConfig": "webpack.renderer.js"
+    }
+  },
   "scripts": {
-    "start": "electron .",
-    "build": "webpack --progress --colors",
+    "start": "electron-webpack dev",
+    "build": "electron-webpack",
+    "dist": "yarn build && electron-builder",
+    "pack": "yarn build --dir && electron-builder",
     "clean": "yarn prettier --write \"src/**/*.js?(x)\" *.js",
     "clean-check": "yarn prettier --check \"src/**/*.js?(x)\" *.js"
   },
-  "main": "main.js",
   "devDependencies": {
     "@babel/core": "^7.4.3",
     "@babel/preset-env": "^7.4.3",
@@ -15,7 +40,8 @@
     "babel-loader": "^8.0.5",
     "css-loader": "^2.1.1",
     "electron": "^4.1.4",
-    "mini-css-extract-plugin": "^0.6.0",
+    "electron-builder": "^20.40.2",
+    "electron-webpack": "^2.6.2",
     "node-sass": "^4.11.0",
     "prettier": "1.16.4",
     "sass-loader": "^7.1.0",
@@ -23,6 +49,8 @@
     "webpack-cli": "^3.3.0"
   },
   "dependencies": {
-    "preact": "^8.4.2"
+    "preact": "^8.4.2",
+    "source-map-support": "^0.5.12",
+    "system-font-families": "^0.4.1"
   }
 }

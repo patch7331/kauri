@@ -10,6 +10,10 @@ import { renderDocumentNodes } from "dom/render";
  * @return {PreactElement} A rendered preact element.
  */
 export default function Paragraph(props) {
-  const { children = [] } = props.node;
-  return <p class="editor__paragraph">{renderDocumentNodes(children)}</p>;
+  const { children = [], style = {} } = props.node;
+  return (
+    <p class="editor__paragraph" style={style}>
+      {renderDocumentNodes(children)}
+    </p>
+  );
 }
