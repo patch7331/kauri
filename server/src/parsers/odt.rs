@@ -1,31 +1,22 @@
+extern crate serde_json;
 extern crate xml;
 extern crate zip;
-extern crate serde_json;
 
 use serde_json::map::Map;
 use serde_json::value::Value;
 use serde_json::Number;
 use std::fs;
-use std::io;
 use xml::reader::{EventReader, XmlEvent};
 
 /// Reads an ODT file referred to by the given path
 /// and returns a JSON string containing a DOM
 pub fn read_odt(filepath: &str) -> String {
-    let file = std::path::Path::new(&filepath);
-    if !file.exists() {
-        //make sure the file actually exists
-        println!("{:?}", fs::metadata(file));
-        return serde_json::to_string(&Value::Null).unwrap();
-    }
-
-    let file = fs::File::open(&file).unwrap();
-    let archive = zip::ZipArchive::new(file);
+    let archive = get_archive(filepath);
     if let Err(e) = archive {
-        //handle case where the file is not even a zip file
         println!("{}", e);
         return serde_json::to_string(&Value::Null).unwrap();
     }
+
     let mut archive = archive.unwrap();
     let content_xml = archive.by_name("content.xml"); //returns a ZipFile struct which implements Read if the file is in the archive
     if let Err(e) = content_xml {
@@ -33,9 +24,8 @@ pub fn read_odt(filepath: &str) -> String {
         println!("{}", e);
         return serde_json::to_string(&Value::Null).unwrap();
     }
-    let content_xml = io::BufReader::new(content_xml.unwrap());
 
-    let parser = EventReader::new(content_xml);
+    let parser = EventReader::new(content_xml.unwrap());
     let mut body_begin = false;
     let mut styles_begin = false;
 
@@ -173,6 +163,25 @@ pub fn read_odt(filepath: &str) -> String {
     document_object.insert("document".to_string(), document_hierarchy.pop().unwrap());
     let document_object = Value::Object(document_object);
     serde_json::to_string(&document_object).unwrap()
+}
+
+/// Takes a path to a file and returns a ZipArchive representation of it
+/// if it exists and it is a zip file
+fn get_archive(filepath: &str) -> Result<zip::ZipArchive<std::fs::File>, String> {
+    let file = std::path::Path::new(&filepath);
+    if !file.exists() {
+        //make sure the file actually exists
+        return Result::Err(format!("{:?}", fs::metadata(file)));
+    }
+
+    let file = fs::File::open(&file).unwrap();
+    let archive = zip::ZipArchive::new(file);
+    if let Err(e) = archive {
+        //handle case where the file is not even a zip file
+        return Result::Err(e.to_string());
+    }
+    let archive = archive.unwrap();
+    Result::Ok(archive)
 }
 
 /// Takes the results of either heading_begin() or paragraph_begin() (called params)

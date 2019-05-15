@@ -30,7 +30,8 @@ fn main() {
                     println!("error: {}", e);
                     continue;
                 }
-                let response = tiny_http::Response::from_string(parsers::odt::read_odt(body_str.unwrap()));
+                let response =
+                    tiny_http::Response::from_string(parsers::odt::read_odt(body_str.unwrap()));
                 if let Err(e) = request.respond(response) {
                     println!("error: {}", e);
                     continue;
