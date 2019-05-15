@@ -1,7 +1,7 @@
 /** @format */
 
 import "./styles.scss";
-import { Component } from "preact";
+import { Component, h } from 'preact';
 import clipboard from "electron-clipboard-extended";
 
 export default class Clipboard extends Component {
@@ -18,7 +18,7 @@ export default class Clipboard extends Component {
         return {
           clipboardStack: [
             ...prevState.clipboardStack,
-            new ClipboardItem("text", text),
+            new ClipboardItem("txt", text),
           ],
         };
       });

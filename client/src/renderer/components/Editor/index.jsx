@@ -5,6 +5,8 @@ import "./styles.scss";
 import { h, Component, createRef } from "preact";
 import { renderDocumentNodes } from "dom/render";
 import ToolBar from "components/Editor/ToolBar";
+import Clipboard from "components/Clipboard";
+
 
 const POST_URI = "http://127.0.0.1:3000/key";
 
@@ -50,6 +52,8 @@ export default class Editor extends Component {
         >
           {renderDocumentNodes(props.dom.children)}
         </div>
+
+        <Clipboard />
       </div>
     );
   }
