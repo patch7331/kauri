@@ -78,29 +78,43 @@ impl ODTParser {
                         if prefix == "office" && name.local_name == "body" {
                             self.body_begin = true;
                         } else if self.body_begin {
-                            if prefix == "text" && name.local_name == "h" {
-                                let (
-                                    map,
-                                    ensure_children_no_underline_new,
-                                    set_children_underline_new,
-                                ) = check_underline(heading_begin(attributes), &self.auto_styles);
-                                self.ensure_children_no_underline =
-                                    ensure_children_no_underline_new;
-                                self.set_children_underline = set_children_underline_new;
-                                current_value = Value::Object(map);
-                            } else if prefix == "text" && name.local_name == "p" {
-                                let (
-                                    map,
-                                    ensure_children_no_underline_new,
-                                    set_children_underline_new,
-                                ) = check_underline(paragraph_begin(attributes), &self.auto_styles);
-                                self.ensure_children_no_underline =
-                                    ensure_children_no_underline_new;
-                                self.set_children_underline = set_children_underline_new;
-                                current_value = Value::Object(map);
-                            } else if prefix == "text" && name.local_name == "span" {
-                                self.is_span = true;
-                                self.current_span_style = span_begin(attributes);
+                            if prefix != "text" {
+                                continue;
+                            }
+                            match name.local_name.as_str() {
+                                "h" => {
+                                    let (
+                                        map,
+                                        ensure_children_no_underline_new,
+                                        set_children_underline_new,
+                                    ) = check_underline(
+                                        heading_begin(attributes),
+                                        &self.auto_styles,
+                                    );
+                                    self.ensure_children_no_underline =
+                                        ensure_children_no_underline_new;
+                                    self.set_children_underline = set_children_underline_new;
+                                    current_value = Value::Object(map);
+                                }
+                                "p" => {
+                                    let (
+                                        map,
+                                        ensure_children_no_underline_new,
+                                        set_children_underline_new,
+                                    ) = check_underline(
+                                        paragraph_begin(attributes),
+                                        &self.auto_styles,
+                                    );
+                                    self.ensure_children_no_underline =
+                                        ensure_children_no_underline_new;
+                                    self.set_children_underline = set_children_underline_new;
+                                    current_value = Value::Object(map);
+                                }
+                                "span" => {
+                                    self.is_span = true;
+                                    self.current_span_style = span_begin(attributes);
+                                }
+                                _ => (),
                             }
                         } else if prefix == "office" && name.local_name == "automatic-styles" {
                             self.styles_begin = true;
