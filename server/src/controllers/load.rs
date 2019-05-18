@@ -27,24 +27,27 @@ pub fn load_controller(mut request: Request) {
     let extension = filepath.split('.').last();
     match extension {
         //pick a parser depending on the file extension
-        Some(".odt") => {
-            let parser = ODTParser::new(filepath);
-            if let Err(e) = parser {
-                respond(request, e.to_string(), true);
-                return;
-            }
-
-            let parsed_odt = parser.unwrap().parse();
-            if let Err(e) = parsed_odt {
-                respond(request, e.to_string(), true);
-                return;
-            }
-            respond(request, parsed_odt.unwrap(), false);
-        }
+        Some(".odt") => handle_odt(request, filepath),
         _ => respond(
             request,
             "File extension missing or unrecognized".to_string(),
             true,
         ),
     }
+}
+
+/// Handles a request for loading an ODT
+fn handle_odt(request: Request, filepath: &str) {
+    let parser = ODTParser::new(filepath);
+    if let Err(e) = parser {
+        respond(request, e.to_string(), true);
+        return;
+    }
+
+    let parsed_odt = parser.unwrap().parse();
+    if let Err(e) = parsed_odt {
+        respond(request, e.to_string(), true);
+        return;
+    }
+    respond(request, parsed_odt.unwrap(), false);
 }
