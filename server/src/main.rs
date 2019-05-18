@@ -1,7 +1,7 @@
 extern crate tiny_http;
 
-mod parsers;
 mod controllers;
+mod parsers;
 
 fn main() {
     let addr = "127.0.0.1:3000";
@@ -22,7 +22,7 @@ fn main() {
 }
 
 /// Takes a request and responds accordingly
-fn handle_request(mut request: tiny_http::Request) {
+fn handle_request(request: tiny_http::Request) {
     match request.url() {
         "/load" => controllers::load::load_controller(request),
         _ => {
