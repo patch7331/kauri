@@ -65,7 +65,7 @@ impl ODTParser {
         //these are here instead of the struct because we may need to move the contents of these somewhere else
         let mut current_value = Value::Null;
         let mut current_style_name = String::new();
-        let mut current_style_value = Value::Null;
+        let mut current_style_value = Value::Object(Map::new()); //in case there is a style definition with nothing we can parse
 
         let parser = EventReader::new(content_xml.unwrap());
         for e in parser {
@@ -138,14 +138,7 @@ impl ODTParser {
                         self.current_span_style = String::new();
                         self.is_span = false;
                     }
-                    current_value
-                        .as_object_mut()
-                        .unwrap()
-                        .get_mut("children")
-                        .unwrap()
-                        .as_array_mut()
-                        .unwrap()
-                        .push(Value::Object(map));
+                    add_to_children(&mut current_value, Value::Object(map));
                 }
                 Ok(XmlEvent::EndElement { name }) => {
                     if self.body_begin {
@@ -155,16 +148,10 @@ impl ODTParser {
                             } else if prefix == "text"
                                 && (name.local_name == "h" || name.local_name == "p")
                             {
-                                self.document_hierarchy
-                                    .last_mut()
-                                    .unwrap()
-                                    .as_object_mut()
-                                    .unwrap()
-                                    .get_mut("children")
-                                    .unwrap()
-                                    .as_array_mut()
-                                    .unwrap()
-                                    .push(current_value);
+                                add_to_children(
+                                    self.document_hierarchy.last_mut().unwrap(),
+                                    current_value,
+                                );
                                 current_value = Value::Null;
                                 self.set_children_underline = false;
                                 self.ensure_children_no_underline = false;
@@ -178,7 +165,7 @@ impl ODTParser {
                                 self.auto_styles
                                     .insert(current_style_name, current_style_value);
                                 current_style_name = String::from("");
-                                current_style_value = Value::Null;
+                                current_style_value = Value::Object(Map::new());
                             }
                         }
                     }
@@ -199,6 +186,17 @@ impl ODTParser {
         let document_object = Value::Object(document_object);
         Ok(serde_json::to_string(&document_object).unwrap())
     }
+}
+
+fn add_to_children(parent: &mut Value, object: Value) {
+    parent
+        .as_object_mut()
+        .unwrap()
+        .get_mut("children")
+        .unwrap()
+        .as_array_mut()
+        .unwrap()
+        .push(object);
 }
 
 /// Takes a path to a file and returns a ZipArchive representation of it.
