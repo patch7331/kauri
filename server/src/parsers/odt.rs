@@ -126,7 +126,7 @@ impl ODTParser {
                         let mut style = self
                             .auto_styles
                             .get(&self.current_span_style)
-                            .unwrap()
+                            .unwrap_or(&Value::Object(Map::new())) //in case the style isn't there somehow
                             .clone();
                         let style_map = style.as_object_mut().unwrap();
                         handle_underline(
