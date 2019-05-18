@@ -226,7 +226,10 @@ fn check_underline(
     let mut ensure_children_no_underline = false;
     let mut set_children_underline = false;
     let (mut map, style_name) = params;
-    let style = auto_styles.get(&style_name).unwrap().clone();
+    let style = auto_styles
+        .get(&style_name)
+        .unwrap_or(&Value::Object(Map::new()))
+        .clone();
     let style_map = style.as_object().unwrap();
     let underline = style_map.get("textDecorationLine");
     let underline_color = style_map.get("textDecorationColor");
@@ -292,9 +295,9 @@ fn heading_begin(attributes: Vec<xml::attribute::OwnedAttribute>) -> (Map<String
     let mut level = 0.0; //because JS numbers are always floats apparently
     let mut style_name = String::new();
     for i in attributes {
-        let prefix = i.name.prefix.unwrap();
+        let prefix = i.name.prefix.unwrap_or_else(|| "".to_string());
         if prefix == "text" && i.name.local_name == "outline-level" {
-            level = i.value.parse::<f64>().unwrap();
+            level = i.value.parse::<f64>().unwrap_or(1.0);
         } else if prefix == "text" && i.name.local_name == "style-name" {
             style_name = i.value;
         }
@@ -317,7 +320,9 @@ fn paragraph_begin(
 ) -> (Map<String, Value>, String) {
     let mut style_name = String::new();
     for i in attributes {
-        if i.name.prefix.unwrap() == "text" && i.name.local_name == "style-name" {
+        if i.name.prefix.unwrap_or_else(|| "".to_string()) == "text"
+            && i.name.local_name == "style-name"
+        {
             style_name = i.value;
         }
     }
@@ -332,7 +337,9 @@ fn paragraph_begin(
 fn span_begin(attributes: Vec<xml::attribute::OwnedAttribute>) -> String {
     let mut style_name = String::new();
     for i in attributes {
-        if i.name.prefix.unwrap() == "text" && i.name.local_name == "style-name" {
+        if i.name.prefix.unwrap_or_else(|| "".to_string()) == "text"
+            && i.name.local_name == "style-name"
+        {
             style_name = i.value;
         }
     }
@@ -343,7 +350,8 @@ fn span_begin(attributes: Vec<xml::attribute::OwnedAttribute>) -> String {
 /// and returns the name of the style
 fn style_begin(attributes: Vec<xml::attribute::OwnedAttribute>) -> String {
     for i in attributes {
-        if i.name.prefix.unwrap() == "style" && i.name.local_name == "name" {
+        if i.name.prefix.unwrap_or_else(|| "".to_string()) == "style" && i.name.local_name == "name"
+        {
             return i.value;
         }
     }
@@ -356,7 +364,7 @@ fn text_properties_begin(attributes: Vec<xml::attribute::OwnedAttribute>) -> Map
     let mut map: Map<String, Value> = Map::new();
     let mut is_double_underline = false;
     for i in attributes {
-        let prefix = i.name.prefix.unwrap();
+        let prefix = i.name.prefix.unwrap_or_else(|| "".to_string());
         if prefix == "fo" {
             if i.name.local_name == "font-weight" {
                 map.insert("fontWeight".to_string(), Value::String(i.value)); //all valid values for this attribute is also valid in the CSS equivalent, so just use it as is
