@@ -11,6 +11,7 @@ pub enum Node {
 #[derive(Serialize, Deserialize)]
 pub struct Text {
     content: String,
+	pub styles: HashMap<String, String>, // Temporary, just as a stepping stone during refactoring
 }
 
 impl Text {
@@ -18,7 +19,7 @@ impl Text {
     ///
     ///  - `content`: Internal text content.
     pub fn new(content: String) -> Text {
-        Text { content }
+        Text { content, styles: HashMap::new() }
     }
 }
 

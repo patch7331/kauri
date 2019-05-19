@@ -7,9 +7,9 @@ use units::DistanceUnit;
 
 #[derive(Serialize, Deserialize)]
 pub struct PaperSize {
-    height: i32,
-    width: i32,
-    unit: DistanceUnit,
+    pub height: i32,
+    pub width: i32,
+    pub unit: DistanceUnit,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -35,6 +35,6 @@ impl Document {
 
     /// Converts the document to a JSON string
     pub fn to_json(&self) -> serde_json::Result<String> {
-        serde_json::to_string(self)
+        serde_json::to_string_pretty(self)
     }
 }

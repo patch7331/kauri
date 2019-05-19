@@ -2,21 +2,23 @@ extern crate serde_json;
 extern crate xml;
 extern crate zip;
 
-use serde_json::map::Map;
-use serde_json::value::Value;
-use serde_json::Number;
 use std::fs;
 use xml::reader::{EventReader, XmlEvent};
+use crate::document::{Document, PaperSize};
+use crate::document::node::{Node, Text, Element};
+use crate::document::units::DistanceUnit;
+use std::collections::HashMap;
 
 pub struct ODTParser {
     body_begin: bool,
     styles_begin: bool,
-    auto_styles: Map<String, Value>,
+    auto_styles: HashMap<String, HashMap<String, String>>,
     is_span: bool,
     current_span_style: String,
     set_children_underline: bool,
     ensure_children_no_underline: bool,
-    document_hierarchy: Vec<Value>,
+	document_root: Document,
+    document_hierarchy: Vec<Element>,
     archive: zip::ZipArchive<std::fs::File>,
 }
 
@@ -30,26 +32,23 @@ impl ODTParser {
         }
         let archive = archive.unwrap();
 
-        let mut document_contents: Map<String, Value> = Map::new(); //value of the "document" key
-        document_contents.insert(
-            "title".to_string(),
-            Value::String("Kauri (Working title)".to_string()),
-        );
-        document_contents.insert("paper".to_string(), Value::String("A4".to_string()));
-        document_contents.insert("children".to_string(), Value::Array(Vec::new()));
+		let document_root = Document::new("Kauri (Working Title)".to_string(), PaperSize {
+			height: 297,
+			width: 210,
+			unit: DistanceUnit::Millimetres
+		});
 
-        // in case of nested tags, not actually handled yet
-        let mut document_hierarchy: Vec<Value> = Vec::new();
-        document_hierarchy.push(Value::Object(document_contents));
+        let document_hierarchy: Vec<Element> = Vec::new();
 
         Ok(ODTParser {
             body_begin: false,
             styles_begin: false,
-            auto_styles: Map::new(),
+            auto_styles: HashMap::new(),
             is_span: false,
             current_span_style: String::new(),
             set_children_underline: false,
             ensure_children_no_underline: false,
+			document_root,
             document_hierarchy,
             archive,
         })
@@ -66,7 +65,7 @@ impl ODTParser {
 
         // These are here instead of the struct because we may need to move the contents of these somewhere else
         let mut current_style_name = String::new();
-        let mut current_style_value = Value::Object(Map::new()); //in case there is a style definition with nothing we can parse
+        let mut current_style_value: HashMap<String, String> = HashMap::new();
 
         let parser = EventReader::new(content_xml.unwrap());
         for e in parser {
@@ -85,7 +84,7 @@ impl ODTParser {
                             match name.local_name.as_str() {
                                 "h" => {
                                     let (
-                                        map,
+                                        element,
                                         ensure_children_no_underline_new,
                                         set_children_underline_new,
                                     ) = check_underline(
@@ -95,11 +94,11 @@ impl ODTParser {
                                     self.ensure_children_no_underline =
                                         ensure_children_no_underline_new;
                                     self.set_children_underline = set_children_underline_new;
-                                    self.document_hierarchy.push(Value::Object(map));
+                                    self.document_hierarchy.push(element);
                                 }
                                 "p" => {
                                     let (
-                                        map,
+                                        element,
                                         ensure_children_no_underline_new,
                                         set_children_underline_new,
                                     ) = check_underline(
@@ -109,7 +108,7 @@ impl ODTParser {
                                     self.ensure_children_no_underline =
                                         ensure_children_no_underline_new;
                                     self.set_children_underline = set_children_underline_new;
-                                    self.document_hierarchy.push(Value::Object(map));
+                                    self.document_hierarchy.push(element);
                                 }
                                 "span" => {
                                     self.is_span = true;
@@ -124,37 +123,34 @@ impl ODTParser {
                                 current_style_name = style_begin(attributes);
                             } else if prefix == "style" && name.local_name == "text-properties" {
                                 current_style_value =
-                                    Value::Object(text_properties_begin(attributes));
+                                    text_properties_begin(attributes);
                             }
                         }
                     }
                 }
                 Ok(XmlEvent::Characters(contents)) => {
+					if self.document_hierarchy.is_empty() {
+						continue;
+					}
                     // Currently the only type of tag expected to emit this event is the ones in the body,
                     // in which case they will contain the document text
-                    let mut map: Map<String, Value> = Map::new();
-                    map.insert("type".to_string(), Value::String("text".to_string()));
-                    map.insert("content".to_string(), Value::String(contents));
+					let mut text = Text::new(contents);
                     if self.is_span {
                         let mut style = self
                             .auto_styles
                             .get(&self.current_span_style)
-                            .unwrap_or(&Value::Object(Map::new())) //in case the style isn't there somehow
+                            .unwrap_or(&HashMap::new()) // In case the style isn't there somehow
                             .clone();
-                        let style_map = style.as_object_mut().unwrap();
                         handle_underline(
-                            style_map,
+                            &mut style,
                             self.set_children_underline,
                             self.ensure_children_no_underline,
                         );
-                        map.insert("style".to_string(), style);
+                        text.styles = style;
                         self.current_span_style = String::new();
                         self.is_span = false;
                     }
-                    add_to_children(
-                        self.document_hierarchy.last_mut().unwrap(),
-                        Value::Object(map),
-                    );
+					self.document_hierarchy.last_mut().unwrap().children.push(Node::Text(text));
                 }
                 Ok(XmlEvent::EndElement { name }) => {
                     if self.body_begin {
@@ -164,8 +160,16 @@ impl ODTParser {
                             } else if prefix == "text"
                                 && (name.local_name == "h" || name.local_name == "p")
                             {
+								if self.document_hierarchy.is_empty() {
+									// It shouldn't be empty now, if it is then this is an unmatched end tag
+									continue;
+								}
                                 let child = self.document_hierarchy.pop().unwrap();
-                                add_to_children(self.document_hierarchy.last_mut().unwrap(), child);
+								if self.document_hierarchy.is_empty() {
+									self.document_root.children.push(Node::Element(child));
+								} else {
+									self.document_hierarchy.last_mut().unwrap().children.push(Node::Element(child));
+								}
                                 self.set_children_underline = false;
                                 self.ensure_children_no_underline = false;
                             }
@@ -178,7 +182,7 @@ impl ODTParser {
                                 self.auto_styles
                                     .insert(current_style_name, current_style_value);
                                 current_style_name = String::from("");
-                                current_style_value = Value::Object(Map::new());
+                                current_style_value = HashMap::new();
                             }
                         }
                     }
@@ -191,26 +195,9 @@ impl ODTParser {
             }
         }
 
-        let mut document_object: Map<String, Value> = Map::new();
-        document_object.insert(
-            "document".to_string(),
-            self.document_hierarchy.pop().unwrap(),
-        );
-        let document_object = Value::Object(document_object);
-        Ok(serde_json::to_string(&document_object).unwrap())
+        
+        Ok(self.document_root.to_json().unwrap())
     }
-}
-
-/// Adds the object parameter to the array of children in the parent parameter
-fn add_to_children(parent: &mut Value, object: Value) {
-    parent
-        .as_object_mut()
-        .unwrap()
-        .get_mut("children")
-        .unwrap()
-        .as_array_mut()
-        .unwrap()
-        .push(object);
 }
 
 /// Takes a path to a file and returns a ZipArchive representation of it.
@@ -228,72 +215,71 @@ fn get_archive(filepath: &str) -> Result<zip::ZipArchive<std::fs::File>, String>
 }
 
 /// Takes the results of either heading_begin() or paragraph_begin() (called params)
-/// and a reference to the map of automatic style names to the JSON style object,
-/// and returns the map from params together with the values for ensure_children_no_underline
+/// and a reference to the map of automatic style names to the map of CSS properties,
+/// and returns the element from params together with the values for ensure_children_no_underline
 /// and set_children_underline in parse_odt()
 fn check_underline(
-    params: (Map<String, Value>, String),
-    auto_styles: &Map<String, Value>,
-) -> (Map<String, Value>, bool, bool) {
+    params: (Element, String),
+    auto_styles: &HashMap<String, HashMap<String, String>>,
+) -> (Element, bool, bool) {
     let mut ensure_children_no_underline = false;
     let mut set_children_underline = false;
-    let (mut map, style_name) = params;
+    let (mut element, style_name) = params;
     let style = auto_styles
         .get(&style_name)
-        .unwrap_or(&Value::Object(Map::new()))
+        .unwrap_or(&HashMap::new())
         .clone();
-    let style_map = style.as_object().unwrap();
-    let underline = style_map.get("textDecorationLine");
-    let underline_color = style_map.get("textDecorationColor");
+    let underline = style.get("textDecorationLine");
+    let underline_color = style.get("textDecorationColor");
     if let Some(x) = underline {
-        if x.as_str().unwrap() == "underline" {
+        if x == "underline" {
             ensure_children_no_underline = true;
             if let Some(x) = underline_color {
-                if x.as_str().unwrap() == "currentcolor" {
+                if x == "currentcolor" {
                     set_children_underline = true;
                 }
             }
         }
     }
-    map.insert("style".to_string(), style);
-    (map, ensure_children_no_underline, set_children_underline)
+    element.styles = style;
+    (element, ensure_children_no_underline, set_children_underline)
 }
 
 /// Takes a mutable reference to a map of CSS style properties to values and 2 booleans
 /// (the boolean results of check_underline()), and adds an extra CSS property to
 /// handle some special cases related to underlines if needed depending on the booleans
 fn handle_underline(
-    style_map: &mut Map<String, Value>,
+    style_map: &mut HashMap<String, String>,
     set_children_underline: bool,
     ensure_children_no_underline: bool,
 ) {
     if set_children_underline {
         if let Some(x) = style_map.get("textDecorationLine") {
-            if x.as_str().unwrap() != "none" {
+            if x != "none" {
                 style_map.insert(
                     "textDecorationLine".to_string(),
-                    Value::String("underline".to_string()),
+                    "underline".to_string(),
                 );
             } else if ensure_children_no_underline {
                 // Need this to make sure the underline is actually not there, because CSS things
                 style_map.insert(
                     "display".to_string(),
-                    Value::String("inline-block".to_string()),
+                    "inline-block".to_string(),
                 );
             }
         } else {
             style_map.insert(
                 "textDecoration".to_string(),
-                Value::String("underline".to_string()),
+                "underline".to_string(),
             );
         }
     } else if ensure_children_no_underline {
         if let Some(x) = style_map.get("textDecorationLine") {
-            if x.as_str().unwrap() == "none" {
+            if x == "none" {
                 // Need this to make sure the underline is actually not there, because CSS things
                 style_map.insert(
                     "display".to_string(),
-                    Value::String("inline-block".to_string()),
+                    "inline-block".to_string(),
                 );
             }
         }
@@ -301,9 +287,9 @@ fn handle_underline(
 }
 
 /// Takes the set of attributes of a text:h tag in the ODT's content.xml,
-/// and returns a map for use in a Value::Object enum that represents a heading element based on the attributes,
+/// and returns a heading element based on the attributes,
 /// together with the value of the text:style-name attribute of the tag
-fn heading_begin(attributes: Vec<xml::attribute::OwnedAttribute>) -> (Map<String, Value>, String) {
+fn heading_begin(attributes: Vec<xml::attribute::OwnedAttribute>) -> (Element, String) {
     // Because JS numbers are always floats apparently
     let mut level = 0.0;
     let mut style_name = String::new();
@@ -315,22 +301,17 @@ fn heading_begin(attributes: Vec<xml::attribute::OwnedAttribute>) -> (Map<String
             style_name = i.value;
         }
     }
-    let mut map: Map<String, Value> = Map::new();
-    map.insert("type".to_string(), Value::String("heading".to_string()));
-    map.insert(
-        "level".to_string(),
-        Value::Number(Number::from_f64(level).unwrap()),
-    );
-    map.insert("children".to_string(), Value::Array(Vec::new()));
-    (map, style_name)
+	let mut element = Element::new("heading".to_string());
+	element.attributes.insert("level".to_string(), level.to_string());
+    (element, style_name)
 }
 
 /// Takes the set of attributes of a text:p tag in the ODT's content.xml,
-/// and returns a map for use in a Value::Object enum that represents a paragraph element
+/// and returns a paragraph element
 /// together with the value of the text:style-name attribute of the tag
 fn paragraph_begin(
     attributes: Vec<xml::attribute::OwnedAttribute>,
-) -> (Map<String, Value>, String) {
+) -> (Element, String) {
     let mut style_name = String::new();
     for i in attributes {
         if i.name.prefix.unwrap_or_else(|| "".to_string()) == "text"
@@ -339,10 +320,7 @@ fn paragraph_begin(
             style_name = i.value;
         }
     }
-    let mut map: Map<String, Value> = Map::new();
-    map.insert("type".to_string(), Value::String("paragraph".to_string()));
-    map.insert("children".to_string(), Value::Array(Vec::new()));
-    (map, style_name)
+    (Element::new("paragraph".to_string()), style_name)
 }
 
 /// Takes the set of attributes of a text:span tag in the ODT's content.xml
@@ -372,54 +350,54 @@ fn style_begin(attributes: Vec<xml::attribute::OwnedAttribute>) -> String {
 }
 
 /// Takes the set of attributes of a style:text-properties tag in the ODT's content.xml,
-/// and creates a map for use in a Value::Object enum that represents a style object based on the attributes
-fn text_properties_begin(attributes: Vec<xml::attribute::OwnedAttribute>) -> Map<String, Value> {
-    let mut map: Map<String, Value> = Map::new();
+/// and creates a map of CSS properties based on the attributes
+fn text_properties_begin(attributes: Vec<xml::attribute::OwnedAttribute>) -> HashMap<String, String> {
+    let mut map: HashMap<String, String> = HashMap::new();
     let mut is_double_underline = false;
     for i in attributes {
         let prefix = i.name.prefix.unwrap_or_else(|| "".to_string());
         if prefix == "fo" {
             if i.name.local_name == "font-weight" {
                 // All valid values for this attribute is also valid in the CSS equivalent, so just use it as is
-                map.insert("fontWeight".to_string(), Value::String(i.value));
+                map.insert("fontWeight".to_string(), i.value);
             } else if i.name.local_name == "font-style" && i.value != "backslant" {
                 // `backslant` is not valid in CSS, but all the other ones are
-                map.insert("fontStyle".to_string(), Value::String(i.value));
+                map.insert("fontStyle".to_string(), i.value);
             } else if i.name.local_name == "color" {
-                map.insert("color".to_string(), Value::String(i.value));
+                map.insert("color".to_string(), i.value);
             } else if i.name.local_name == "font-size" {
-                map.insert("font-size".to_string(), Value::String(i.value));
+                map.insert("fontSize".to_string(), i.value);
             }
         } else if prefix == "style" {
             if i.name.local_name == "text-underline-style" {
                 if i.value == "none" {
                     map.insert(
                         "textDecorationLine".to_string(),
-                        Value::String("none".to_string()),
+                        "none".to_string(),
                     );
                 } else {
                     map.insert(
                         "textDecorationLine".to_string(),
-                        Value::String("underline".to_string()),
+                        "underline".to_string(),
                     );
                     match i.value.as_ref() {
                         "dash" => map.insert(
                             "textDecorationStyle".to_string(),
-                            Value::String("dashed".to_string()),
+                            "dashed".to_string(),
                         ),
                         "dotted" => map.insert(
                             "textDecorationStyle".to_string(),
-                            Value::String("dotted".to_string()),
+                            "dotted".to_string(),
                         ),
                         "wave" => map.insert(
                             "textDecorationStyle".to_string(),
-                            Value::String("wavy".to_string()),
+                            "wavy".to_string(),
                         ),
                         // There are a few possible styles in ODF that aren't present in CSS
                         // (dot-dash, dot-dot-dash, long-dash), so just put in a basic underline?
                         "solid" | _ => map.insert(
                             "textDecorationStyle".to_string(),
-                            Value::String("solid".to_string()),
+                            "solid".to_string(),
                         ),
                     };
                 }
@@ -429,14 +407,14 @@ fn text_properties_begin(attributes: Vec<xml::attribute::OwnedAttribute>) -> Map
                 if i.value == "font-color" {
                     map.insert(
                         "textDecorationColor".to_string(),
-                        Value::String("currentcolor".to_string()),
+                        "currentcolor".to_string(),
                     );
                 } else {
                     // The other valid values are all in hex format
-                    map.insert("textDecorationColor".to_string(), Value::String(i.value));
+                    map.insert("textDecorationColor".to_string(), i.value);
                 }
             } else if i.name.local_name == "font-name" {
-                map.insert("fontFamily".to_string(), Value::String(i.value));
+                map.insert("fontFamily".to_string(), i.value);
             }
         }
     }
@@ -445,7 +423,7 @@ fn text_properties_begin(attributes: Vec<xml::attribute::OwnedAttribute>) -> Map
         // only supports double solid underlines, so prioritize the double over the line style?
         map.insert(
             "textDecorationStyle".to_string(),
-            Value::String("double".to_string()),
+            "double".to_string(),
         );
     }
     map
