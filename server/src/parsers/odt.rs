@@ -65,7 +65,6 @@ impl ODTParser {
         }
 
         // These are here instead of the struct because we may need to move the contents of these somewhere else
-        let mut current_value = Value::Null;
         let mut current_style_name = String::new();
         let mut current_style_value = Value::Object(Map::new()); //in case there is a style definition with nothing we can parse
 
@@ -96,7 +95,7 @@ impl ODTParser {
                                     self.ensure_children_no_underline =
                                         ensure_children_no_underline_new;
                                     self.set_children_underline = set_children_underline_new;
-                                    current_value = Value::Object(map);
+                                    self.document_hierarchy.push(Value::Object(map));
                                 }
                                 "p" => {
                                     let (
@@ -110,7 +109,7 @@ impl ODTParser {
                                     self.ensure_children_no_underline =
                                         ensure_children_no_underline_new;
                                     self.set_children_underline = set_children_underline_new;
-                                    current_value = Value::Object(map);
+                                    self.document_hierarchy.push(Value::Object(map));
                                 }
                                 "span" => {
                                     self.is_span = true;
@@ -152,7 +151,10 @@ impl ODTParser {
                         self.current_span_style = String::new();
                         self.is_span = false;
                     }
-                    add_to_children(&mut current_value, Value::Object(map));
+                    add_to_children(
+                        self.document_hierarchy.last_mut().unwrap(),
+                        Value::Object(map),
+                    );
                 }
                 Ok(XmlEvent::EndElement { name }) => {
                     if self.body_begin {
@@ -162,11 +164,8 @@ impl ODTParser {
                             } else if prefix == "text"
                                 && (name.local_name == "h" || name.local_name == "p")
                             {
-                                add_to_children(
-                                    self.document_hierarchy.last_mut().unwrap(),
-                                    current_value,
-                                );
-                                current_value = Value::Null;
+                                let child = self.document_hierarchy.pop().unwrap();
+                                add_to_children(self.document_hierarchy.last_mut().unwrap(), child);
                                 self.set_children_underline = false;
                                 self.ensure_children_no_underline = false;
                             }
@@ -202,6 +201,7 @@ impl ODTParser {
     }
 }
 
+/// Adds the object parameter to the array of children in the parent parameter
 fn add_to_children(parent: &mut Value, object: Value) {
     parent
         .as_object_mut()
@@ -326,7 +326,7 @@ fn heading_begin(attributes: Vec<xml::attribute::OwnedAttribute>) -> (Map<String
 }
 
 /// Takes the set of attributes of a text:p tag in the ODT's content.xml,
-/// and returns a map for use in a Value::Object enum that represents a heading element
+/// and returns a map for use in a Value::Object enum that represents a paragraph element
 /// together with the value of the text:style-name attribute of the tag
 fn paragraph_begin(
     attributes: Vec<xml::attribute::OwnedAttribute>,
