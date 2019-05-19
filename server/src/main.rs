@@ -1,6 +1,7 @@
 extern crate tiny_http;
 
 mod controllers;
+mod document;
 mod parsers;
 
 fn main() {

@@ -2,8 +2,8 @@
   <h1>Kauri</h1>
 
   [![Build Status](https://travis-ci.com/sean0x42/kauri.svg?token=y4PzktMpXpMzBmaZHNGq&branch=master)](https://travis-ci.com/sean0x42/kauri)
-  [![GitHub release](https://img.shields.io/github/release/sean0x42/kauri.svg)](https://github.com/sean0x42/kauri/releases/)
   [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
+  [![Dependabot Status](https://api.dependabot.com/badges/status?host=github&repo=sean0x42/kauri)](https://dependabot.com)
 </div>
 
 Kauri (working title) is an experimental, desktop document processor currently
