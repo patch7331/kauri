@@ -34,11 +34,7 @@ impl ODTParser {
 
         let document_root = Document::new(
             "Kauri (Working Title)".to_string(),
-            PaperSize {
-                height: 297,
-                width: 210,
-                unit: DistanceUnit::Millimetres,
-            },
+            PaperSize::new(297, 210, DistanceUnit::Millimetres),
         );
 
         let document_hierarchy: Vec<Element> = Vec::new();

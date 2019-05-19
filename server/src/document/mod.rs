@@ -7,9 +7,24 @@ use units::DistanceUnit;
 
 #[derive(Serialize, Deserialize)]
 pub struct PaperSize {
-    pub height: i32,
-    pub width: i32,
-    pub unit: DistanceUnit,
+    height: i32,
+    width: i32,
+    unit: DistanceUnit,
+}
+
+impl PaperSize {
+	/// Constructs a new paper size object
+    ///
+    /// - `height` Paper height.
+    /// - `width` Paper width.
+	/// - `unit` Measurement unit for the paper height and width.
+	pub fn new(height: i32, width: i32, unit: DistanceUnit) -> PaperSize {
+		PaperSize {
+			height,
+			width,
+			unit
+		}
+	}
 }
 
 #[derive(Serialize, Deserialize)]
