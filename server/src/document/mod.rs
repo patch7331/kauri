@@ -13,18 +13,18 @@ pub struct PaperSize {
 }
 
 impl PaperSize {
-	/// Constructs a new paper size object
+    /// Constructs a new paper size object
     ///
     /// - `height` Paper height.
     /// - `width` Paper width.
-	/// - `unit` Measurement unit for the paper height and width.
-	pub fn new(height: i32, width: i32, unit: DistanceUnit) -> PaperSize {
-		PaperSize {
-			height,
-			width,
-			unit
-		}
-	}
+    /// - `unit` Measurement unit for the paper height and width.
+    pub fn new(height: i32, width: i32, unit: DistanceUnit) -> PaperSize {
+        PaperSize {
+            height,
+            width,
+            unit,
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize)]
