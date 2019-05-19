@@ -26,7 +26,7 @@ pub fn load_controller(mut request: Request) {
 
     let extension = filepath.split('.').last();
     match extension {
-        //pick a parser depending on the file extension
+        // Pick a parser depending on the file extension
         Some("odt") => handle_odt(request, filepath),
         _ => respond(
             request,

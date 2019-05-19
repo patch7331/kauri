@@ -38,7 +38,8 @@ impl ODTParser {
         document_contents.insert("paper".to_string(), Value::String("A4".to_string()));
         document_contents.insert("children".to_string(), Value::Array(Vec::new()));
 
-        let mut document_hierarchy: Vec<Value> = Vec::new(); //in case of nested tags, not actually handled yet
+        // in case of nested tags, not actually handled yet
+        let mut document_hierarchy: Vec<Value> = Vec::new();
         document_hierarchy.push(Value::Object(document_contents));
 
         Ok(ODTParser {
@@ -56,20 +57,21 @@ impl ODTParser {
 
     /// Actually parses the ODT file and returns a JSON representation of it
     pub fn parse(&mut self) -> Result<String, String> {
-        let content_xml = self.archive.by_name("content.xml"); //returns a ZipFile struct which implements Read if the file is in the archive
+        // returns a ZipFile struct which implements Read if the file is in the archive
+        let content_xml = self.archive.by_name("content.xml");
         if let Err(e) = content_xml {
-            //handle case where there is no content.xml (so probably not actually an ODT file)
+            // Handle case where there is no content.xml (so probably not actually an ODT file)
             return Err(e.to_string());
         }
 
-        //these are here instead of the struct because we may need to move the contents of these somewhere else
+        // These are here instead of the struct because we may need to move the contents of these somewhere else
         let mut current_value = Value::Null;
         let mut current_style_name = String::new();
         let mut current_style_value = Value::Object(Map::new()); //in case there is a style definition with nothing we can parse
 
         let parser = EventReader::new(content_xml.unwrap());
         for e in parser {
-            //iterate through the XML
+            // Iterate through the XML
             match e {
                 Ok(XmlEvent::StartElement {
                     name, attributes, ..
@@ -220,7 +222,7 @@ fn get_archive(filepath: &str) -> Result<zip::ZipArchive<std::fs::File>, String>
     let file = fs::File::open(&std::path::Path::new(&filepath)).unwrap();
     let archive = zip::ZipArchive::new(file);
     if let Err(e) = archive {
-        //handle case where the file is not even a zip file
+        // Handle case where the file is not even a zip file
         return Result::Err(e.to_string());
     }
     let archive = archive.unwrap();
@@ -275,7 +277,7 @@ fn handle_underline(
                     Value::String("underline".to_string()),
                 );
             } else if ensure_children_no_underline {
-                //need this to make sure the underline is actually not there, because CSS things
+                // Need this to make sure the underline is actually not there, because CSS things
                 style_map.insert(
                     "display".to_string(),
                     Value::String("inline-block".to_string()),
@@ -290,7 +292,7 @@ fn handle_underline(
     } else if ensure_children_no_underline {
         if let Some(x) = style_map.get("textDecorationLine") {
             if x.as_str().unwrap() == "none" {
-                //need this to make sure the underline is actually not there, because CSS things
+                // Need this to make sure the underline is actually not there, because CSS things
                 style_map.insert(
                     "display".to_string(),
                     Value::String("inline-block".to_string()),
@@ -304,7 +306,8 @@ fn handle_underline(
 /// and returns a map for use in a Value::Object enum that represents a heading element based on the attributes,
 /// together with the value of the text:style-name attribute of the tag
 fn heading_begin(attributes: Vec<xml::attribute::OwnedAttribute>) -> (Map<String, Value>, String) {
-    let mut level = 0.0; //because JS numbers are always floats apparently
+    // Because JS numbers are always floats apparently
+    let mut level = 0.0;
     let mut style_name = String::new();
     for i in attributes {
         let prefix = i.name.prefix.unwrap_or_else(|| "".to_string());
@@ -379,9 +382,10 @@ fn text_properties_begin(attributes: Vec<xml::attribute::OwnedAttribute>) -> Map
         let prefix = i.name.prefix.unwrap_or_else(|| "".to_string());
         if prefix == "fo" {
             if i.name.local_name == "font-weight" {
-                map.insert("fontWeight".to_string(), Value::String(i.value)); //all valid values for this attribute is also valid in the CSS equivalent, so just use it as is
+                // All valid values for this attribute is also valid in the CSS equivalent, so just use it as is
+                map.insert("fontWeight".to_string(), Value::String(i.value));
             } else if i.name.local_name == "font-style" && i.value != "backslant" {
-                //backslant is not valid in CSS, but all the other ones are
+                // `backslant` is not valid in CSS, but all the other ones are
                 map.insert("fontStyle".to_string(), Value::String(i.value));
             } else if i.name.local_name == "color" {
                 map.insert("color".to_string(), Value::String(i.value));
@@ -413,7 +417,8 @@ fn text_properties_begin(attributes: Vec<xml::attribute::OwnedAttribute>) -> Map
                             "textDecorationStyle".to_string(),
                             Value::String("wavy".to_string()),
                         ),
-                        //there are a few possible styles in ODF that aren't present in CSS (dot-dash, dot-dot-dash, long-dash), so just put in a basic underline?
+                        // There are a few possible styles in ODF that aren't present in CSS
+                        // (dot-dash, dot-dot-dash, long-dash), so just put in a basic underline?
                         "solid" | _ => map.insert(
                             "textDecorationStyle".to_string(),
                             Value::String("solid".to_string()),
@@ -429,7 +434,7 @@ fn text_properties_begin(attributes: Vec<xml::attribute::OwnedAttribute>) -> Map
                         Value::String("currentcolor".to_string()),
                     );
                 } else {
-                    //the other valid values are all in hex format
+                    // The other valid values are all in hex format
                     map.insert("textDecorationColor".to_string(), Value::String(i.value));
                 }
             } else if i.name.local_name == "font-name" {
@@ -438,8 +443,8 @@ fn text_properties_begin(attributes: Vec<xml::attribute::OwnedAttribute>) -> Map
         }
     }
     if is_double_underline {
-        //the ODF standard supports double underlines of any kind (solid, dotted, etc), while CSS only supports double solid underlines,
-        //so prioritize the double over the line style?
+        // The ODT standard supports double underlines of any kind (solid, dotted, etc), while CSS
+        // only supports double solid underlines, so prioritize the double over the line style?
         map.insert(
             "textDecorationStyle".to_string(),
             Value::String("double".to_string()),
