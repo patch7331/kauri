@@ -131,10 +131,8 @@ impl ODTParser {
                     }
                 }
                 Ok(XmlEvent::Characters(contents)) => {
-                    /*
-                        Currently the only type of tag expected to emit this event is the ones in the body,
-                        in which case they will contain the document text
-                    */
+                    // Currently the only type of tag expected to emit this event is the ones in the body,
+                    // in which case they will contain the document text
                     let mut map: Map<String, Value> = Map::new();
                     map.insert("type".to_string(), Value::String("text".to_string()));
                     map.insert("content".to_string(), Value::String(contents));
