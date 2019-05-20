@@ -3,6 +3,8 @@ extern crate tiny_http;
 extern crate xml;
 extern crate zip;
 
+mod document;
+
 use serde_json::map::Map;
 use serde_json::value::Value;
 use serde_json::Number;
