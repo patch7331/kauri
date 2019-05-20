@@ -50,7 +50,7 @@ export default class Clipboard extends Component {
               <p>{item.data}</p>
             ) : (
               <img src={item.data} alt="image" />
-            )}{" "}
+            )}
           </li>
         ))}
       </ul>
