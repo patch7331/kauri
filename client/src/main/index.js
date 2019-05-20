@@ -13,7 +13,11 @@ const systemFonts = new SystemFonts();
 let mainWindow;
 
 function createWindow() {
-  mainWindow = new BrowserWindow();
+  mainWindow = new BrowserWindow({
+    webPreferences: {
+      nodeIntegration: true,
+    },
+  });
 
   if (isDevelopment) {
     mainWindow.webContents.openDevTools();
