@@ -1,5 +1,10 @@
 /** @format */
 
+/**
+ * Stores and lists contents of system clipboard
+ * @extends Component
+ */
+
 import "./styles.scss";
 import { Component, h } from 'preact';
 import clipboard from "electron-clipboard-extended";
@@ -8,22 +13,32 @@ export default class Clipboard extends Component {
   constructor(props) {
     super(props);
     this.state = { clipboardStack: [] };
+    this.handleTextChanged = this.handleTextChanged.bind(this);
+    this.handleImageChanged = this.handleImageChanged.bind(this);
   }
 
   componentDidMount() {
     clipboard.startWatching();
-    clipboard.on("text-changed", () => {
+    clipboard.on("text-changed", handleTextChanged());
+    clipboard.on("image-changed", handleImageChanged());
+
+  componentWillUnmount() {
+    clipboard.stopWatching();
+    clipboard.off("text-changed");
+  }
+
+    handleTextChanged() {
       this.setState(prevState => {
-        const text = clipboard.readText();
         return {
           clipboardStack: [
             ...prevState.clipboardStack,
-            new ClipboardItem("txt", text),
+            new ClipboardItem("txt", clipboard.readText()),
           ],
         };
       });
-    });
-    clipboard.on("image-changed", () => {
+    }
+
+    handleImageChanged() {
       this.setState(prevState => {
         const img = clipboard.readImage();
         const imgURI = img.toDataURL();
@@ -34,23 +49,19 @@ export default class Clipboard extends Component {
           ],
         };
       });
-    });
-  }
-  componentWillUnmount() {
-    clipboard.stopWatching();
-    clipboard.off("text-changed");
-  }
+    };
+
+
   render(props, state) {
     return (
-      <ul class="cpList">
+      <ul class="clipboard-list">
         {state.clipboardStack.map(item => (
-          <li>
-            {" "}
+          <li class="clipboard-item">
             {item.type === "txt" ? (
               <p>{item.data}</p>
             ) : (
               <img src={item.data} alt="image" />
-            )}{" "}
+            )}
           </li>
         ))}
       </ul>
