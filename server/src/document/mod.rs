@@ -48,8 +48,14 @@ impl Document {
         }
     }
 
-    /// Converts the document to a JSON string
+    /// Converts the document to a JSON string (pretty print in debug mode)
+    #[cfg(debug_assertions)]
     pub fn to_json(&self) -> serde_json::Result<String> {
         serde_json::to_string_pretty(self)
+    }
+
+    #[cfg(not(debug_assertions))]
+    pub fn to_json(&self) -> serde_json::Result<String> {
+        serde_json::to_string(self)
     }
 }
