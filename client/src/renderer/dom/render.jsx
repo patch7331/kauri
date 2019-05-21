@@ -38,7 +38,10 @@ export function renderDocumentNode(node) {
     case "Element":
       return renderTag(node);
     case "Text":
-      if (node.styles === {}) {
+      if (
+        Object.keys(node.styles).length === 0 &&
+        node.styles.constructor === Object
+      ) {
         return node.content;
       } else {
         return <span style={node.styles}>{node.content}</span>;
