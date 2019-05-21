@@ -20,8 +20,12 @@ export function renderDocumentNodes(nodes) {
  *
  * @example
  * renderDocumentNode({
- *   "type": "heading",
- *   "level": 1,
+ *   "type": "Element",
+ *   "tag": "heading",
+ *   "attributes" {
+ *     "level": "1"
+ *   },
+ *   "styles": {},
  *   "children": [ ... ]
  * });
  *
@@ -31,17 +35,33 @@ export function renderDocumentNodes(nodes) {
  */
 export function renderDocumentNode(node) {
   switch (node.type) {
+    case "Element":
+      return renderTag(node);
+    case "Text":
+      if (node.styles === {}) {
+        return node.content;
+      } else {
+        return <span style={node.styles}>{node.content}</span>;
+      }
+    default:
+      throw new RenderError(node, `Unknown type '${node.type}'.`);
+  }
+}
+
+/**
+ * Returns a component that matches the tag property of the node.
+ *
+ * @param {Object} node Node to match.
+ * @param {string} node.tag Tag of node to render.
+ * @return {PreactElement} A rendered preact element.
+ */
+function renderTag(node) {
+  switch (node.tag) {
     case "heading":
       return <Heading node={node} />;
     case "paragraph":
       return <Paragraph node={node} />;
-    case "text":
-      if (node.style == null) {
-        return node.content;
-      } else {
-        return <span style={node.style}>{node.content}</span>;
-      }
     default:
-      throw new RenderError(node, `Unknown type '${node.type}'.`);
+      throw new RenderError(node, `Unknown tag '${node.tag}'.`);
   }
 }

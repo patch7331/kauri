@@ -1,41 +1,49 @@
 {
-  "document": {
-    "title": "Kauri (Working Title)",
-    "paper": "A4",
-    "children": [
-      {
-        "type": "heading",
-        "level": 1,
-        "style": {
-          "textDecoration": "underline"
-        },
-        "children": [
-          {
-            "type": "text",
-            "style": null,
-            "content": "Hello, world!"
-          }
-        ]
+  "title": "Kauri (Working Title)",
+  "paperSize": {
+    "height": 297,
+    "width": 210,
+    "unit": "Millimetres"
+  },
+  "children": [
+    {
+      "type": "Element",
+      "tag": "heading",
+      "attributes": {
+        "level": "1"
       },
-      {
-        "type": "paragraph",
-        "style": {
-          "fontStyle": "italic"
+      "styles": {
+        "textDecorationLine": "underline"
+      },
+      "children": [
+        {
+          "type": "Text",
+          "content": "Hello, world!",
+          "styles": {}
+        }
+      ]
+    },
+    {
+      "type": "Element",
+      "tag": "paragraph",
+      "attributes": {},
+      "styles": {
+        "fontStyle": "italic"
+      },
+      "children": [
+        {
+          "type": "Text",
+          "content": "Kauri",
+          "styles": {}
         },
-        "children": [
-          {
-            "type": "text",
-            "content": "Kauri"
-          },
-          {
-            "type": "text",
-            "style": {
-              "fontWeight": "bold"
-            },
-            "content": " (working title) is a next generation document processor."
+        {
+          "type": "Text",
+          "content": " (working title) is a next generation document processor.",
+          "styles": {
+            "fontWeight": "bold"
           }
-        ]
-      }
-    ]
-  }
+        }
+      ]
+    }
+  ]
 }
