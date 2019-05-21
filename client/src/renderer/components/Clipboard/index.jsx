@@ -1,18 +1,18 @@
 /** @format */
 
+import "./styles.scss";
+import { Component, h } from "preact";
+import clipboard from "electron-clipboard-extended";
+
 /**
  * Stores and lists contents of system clipboard
  * @extends Component
  */
 
-import "./styles.scss";
-import { Component, h } from 'preact';
-import clipboard from "electron-clipboard-extended";
-
 export default class Clipboard extends Component {
   constructor(props) {
     super(props);
-    this.state = {clipboardStack: []};
+    this.state = { clipboardStack: [] };
     this.handleTextChanged = this.handleTextChanged.bind(this);
     this.handleImageChanged = this.handleImageChanged.bind(this);
   }
@@ -26,6 +26,7 @@ export default class Clipboard extends Component {
   componentWillUnmount() {
     clipboard.stopWatching();
     clipboard.off("text-changed");
+    clipboard.off("image-changed");
   }
 
   handleTextChanged() {
@@ -50,22 +51,21 @@ export default class Clipboard extends Component {
         ],
       };
     });
-  };
-
+  }
 
   render(props, state) {
     return (
-        <ul class="clipboard-list">
-          {state.clipboardStack.map(item => (
-              <li class="clipboard-item">
-                {item.type === "txt" ? (
-                    <p>{item.data}</p>
-                ) : (
-                    <img src={item.data} alt="image"/>
-                )}
-              </li>
-          ))}
-        </ul>
+      <ul class="clipboard-list">
+        {state.clipboardStack.map(item => (
+          <li class="clipboard-item">
+            {item.type === "txt" ? (
+              <p>{item.data}</p>
+            ) : (
+              <img src={item.data} alt="image" />
+            )}
+          </li>
+        ))}
+      </ul>
     );
   }
 }
