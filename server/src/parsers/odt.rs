@@ -15,8 +15,8 @@ pub struct ODTParser {
     auto_styles: HashMap<String, HashMap<String, String>>,
     is_span: bool,
     current_span_style: String,
-    set_children_underline: bool,
-    ensure_children_no_underline: bool,
+    set_children_underline: Vec<bool>,
+    ensure_children_no_underline: Vec<bool>,
     document_root: Document,
     document_hierarchy: Vec<Element>,
     archive: zip::ZipArchive<std::fs::File>,
@@ -45,8 +45,8 @@ impl ODTParser {
             auto_styles: HashMap::new(),
             is_span: false,
             current_span_style: String::new(),
-            set_children_underline: false,
-            ensure_children_no_underline: false,
+            set_children_underline: Vec::new(),
+            ensure_children_no_underline: Vec::new(),
             document_root,
             document_hierarchy,
             archive,
@@ -90,9 +90,9 @@ impl ODTParser {
                                         heading_begin(attributes),
                                         &self.auto_styles,
                                     );
-                                    self.ensure_children_no_underline =
-                                        ensure_children_no_underline_new;
-                                    self.set_children_underline = set_children_underline_new;
+                                    self.ensure_children_no_underline
+                                        .push(ensure_children_no_underline_new);
+                                    self.set_children_underline.push(set_children_underline_new);
                                     self.document_hierarchy.push(element);
                                 }
                                 "p" => {
@@ -104,9 +104,9 @@ impl ODTParser {
                                         paragraph_begin(attributes),
                                         &self.auto_styles,
                                     );
-                                    self.ensure_children_no_underline =
-                                        ensure_children_no_underline_new;
-                                    self.set_children_underline = set_children_underline_new;
+                                    self.ensure_children_no_underline
+                                        .push(ensure_children_no_underline_new);
+                                    self.set_children_underline.push(set_children_underline_new);
                                     self.document_hierarchy.push(element);
                                 }
                                 "span" => {
@@ -141,8 +141,10 @@ impl ODTParser {
                             .clone();
                         handle_underline(
                             &mut style,
-                            self.set_children_underline,
-                            self.ensure_children_no_underline,
+                            !self.set_children_underline.is_empty()
+                                && *self.set_children_underline.last().unwrap(),
+                            !self.ensure_children_no_underline.is_empty()
+                                && *self.ensure_children_no_underline.last().unwrap(),
                         );
                         text.styles = style;
                         self.current_span_style = String::new();
@@ -176,8 +178,8 @@ impl ODTParser {
                                         .children
                                         .push(Node::Element(child));
                                 }
-                                self.set_children_underline = false;
-                                self.ensure_children_no_underline = false;
+                                self.set_children_underline.pop();
+                                self.ensure_children_no_underline.pop();
                             }
                         }
                     } else if self.styles_begin {
