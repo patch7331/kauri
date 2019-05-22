@@ -38,7 +38,7 @@ impl ODTParser {
         }
     }
 
-	/// Parse the ODT file referenced by the file path
+    /// Parse the ODT file referenced by the file path
     pub fn parse(&mut self, filepath: &str) -> Result<String, String> {
         let archive = get_archive(filepath);
         if let Err(e) = archive {
@@ -71,144 +71,28 @@ impl ODTParser {
                 Ok(XmlEvent::StartElement {
                     name, attributes, ..
                 }) => {
-                    if let Some(prefix) = name.prefix {
-                        if prefix == "office" && name.local_name == "body" {
-                            self.body_begin = true;
-                        } else if self.body_begin {
-                            if prefix != "text" {
-                                continue;
-                            }
-                            match name.local_name.as_str() {
-                                "h" => {
-                                    let (
-                                        element,
-                                        set_children_underline_new,
-                                        ensure_children_no_underline_new,
-                                    ) = check_underline(
-                                        heading_begin(attributes),
-                                        &self.auto_styles,
-                                        !self.set_children_underline.is_empty()
-                                            && *self.set_children_underline.last().unwrap(),
-                                        !self.ensure_children_no_underline.is_empty()
-                                            && *self.ensure_children_no_underline.last().unwrap(),
-                                    );
-                                    self.ensure_children_no_underline
-                                        .push(ensure_children_no_underline_new);
-                                    self.set_children_underline.push(set_children_underline_new);
-                                    self.document_hierarchy.push(element);
-                                }
-                                "p" => {
-                                    let (
-                                        element,
-                                        set_children_underline_new,
-                                        ensure_children_no_underline_new,
-                                    ) = check_underline(
-                                        paragraph_begin(attributes),
-                                        &self.auto_styles,
-                                        !self.set_children_underline.is_empty()
-                                            && *self.set_children_underline.last().unwrap(),
-                                        !self.ensure_children_no_underline.is_empty()
-                                            && *self.ensure_children_no_underline.last().unwrap(),
-                                    );
-                                    self.ensure_children_no_underline
-                                        .push(ensure_children_no_underline_new);
-                                    self.set_children_underline.push(set_children_underline_new);
-                                    self.document_hierarchy.push(element);
-                                }
-                                "span" => {
-                                    let (
-                                        element,
-                                        set_children_underline_new,
-                                        ensure_children_no_underline_new,
-                                    ) = check_underline(
-                                        span_begin(attributes),
-                                        &self.auto_styles,
-                                        !self.set_children_underline.is_empty()
-                                            && *self.set_children_underline.last().unwrap(),
-                                        !self.ensure_children_no_underline.is_empty()
-                                            && *self.ensure_children_no_underline.last().unwrap(),
-                                    );
-                                    self.ensure_children_no_underline
-                                        .push(ensure_children_no_underline_new);
-                                    self.set_children_underline.push(set_children_underline_new);
-                                    self.document_hierarchy.push(element);
-                                }
-                                _ => (),
-                            }
-                        } else if prefix == "office" && name.local_name == "automatic-styles" {
-                            self.styles_begin = true;
-                        } else if self.styles_begin {
-                            if prefix == "style" && name.local_name == "style" {
-                                current_style_name = style_begin(attributes);
-                            } else if prefix == "style" && name.local_name == "text-properties" {
-                                current_style_value = text_properties_begin(attributes);
-                            }
-                        }
+                    let (current_style_name_new, current_style_value_new) =
+                        self.handle_element_start(name, attributes);
+                    if let Some(x) = current_style_name_new {
+                        current_style_name = x;
+                    }
+                    if let Some(x) = current_style_value_new {
+                        current_style_value = x;
                     }
                 }
-                Ok(XmlEvent::Characters(contents)) => {
-                    if self.document_hierarchy.is_empty() {
-                        continue;
-                    }
-                    // Currently the only type of tag expected to emit this event is the ones in the body,
-                    // in which case they will contain the document text
-                    let text = Text::new(contents);
-                    self.document_hierarchy
-                        .last_mut()
-                        .unwrap()
-                        .children
-                        .push(Node::Text(text));
-                }
+                Ok(XmlEvent::Characters(contents)) => self.handle_characters(contents),
                 Ok(XmlEvent::EndElement { name }) => {
-                    if self.body_begin {
-                        if let Some(prefix) = name.prefix {
-                            if prefix == "office" && name.local_name == "body" {
-                                break;
-                            } else if prefix == "text"
-                                && (name.local_name == "h"
-                                    || name.local_name == "p"
-                                    || name.local_name == "span")
-                            {
-                                if self.document_hierarchy.is_empty() {
-                                    // It shouldn't be empty now, if it is then this is an unmatched end tag
-                                    continue;
-                                }
-                                // The top of set_children_underline and ensure_children_no_underline is for this node's children,
-                                // so pop them here before we finish up with this node
-                                self.set_children_underline.pop();
-                                self.ensure_children_no_underline.pop();
-                                let mut child = self.document_hierarchy.pop().unwrap();
-                                if name.local_name == "span" {
-                                    handle_underline(
-                                        &mut child.styles,
-                                        !self.set_children_underline.is_empty()
-                                            && *self.set_children_underline.last().unwrap(),
-                                        !self.ensure_children_no_underline.is_empty()
-                                            && *self.ensure_children_no_underline.last().unwrap(),
-                                    );
-                                }
-                                if self.document_hierarchy.is_empty() {
-                                    self.document_root.children.push(Node::Element(child));
-                                } else {
-                                    self.document_hierarchy
-                                        .last_mut()
-                                        .unwrap()
-                                        .children
-                                        .push(Node::Element(child));
-                                }
-                            }
-                        }
-                    } else if self.styles_begin {
-                        if let Some(prefix) = name.prefix {
-                            if prefix == "office" && name.local_name == "automatic-styles" {
-                                self.styles_begin = false;
-                            } else if prefix == "style" && name.local_name == "style" {
-                                self.auto_styles
-                                    .insert(current_style_name, current_style_value);
-                                current_style_name = String::from("");
-                                current_style_value = HashMap::new();
-                            }
-                        }
+                    let result =
+                        self.handle_element_end(name, current_style_name, current_style_value);
+                    if let Some(x) = result {
+                        // If they were not used inside handle_element_end() then put them back
+                        let (current_style_name_new, current_style_value_new) = x;
+                        current_style_name = current_style_name_new;
+                        current_style_value = current_style_value_new;
+                    } else {
+                        // Otherwise reinitialise them
+                        current_style_name = String::new();
+                        current_style_value = HashMap::new();
                     }
                 }
                 Err(e) => {
@@ -220,6 +104,161 @@ impl ODTParser {
         }
 
         Ok(self.document_root.to_json().unwrap())
+    }
+
+    /// Handles a StartElement event from the XML parser by taking its contents (only name and attributes needed)
+    /// and returns the new values of current_style_name and current_style_value if either were set as a result
+    /// as well as mutating internal state accordingly
+    fn handle_element_start(
+        &mut self,
+        name: xml::name::OwnedName,
+        attributes: Vec<xml::attribute::OwnedAttribute>,
+    ) -> (Option<String>, Option<HashMap<String, String>>) {
+        let mut current_style_name: Option<String> = None;
+        let mut current_style_value: Option<HashMap<String, String>> = None;
+        if let Some(prefix) = name.prefix {
+            if prefix == "office" && name.local_name == "body" {
+                self.body_begin = true;
+            } else if self.body_begin {
+                if prefix != "text" {
+                    return (current_style_name, current_style_value);
+                }
+                match name.local_name.as_str() {
+                    "h" => {
+                        let (element, set_children_underline_new, ensure_children_no_underline_new) =
+                            check_underline(
+                                heading_begin(attributes),
+                                &self.auto_styles,
+                                !self.set_children_underline.is_empty()
+                                    && *self.set_children_underline.last().unwrap(),
+                                !self.ensure_children_no_underline.is_empty()
+                                    && *self.ensure_children_no_underline.last().unwrap(),
+                            );
+                        self.ensure_children_no_underline
+                            .push(ensure_children_no_underline_new);
+                        self.set_children_underline.push(set_children_underline_new);
+                        self.document_hierarchy.push(element);
+                    }
+                    "p" => {
+                        let (element, set_children_underline_new, ensure_children_no_underline_new) =
+                            check_underline(
+                                paragraph_begin(attributes),
+                                &self.auto_styles,
+                                !self.set_children_underline.is_empty()
+                                    && *self.set_children_underline.last().unwrap(),
+                                !self.ensure_children_no_underline.is_empty()
+                                    && *self.ensure_children_no_underline.last().unwrap(),
+                            );
+                        self.ensure_children_no_underline
+                            .push(ensure_children_no_underline_new);
+                        self.set_children_underline.push(set_children_underline_new);
+                        self.document_hierarchy.push(element);
+                    }
+                    "span" => {
+                        let (element, set_children_underline_new, ensure_children_no_underline_new) =
+                            check_underline(
+                                span_begin(attributes),
+                                &self.auto_styles,
+                                !self.set_children_underline.is_empty()
+                                    && *self.set_children_underline.last().unwrap(),
+                                !self.ensure_children_no_underline.is_empty()
+                                    && *self.ensure_children_no_underline.last().unwrap(),
+                            );
+                        self.ensure_children_no_underline
+                            .push(ensure_children_no_underline_new);
+                        self.set_children_underline.push(set_children_underline_new);
+                        self.document_hierarchy.push(element);
+                    }
+                    _ => (),
+                }
+            } else if prefix == "office" && name.local_name == "automatic-styles" {
+                self.styles_begin = true;
+            } else if self.styles_begin {
+                if prefix == "style" && name.local_name == "style" {
+                    current_style_name = Some(style_begin(attributes));
+                } else if prefix == "style" && name.local_name == "text-properties" {
+                    current_style_value = Some(text_properties_begin(attributes));
+                }
+            }
+        }
+        (current_style_name, current_style_value)
+    }
+
+    /// Handles a Characters event from the XML parser by taking its contents
+    /// and mutating internal state accordingly
+    fn handle_characters(&mut self, contents: String) {
+        if self.document_hierarchy.is_empty() {
+            return;
+        }
+        // Currently the only type of tag expected to emit this event is the ones in the body,
+        // in which case they will contain the document text
+        let text = Text::new(contents);
+        self.document_hierarchy
+            .last_mut()
+            .unwrap()
+            .children
+            .push(Node::Text(text));
+    }
+
+    /// Handles an EndElement event from the XML parser by taking its contents (the name of the element),
+    /// the style name and value of the current element and mutating internal state accordingly,
+    /// then it will return the current_style_name and current_style_value back if they were not used
+    fn handle_element_end(
+        &mut self,
+        name: xml::name::OwnedName,
+        current_style_name: String,
+        current_style_value: HashMap<String, String>,
+    ) -> Option<(String, HashMap<String, String>)> {
+        if self.body_begin {
+            if let Some(prefix) = name.prefix {
+                if prefix == "office" && name.local_name == "body" {
+                    return Some((current_style_name, current_style_value));
+                } else if prefix == "text"
+                    && (name.local_name == "h"
+                        || name.local_name == "p"
+                        || name.local_name == "span")
+                {
+                    if self.document_hierarchy.is_empty() {
+                        // It shouldn't be empty now, if it is then this is an unmatched end tag
+                        return Some((current_style_name, current_style_value));
+                    }
+                    // The top of set_children_underline and ensure_children_no_underline is for this node's children,
+                    // so pop them here before we finish up with this node
+                    self.set_children_underline.pop();
+                    self.ensure_children_no_underline.pop();
+                    let mut child = self.document_hierarchy.pop().unwrap();
+                    if name.local_name == "span" {
+                        handle_underline(
+                            &mut child.styles,
+                            !self.set_children_underline.is_empty()
+                                && *self.set_children_underline.last().unwrap(),
+                            !self.ensure_children_no_underline.is_empty()
+                                && *self.ensure_children_no_underline.last().unwrap(),
+                        );
+                    }
+                    if self.document_hierarchy.is_empty() {
+                        self.document_root.children.push(Node::Element(child));
+                    } else {
+                        self.document_hierarchy
+                            .last_mut()
+                            .unwrap()
+                            .children
+                            .push(Node::Element(child));
+                    }
+                }
+            }
+        } else if self.styles_begin {
+            if let Some(prefix) = name.prefix {
+                if prefix == "office" && name.local_name == "automatic-styles" {
+                    self.styles_begin = false;
+                } else if prefix == "style" && name.local_name == "style" {
+                    self.auto_styles
+                        .insert(current_style_name, current_style_value);
+                    return None;
+                }
+            }
+        }
+        Some((current_style_name, current_style_value))
     }
 }
 
