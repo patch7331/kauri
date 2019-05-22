@@ -6,7 +6,6 @@ use crate::document::node::{Element, Node, Text};
 use crate::document::units::DistanceUnit;
 use crate::document::{Document, PaperSize};
 use std::collections::HashMap;
-use std::fs;
 use xml::reader::{EventReader, XmlEvent};
 
 pub struct ODTParser {
@@ -40,7 +39,7 @@ impl ODTParser {
 
     /// Parse the ODT file referenced by the file path
     pub fn parse(&mut self, filepath: &str) -> Result<String, String> {
-        let archive = get_archive(filepath);
+        let archive = super::util::get_archive(filepath);
         if let Err(e) = archive {
             return Err(e.to_string());
         }
@@ -260,20 +259,6 @@ impl ODTParser {
         }
         Some((current_style_name, current_style_value))
     }
-}
-
-/// Takes a path to a file and returns a ZipArchive representation of it.
-/// This will make sure that the file is actually a zip file but will fail
-/// if the file does not exist
-fn get_archive(filepath: &str) -> Result<zip::ZipArchive<std::fs::File>, String> {
-    let file = fs::File::open(&std::path::Path::new(&filepath)).unwrap();
-    let archive = zip::ZipArchive::new(file);
-    if let Err(e) = archive {
-        // Handle case where the file is not even a zip file
-        return Result::Err(e.to_string());
-    }
-    let archive = archive.unwrap();
-    Result::Ok(archive)
 }
 
 /// Takes the results of either heading_begin() or paragraph_begin() (called params)
