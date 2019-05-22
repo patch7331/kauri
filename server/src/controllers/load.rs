@@ -38,13 +38,8 @@ pub fn load_controller(mut request: Request) {
 
 /// Handles a request for loading an ODT
 fn handle_odt(request: Request, filepath: &str) {
-    let parser = ODTParser::new(filepath);
-    if let Err(e) = parser {
-        respond(request, e.to_string(), true);
-        return;
-    }
-
-    let parsed_odt = parser.unwrap().parse();
+    let mut parser = ODTParser::new();
+    let parsed_odt = parser.parse(filepath);
     if let Err(e) = parsed_odt {
         respond(request, e.to_string(), true);
         return;

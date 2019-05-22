@@ -17,27 +17,17 @@ pub struct ODTParser {
     ensure_children_no_underline: Vec<bool>,
     document_root: Document,
     document_hierarchy: Vec<Element>,
-    archive: zip::ZipArchive<std::fs::File>,
 }
 
 impl ODTParser {
-    /// Initialises the struct's members given the path of an ODT file,
-    /// can return an error if there is an issue with the file
-    pub fn new(filepath: &str) -> Result<ODTParser, String> {
-        let archive = get_archive(filepath);
-        if let Err(e) = archive {
-            return Err(e);
-        }
-        let archive = archive.unwrap();
-
+    /// Initialises a new ODTParser instance
+    pub fn new() -> ODTParser {
         let document_root = Document::new(
             "Kauri (Working Title)".to_string(),
             PaperSize::new(297, 210, DistanceUnit::Millimetres),
         );
-
         let document_hierarchy: Vec<Element> = Vec::new();
-
-        Ok(ODTParser {
+        ODTParser {
             body_begin: false,
             styles_begin: false,
             auto_styles: HashMap::new(),
@@ -45,14 +35,26 @@ impl ODTParser {
             ensure_children_no_underline: Vec::new(),
             document_root,
             document_hierarchy,
-            archive,
-        })
+        }
     }
 
-    /// Actually parses the ODT file and returns a JSON representation of it
-    pub fn parse(&mut self) -> Result<String, String> {
+	/// Parse the ODT file referenced by the file path
+    pub fn parse(&mut self, filepath: &str) -> Result<String, String> {
+        let archive = get_archive(filepath);
+        if let Err(e) = archive {
+            return Err(e.to_string());
+        }
+        let archive = archive.unwrap();
+        self.parse_private(archive)
+    }
+
+    /// Actually parse the file, this is a separate function so we actually own the archive here
+    fn parse_private(
+        &mut self,
+        mut archive: zip::ZipArchive<std::fs::File>,
+    ) -> Result<String, String> {
         // returns a ZipFile struct which implements Read if the file is in the archive
-        let content_xml = self.archive.by_name("content.xml");
+        let content_xml = archive.by_name("content.xml");
         if let Err(e) = content_xml {
             // Handle case where there is no content.xml (so probably not actually an ODT file)
             return Err(e.to_string());
