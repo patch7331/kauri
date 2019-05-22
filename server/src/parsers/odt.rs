@@ -84,11 +84,15 @@ impl ODTParser {
                                 "h" => {
                                     let (
                                         element,
-                                        ensure_children_no_underline_new,
                                         set_children_underline_new,
+                                        ensure_children_no_underline_new,
                                     ) = check_underline(
                                         heading_begin(attributes),
                                         &self.auto_styles,
+                                        !self.set_children_underline.is_empty()
+                                            && *self.set_children_underline.last().unwrap(),
+                                        !self.ensure_children_no_underline.is_empty()
+                                            && *self.ensure_children_no_underline.last().unwrap(),
                                     );
                                     self.ensure_children_no_underline
                                         .push(ensure_children_no_underline_new);
@@ -98,11 +102,15 @@ impl ODTParser {
                                 "p" => {
                                     let (
                                         element,
-                                        ensure_children_no_underline_new,
                                         set_children_underline_new,
+                                        ensure_children_no_underline_new,
                                     ) = check_underline(
                                         paragraph_begin(attributes),
                                         &self.auto_styles,
+                                        !self.set_children_underline.is_empty()
+                                            && *self.set_children_underline.last().unwrap(),
+                                        !self.ensure_children_no_underline.is_empty()
+                                            && *self.ensure_children_no_underline.last().unwrap(),
                                     );
                                     self.ensure_children_no_underline
                                         .push(ensure_children_no_underline_new);
@@ -223,14 +231,16 @@ fn get_archive(filepath: &str) -> Result<zip::ZipArchive<std::fs::File>, String>
 
 /// Takes the results of either heading_begin() or paragraph_begin() (called params)
 /// and a reference to the map of automatic style names to the map of CSS properties,
-/// and returns the element from params together with the values for ensure_children_no_underline
-/// and set_children_underline in parse_odt()
+/// and returns the element from params together with the values for set_children_underline
+/// and ensure_children_no_underline in ODTParser
 fn check_underline(
     params: (Element, String),
     auto_styles: &HashMap<String, HashMap<String, String>>,
+    set_children_underline_old: bool,
+    ensure_children_no_underline_old: bool,
 ) -> (Element, bool, bool) {
-    let mut ensure_children_no_underline = false;
-    let mut set_children_underline = false;
+    let mut ensure_children_no_underline = ensure_children_no_underline_old;
+    let mut set_children_underline = set_children_underline_old;
     let (mut element, style_name) = params;
     let style = auto_styles
         .get(&style_name)
@@ -242,17 +252,17 @@ fn check_underline(
         if x == "underline" {
             ensure_children_no_underline = true;
             if let Some(x) = underline_color {
-                if x == "currentcolor" {
-                    set_children_underline = true;
-                }
+                set_children_underline = x == "currentcolor";
             }
+        } else if x == "none" {
+            ensure_children_no_underline = false;
         }
     }
     element.styles = style;
     (
         element,
-        ensure_children_no_underline,
         set_children_underline,
+        ensure_children_no_underline,
     )
 }
 
