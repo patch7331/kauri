@@ -13,8 +13,6 @@ pub struct ODTParser {
     body_begin: bool,
     styles_begin: bool,
     auto_styles: HashMap<String, HashMap<String, String>>,
-    is_span: bool,
-    current_span_style: String,
     set_children_underline: Vec<bool>,
     ensure_children_no_underline: Vec<bool>,
     document_root: Document,
@@ -43,8 +41,6 @@ impl ODTParser {
             body_begin: false,
             styles_begin: false,
             auto_styles: HashMap::new(),
-            is_span: false,
-            current_span_style: String::new(),
             set_children_underline: Vec::new(),
             ensure_children_no_underline: Vec::new(),
             document_root,
@@ -118,8 +114,22 @@ impl ODTParser {
                                     self.document_hierarchy.push(element);
                                 }
                                 "span" => {
-                                    self.is_span = true;
-                                    self.current_span_style = span_begin(attributes);
+                                    let (
+                                        element,
+                                        set_children_underline_new,
+                                        ensure_children_no_underline_new,
+                                    ) = check_underline(
+                                        span_begin(attributes),
+                                        &self.auto_styles,
+                                        !self.set_children_underline.is_empty()
+                                            && *self.set_children_underline.last().unwrap(),
+                                        !self.ensure_children_no_underline.is_empty()
+                                            && *self.ensure_children_no_underline.last().unwrap(),
+                                    );
+                                    self.ensure_children_no_underline
+                                        .push(ensure_children_no_underline_new);
+                                    self.set_children_underline.push(set_children_underline_new);
+                                    self.document_hierarchy.push(element);
                                 }
                                 _ => (),
                             }
@@ -140,24 +150,7 @@ impl ODTParser {
                     }
                     // Currently the only type of tag expected to emit this event is the ones in the body,
                     // in which case they will contain the document text
-                    let mut text = Text::new(contents);
-                    if self.is_span {
-                        let mut style = self
-                            .auto_styles
-                            .get(&self.current_span_style)
-                            .unwrap_or(&HashMap::new()) // In case the style isn't there somehow
-                            .clone();
-                        handle_underline(
-                            &mut style,
-                            !self.set_children_underline.is_empty()
-                                && *self.set_children_underline.last().unwrap(),
-                            !self.ensure_children_no_underline.is_empty()
-                                && *self.ensure_children_no_underline.last().unwrap(),
-                        );
-                        text.styles = style;
-                        self.current_span_style = String::new();
-                        self.is_span = false;
-                    }
+                    let text = Text::new(contents);
                     self.document_hierarchy
                         .last_mut()
                         .unwrap()
@@ -170,13 +163,24 @@ impl ODTParser {
                             if prefix == "office" && name.local_name == "body" {
                                 break;
                             } else if prefix == "text"
-                                && (name.local_name == "h" || name.local_name == "p")
+                                && (name.local_name == "h"
+                                    || name.local_name == "p"
+                                    || name.local_name == "span")
                             {
                                 if self.document_hierarchy.is_empty() {
                                     // It shouldn't be empty now, if it is then this is an unmatched end tag
                                     continue;
                                 }
-                                let child = self.document_hierarchy.pop().unwrap();
+                                let mut child = self.document_hierarchy.pop().unwrap();
+                                if name.local_name == "span" {
+                                    handle_underline(
+                                        &mut child.styles,
+                                        !self.set_children_underline.is_empty()
+                                            && *self.set_children_underline.last().unwrap(),
+                                        !self.ensure_children_no_underline.is_empty()
+                                            && *self.ensure_children_no_underline.last().unwrap(),
+                                    );
+                                }
                                 if self.document_hierarchy.is_empty() {
                                     self.document_root.children.push(Node::Element(child));
                                 } else {
@@ -318,8 +322,7 @@ fn heading_begin(attributes: Vec<xml::attribute::OwnedAttribute>) -> (Element, S
 }
 
 /// Takes the set of attributes of a text:p tag in the ODT's content.xml,
-/// and returns a paragraph element
-/// together with the value of the text:style-name attribute of the tag
+/// and returns a paragraph element together with the value of the text:style-name attribute of the tag
 fn paragraph_begin(attributes: Vec<xml::attribute::OwnedAttribute>) -> (Element, String) {
     let mut style_name = String::new();
     for i in attributes {
@@ -333,8 +336,8 @@ fn paragraph_begin(attributes: Vec<xml::attribute::OwnedAttribute>) -> (Element,
 }
 
 /// Takes the set of attributes of a text:span tag in the ODT's content.xml
-/// and returns the value of the text:style-name attribute of the tag
-fn span_begin(attributes: Vec<xml::attribute::OwnedAttribute>) -> String {
+/// and returns a span element together with the value of the text:style-name attribute of the tag
+fn span_begin(attributes: Vec<xml::attribute::OwnedAttribute>) -> (Element, String) {
     let mut style_name = String::new();
     for i in attributes {
         if i.name.prefix.unwrap_or_else(|| "".to_string()) == "text"
@@ -343,7 +346,7 @@ fn span_begin(attributes: Vec<xml::attribute::OwnedAttribute>) -> String {
             style_name = i.value;
         }
     }
-    style_name
+    (Element::new("span".to_string()), style_name)
 }
 
 /// Takes the set of attributes of a style:style tag in the ODT's content.xml,
