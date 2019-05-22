@@ -171,6 +171,10 @@ impl ODTParser {
                                     // It shouldn't be empty now, if it is then this is an unmatched end tag
                                     continue;
                                 }
+                                // The top of set_children_underline and ensure_children_no_underline is for this node's children,
+                                // so pop them here before we finish up with this node
+                                self.set_children_underline.pop();
+                                self.ensure_children_no_underline.pop();
                                 let mut child = self.document_hierarchy.pop().unwrap();
                                 if name.local_name == "span" {
                                     handle_underline(
@@ -190,8 +194,6 @@ impl ODTParser {
                                         .children
                                         .push(Node::Element(child));
                                 }
-                                self.set_children_underline.pop();
-                                self.ensure_children_no_underline.pop();
                             }
                         }
                     } else if self.styles_begin {
