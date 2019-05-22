@@ -4,6 +4,7 @@ import { h } from "preact";
 
 import Heading from "components/Editor/Heading";
 import Paragraph from "components/Editor/Paragraph";
+import Span from "components/Editor/Span";
 import RenderError from "dom/RenderError";
 
 /**
@@ -38,14 +39,7 @@ export function renderDocumentNode(node) {
     case "Element":
       return renderTag(node);
     case "Text":
-      if (
-        Object.keys(node.styles).length === 0 &&
-        node.styles.constructor === Object
-      ) {
-        return node.content;
-      } else {
-        return <span style={node.styles}>{node.content}</span>;
-      }
+      return node.content;
     default:
       throw new RenderError(node, `Unknown type '${node.type}'.`);
   }
@@ -64,6 +58,8 @@ function renderTag(node) {
       return <Heading node={node} />;
     case "paragraph":
       return <Paragraph node={node} />;
+    case "span":
+      return <Span node={node} />;
     default:
       throw new RenderError(node, `Unknown tag '${node.tag}'.`);
   }

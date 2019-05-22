@@ -37,11 +37,18 @@
           "styles": {}
         },
         {
-          "type": "Text",
-          "content": " (working title) is a next generation document processor.",
+          "type": "Element",
+          "tag": "span",
+          "attributes": {},
           "styles": {
             "fontWeight": "bold"
-          }
+          },
+          "children": [
+            {
+              "type": "Text",
+              "content": " (working title) is a next generation document processor."
+            }
+          ]
         }
       ]
     }
