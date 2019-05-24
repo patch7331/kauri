@@ -11,7 +11,8 @@ import RenderError from "dom/RenderError";
  * @return {PreactElement} A rendered preact element.
  */
 export default function Heading(props) {
-  const { children = [], level = 1, style = {} } = props.node;
+  const { children = [], attributes = {}, styles = {} } = props.node;
+  const { level = 1 } = attributes;
   const Tag = `h${level}`;
 
   // Ensure level is within valid range
@@ -20,7 +21,7 @@ export default function Heading(props) {
   }
 
   return (
-    <Tag class="editor__heading" style={style}>
+    <Tag class="editor__heading" style={styles}>
       {renderDocumentNodes(children)}
     </Tag>
   );
