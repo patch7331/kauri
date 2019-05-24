@@ -9,7 +9,7 @@ import { renderDocumentNodes } from "dom/render";
  * @param {Object} props.node DOM Node used to create a paragraph.
  * @return {PreactElement} A rendered preact element.
  */
-export default function Paragraph(props) {
+export default function Span(props) {
   const { children = [], styles = {} } = props.node;
   return <span style={styles}>{renderDocumentNodes(children)}</span>;
 }
