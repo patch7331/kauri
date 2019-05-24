@@ -34,8 +34,8 @@
     "clean-check": "yarn prettier --check \"src/**/*.js?(x)\" *.js"
   },
   "devDependencies": {
-    "@babel/core": "^7.4.3",
-    "@babel/preset-env": "^7.4.3",
+    "@babel/core": "^7.4.5",
+    "@babel/preset-env": "^7.4.5",
     "@babel/preset-react": "^7.0.0",
     "babel-loader": "^8.0.5",
     "css-loader": "^2.1.1",
@@ -45,7 +45,7 @@
     "node-sass": "^4.11.0",
     "prettier": "1.17.1",
     "sass-loader": "^7.1.0",
-    "webpack": "^4.32.0",
+    "webpack": "^4.32.2",
     "webpack-cli": "^3.3.0"
   },
   "dependencies": {
