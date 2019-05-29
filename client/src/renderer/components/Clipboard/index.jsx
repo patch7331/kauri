@@ -57,7 +57,7 @@ export default class Clipboard extends Component {
     return (
       <ul class="clipboard">
         {state.clipboardStack.map(item => (
-          <li class="clipboard-item">
+          <li class="clipboard__item">
             {item.type === "txt" ? (
               <p>{item.data}</p>
             ) : (
