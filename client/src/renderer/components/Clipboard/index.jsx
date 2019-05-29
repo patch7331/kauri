@@ -55,9 +55,9 @@ export default class Clipboard extends Component {
 
   render(props, state) {
     return (
-      <ul class="clipboard-list">
+      <ul class="clipboard">
         {state.clipboardStack.map(item => (
-          <li class="clipboard-item">
+          <li class="clipboard__item">
             {item.type === "txt" ? (
               <p>{item.data}</p>
             ) : (
