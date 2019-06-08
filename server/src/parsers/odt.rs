@@ -6,6 +6,7 @@ use crate::document::node::{Element, Node, Text};
 use crate::document::units::DistanceUnit;
 use crate::document::{Document, PaperSize};
 use std::collections::HashMap;
+use std::io::BufReader;
 use xml::reader::{EventReader, XmlEvent};
 
 pub struct ODTParser {
@@ -58,12 +59,13 @@ impl ODTParser {
             // Handle case where there is no content.xml (so probably not actually an ODT file)
             return Err(e.to_string());
         }
+        let content_xml = BufReader::new(content_xml.unwrap()); //add buffering because quick-xml's reader requires it
 
         // These are here instead of the struct because we may need to move the contents of these somewhere else
         let mut current_style_name = String::new();
         let mut current_style_value: HashMap<String, String> = HashMap::new();
 
-        let parser = EventReader::new(content_xml.unwrap());
+        let parser = EventReader::new(content_xml);
         for e in parser {
             // Iterate through the XML
             match e {
