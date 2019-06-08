@@ -73,16 +73,12 @@ impl ODTParser {
             // Iterate through the XML
             match parser.read_event(&mut buffer) {
                 Ok(Event::Start(contents)) => {
-                    let (current_style_name_new, current_style_value_new) = self
-                        .handle_element_start(
-                            std::str::from_utf8(contents.name()).unwrap_or(":"),
-                            contents.attributes(),
-                        );
+                    let current_style_name_new = self.handle_element_start(
+                        std::str::from_utf8(contents.name()).unwrap_or(":"),
+                        contents.attributes(),
+                    );
                     if let Some(x) = current_style_name_new {
                         current_style_name = x;
-                    }
-                    if let Some(x) = current_style_value_new {
-                        current_style_value = x;
                     }
                 }
                 Ok(Event::Text(contents)) => {
@@ -110,6 +106,15 @@ impl ODTParser {
                         current_style_value = HashMap::new();
                     }
                 }
+                Ok(Event::Empty(contents)) => {
+                    let current_style_value_new = self.handle_element_empty(
+                        std::str::from_utf8(contents.name()).unwrap_or(":"),
+                        contents.attributes(),
+                    );
+                    if let Some(x) = current_style_value_new {
+                        current_style_value = x;
+                    }
+                }
                 Ok(Event::Eof) => break,
                 Err(e) => {
                     println!("Error: {}", e);
@@ -123,22 +128,17 @@ impl ODTParser {
     }
 
     /// Handles a StartElement event from the XML parser by taking its contents (only name and attributes needed)
-    /// and returns the new values of current_style_name and current_style_value if either were set as a result
+    /// and returns the new value of current_style_name if it was set as a result
     /// as well as mutating internal state accordingly
-    fn handle_element_start(
-        &mut self,
-        name: &str,
-        attributes: Attributes,
-    ) -> (Option<String>, Option<HashMap<String, String>>) {
+    fn handle_element_start(&mut self, name: &str, attributes: Attributes) -> Option<String> {
         let mut current_style_name: Option<String> = None;
-        let mut current_style_value: Option<HashMap<String, String>> = None;
         let (prefix, local_name) = name.split_at(name.find(':').unwrap_or(0));
         let local_name = &local_name[1..];
         if prefix == "office" && local_name == "body" {
             self.body_begin = true;
         } else if self.body_begin {
             if prefix != "text" {
-                return (current_style_name, current_style_value);
+                return current_style_name;
             }
             match local_name {
                 "h" => {
@@ -190,14 +190,25 @@ impl ODTParser {
             }
         } else if prefix == "office" && local_name == "automatic-styles" {
             self.styles_begin = true;
-        } else if self.styles_begin {
-            if prefix == "style" && local_name == "style" {
-                current_style_name = Some(style_begin(attributes));
-            } else if prefix == "style" && local_name == "text-properties" {
-                current_style_value = Some(text_properties_begin(attributes));
-            }
+        } else if self.styles_begin && prefix == "style" && local_name == "style" {
+            current_style_name = Some(style_begin(attributes));
         }
-        (current_style_name, current_style_value)
+        current_style_name
+    }
+
+    /// Handles an EmptyElement event from the XML parser by taking its contents (only name and attributes needed)
+    /// and returns the new value of current_style_value if it was set as a result
+    /// as well as mutating internal state accordingly
+    fn handle_element_empty(
+        &mut self,
+        name: &str,
+        attributes: Attributes,
+    ) -> Option<HashMap<String, String>> {
+        if name == "style:text-properties" {
+            Some(text_properties_begin(attributes))
+        } else {
+            None
+        }
     }
 
     /// Handles a Characters event from the XML parser by taking its contents
@@ -456,7 +467,7 @@ fn text_properties_begin(attributes: Attributes) -> HashMap<String, String> {
                 &i.unescaped_value()
                     .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
             )
-            .unwrap_or("")
+            .unwrap_or("what")
             .to_string();
             if prefix == "fo" {
                 if local_name == "font-weight" {
