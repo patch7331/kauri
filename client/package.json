@@ -43,7 +43,7 @@
     "electron-builder": "^20.43.0",
     "electron-webpack": "^2.6.2",
     "node-sass": "^4.11.0",
-    "prettier": "1.18.1",
+    "prettier": "1.18.2",
     "sass-loader": "^7.1.0",
     "webpack": "^4.32.2",
     "webpack-cli": "^3.3.0"
