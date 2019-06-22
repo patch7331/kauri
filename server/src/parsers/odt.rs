@@ -134,7 +134,7 @@ impl ODTParser {
         let mut current_style_name: Option<String> = None;
         let (prefix, local_name) = name.split_at(name.find(':').unwrap_or(0));
         let local_name = &local_name[1..];
-        if prefix == "office" && local_name == "body" {
+        if name == "office:body" {
             self.body_begin = true;
         } else if self.body_begin {
             if prefix != "text" {
@@ -188,9 +188,9 @@ impl ODTParser {
                 }
                 _ => (),
             }
-        } else if prefix == "office" && local_name == "automatic-styles" {
+        } else if name == "office:automatic-styles" {
             self.styles_begin = true;
-        } else if self.styles_begin && prefix == "style" && local_name == "style" {
+        } else if self.styles_begin && name == "style:style" {
             current_style_name = Some(style_begin(attributes));
         }
         current_style_name
@@ -239,7 +239,7 @@ impl ODTParser {
         let (prefix, local_name) = name.split_at(name.find(':').unwrap_or(0));
         let local_name = &local_name[1..];
         if self.body_begin {
-            if prefix == "office" && local_name == "body" {
+            if name == "office:body" {
                 return Some((current_style_name, current_style_value));
             } else if prefix == "text"
                 && (local_name == "h" || local_name == "p" || local_name == "span")
@@ -273,9 +273,9 @@ impl ODTParser {
                 }
             }
         } else if self.styles_begin {
-            if prefix == "office" && local_name == "automatic-styles" {
+            if name == "office:automatic-styles" {
                 self.styles_begin = false;
-            } else if prefix == "style" && local_name == "style" {
+            } else if name == "style:style" {
                 self.auto_styles
                     .insert(current_style_name, current_style_value);
                 return None;
@@ -361,9 +361,7 @@ fn heading_begin(attributes: Attributes) -> (Element, String) {
     for i in attributes {
         if let Ok(i) = i {
             let name = std::str::from_utf8(i.key).unwrap_or(":");
-            let (prefix, local_name) = name.split_at(name.find(':').unwrap_or(0));
-            let local_name = &local_name[1..];
-            if prefix == "text" && local_name == "outline-level" {
+            if name == "text:outline-level" {
                 level = std::str::from_utf8(
                     &i.unescaped_value()
                         .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
@@ -371,7 +369,7 @@ fn heading_begin(attributes: Attributes) -> (Element, String) {
                 .unwrap_or("1")
                 .parse::<f64>()
                 .unwrap_or(1.0);
-            } else if prefix == "text" && local_name == "style-name" {
+            } else if name == "text:style-name" {
                 style_name = std::str::from_utf8(
                     &i.unescaped_value()
                         .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
@@ -395,9 +393,7 @@ fn paragraph_begin(attributes: Attributes) -> (Element, String) {
     for i in attributes {
         if let Ok(i) = i {
             let name = std::str::from_utf8(i.key).unwrap_or(":");
-            let (prefix, local_name) = name.split_at(name.find(':').unwrap_or(0));
-            let local_name = &local_name[1..];
-            if prefix == "text" && local_name == "style-name" {
+            if name == "text:style-name" {
                 style_name = std::str::from_utf8(
                     &i.unescaped_value()
                         .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
@@ -417,9 +413,7 @@ fn span_begin(attributes: Attributes) -> (Element, String) {
     for i in attributes {
         if let Ok(i) = i {
             let name = std::str::from_utf8(i.key).unwrap_or(":");
-            let (prefix, local_name) = name.split_at(name.find(':').unwrap_or(0));
-            let local_name = &local_name[1..];
-            if prefix == "text" && local_name == "style-name" {
+            if name == "text:style-name" {
                 style_name = std::str::from_utf8(
                     &i.unescaped_value()
                         .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
@@ -438,9 +432,7 @@ fn style_begin(attributes: Attributes) -> String {
     for i in attributes {
         if let Ok(i) = i {
             let name = std::str::from_utf8(i.key).unwrap_or(":");
-            let (prefix, local_name) = name.split_at(name.find(':').unwrap_or(0));
-            let local_name = &local_name[1..];
-            if prefix == "style" && local_name == "name" {
+            if name == "style:name" {
                 return std::str::from_utf8(
                     &i.unescaped_value()
                         .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
