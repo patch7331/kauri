@@ -3,7 +3,6 @@ name: Bug report
 about: Report an issue you've found with Kauri
 labels: bug
 ---
-
 #### Describe the issue
 A clear and concise description of what the bug is.
 
