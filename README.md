@@ -46,4 +46,4 @@ who participated in this project.
 ## 🎉 Acknowledgements
 
  - Our friends and families for their support
- - Dr Alexander Mendes
+ - [Dr Alexandre Mendes](https://www.newcastle.edu.au/profile/alexandre-mendes)
