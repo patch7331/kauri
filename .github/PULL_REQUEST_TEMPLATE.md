@@ -1,16 +1,15 @@
-## Proposed Changes
+### 🚨 Contributor Checklist
+
+ - [x] I have read and followed the [Contributing guide](https://github.com/sean0x42/kauri/blob/develop/.github/CONTRIBUTING.md).
+ - [ ] I am merging into the appropriate branch (usually `develop`).
+ - [ ] I am merging from a feature/bugfix branch (not my `master` branch).
+ - [ ] I have run appropriate [linters](https://github.com/sean0x42/kauri/blob/develop/.github/CONTRIBUTING.md#linters) as outlined in the Contributing guide.
+ - [ ] I have added any major changes to `CHANGELOG.md`.
+
+
+### Proposed Changes
+
  - List changes proposed by this PR
  - Please be descriptive
 
-## Related Stories
- - Links to any relevant Jira stories belong here.
- - And here...
-
-## Acknowledgements
- - [x] I have read and followed the [Contributing guide](https://github.com/sean0x42/kauri/blob/master/.github/CONTRIBUTING.md).
- - [ ] I have followed the branching requirements.
- - [ ] I have run `cargo fmt` and `cargo clippy` (for Rust contributions).
- - [ ] I have run `yarn clean` (for JavaScript contributions).
- - [ ] I have added any major changes to `CHANGELOG.md`.
-
-Please review @sean0x42
+❤️ Thank you for your contribution!
