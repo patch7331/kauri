@@ -203,6 +203,8 @@ impl ODTParser {
             current_style_name = Some(style_begin(attributes));
         } else if name == "style:table-row-properties" {
             current_style_value = Some(table_row_properties_begin(attributes));
+        } else if name == "style:table-properties" {
+            current_style_value = Some(table_properties_begin(attributes))
         }
         (current_style_name, current_style_value)
     }
@@ -217,8 +219,6 @@ impl ODTParser {
     ) -> Option<HashMap<String, String>> {
         if name == "style:text-properties" {
             Some(text_properties_begin(attributes))
-        } else if name == "style:table-properties" {
-            Some(table_properties_begin(attributes))
         } else if name == "style:table-column-properties" {
             Some(table_column_properties_begin(attributes))
         } else {
