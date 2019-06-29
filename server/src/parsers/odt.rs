@@ -208,6 +208,8 @@ impl ODTParser {
             Some(text_properties_begin(attributes))
         } else if name == "style:table-properties" {
             Some(table_properties_begin(attributes))
+        } else if name == "style:table-column-properties" {
+            Some(table_column_properties_begin(attributes))
         } else {
             None
         }
@@ -662,6 +664,45 @@ fn table_properties_begin(attributes: Attributes) -> HashMap<String, String> {
                 "width".to_string(),
                 format!("calc(100% - {} - {})", margin_left, margin_right),
             );
+        }
+    }
+    map
+}
+
+/// Takes the set of attributes of a style:table-column-properties tag in the ODT's content.xml,
+/// and creates a map of CSS properties based on the attributes
+fn table_column_properties_begin(attributes: Attributes) -> HashMap<String, String> {
+    let mut map: HashMap<String, String> = HashMap::new();
+    for i in attributes {
+        if let Ok(i) = i {
+            let name = std::str::from_utf8(i.key).unwrap_or(":");
+            let value = std::str::from_utf8(
+                &i.unescaped_value()
+                    .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+            )
+            .unwrap_or("what")
+            .to_string();
+            match name {
+                "fo:break-after" => {
+                    if value == "auto" || value == "column" || value == "page" {
+                        map.insert("breakAfter".to_string(), value);
+                    }
+                }
+                "fo:break-before" => {
+                    if value == "auto" || value == "column" || value == "page" {
+                        map.insert("breakBefore".to_string(), value);
+                    }
+                }
+                "style:column-width" => {
+                    map.insert("width".to_string(), value);
+                }
+                "style:use-optimal-column-width" => {
+                    if value == "true" {
+                        map.insert("width".to_string(), "auto".to_string());
+                    }
+                }
+                _ => (),
+            }
         }
     }
     map
