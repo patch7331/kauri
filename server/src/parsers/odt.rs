@@ -206,6 +206,8 @@ impl ODTParser {
     ) -> Option<HashMap<String, String>> {
         if name == "style:text-properties" {
             Some(text_properties_begin(attributes))
+        } else if name == "style:table-properties" {
+            Some(table_properties_begin(attributes))
         } else {
             None
         }
@@ -518,6 +520,149 @@ fn text_properties_begin(attributes: Attributes) -> HashMap<String, String> {
         // The ODT standard supports double underlines of any kind (solid, dotted, etc), while CSS
         // only supports double solid underlines, so prioritize the double over the line style?
         map.insert("textDecorationStyle".to_string(), "double".to_string());
+    }
+    map
+}
+
+enum TableAlign {
+    Center,
+    Left,
+    Right,
+    Margins,
+}
+
+/// Takes the set of attributes of a style:table-properties tag in the ODT's content.xml,
+/// and creates a map of CSS properties based on the attributes
+fn table_properties_begin(attributes: Attributes) -> HashMap<String, String> {
+    let mut map: HashMap<String, String> = HashMap::new();
+    let mut table_alignment = TableAlign::Margins;
+    let mut margin_left = "0cm".to_string();
+    let mut margin_right = "0cm".to_string();
+    for i in attributes {
+        if let Ok(i) = i {
+            let name = std::str::from_utf8(i.key).unwrap_or(":");
+            let (prefix, local_name) = name.split_at(name.find(':').unwrap_or(0));
+            let local_name = &local_name[1..];
+            let value = std::str::from_utf8(
+                &i.unescaped_value()
+                    .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+            )
+            .unwrap_or("what")
+            .to_string();
+            if prefix == "fo" {
+                match local_name {
+                    "background-color" => {
+                        map.insert("fontWeight".to_string(), value);
+                    }
+                    "break-after" => {
+                        if value == "auto" || value == "column" || value == "page" {
+                            map.insert("breakAfter".to_string(), value);
+                        }
+                    }
+                    "break-before" => {
+                        if value == "auto" || value == "column" || value == "page" {
+                            map.insert("breakBefore".to_string(), value);
+                        }
+                    }
+                    "margin" => {
+                        let margin_split = value.clone();
+                        let mut margin_split = margin_split.split(' ');
+                        let right = margin_split.nth(1);
+                        let left = margin_split.nth(1);
+                        margin_left = left.unwrap_or("0cm").to_string();
+                        margin_right = right.unwrap_or("0cm").to_string();
+                        map.insert("margin".to_string(), value);
+                    }
+                    "margin-top" => {
+                        map.insert("marginTop".to_string(), value);
+                    }
+                    "margin-bottom" => {
+                        map.insert("marginLeft".to_string(), value);
+                    }
+                    "margin-left" => {
+                        margin_left = value.clone();
+                        map.insert("marginRight".to_string(), value);
+                    }
+                    "margin-right" => {
+                        margin_right = value.clone();
+                        map.insert("marginBottom".to_string(), value);
+                    }
+                    _ => (),
+                }
+            } else if prefix == "style" {
+                match local_name {
+                    "rel-width" | "width" => {
+                        map.insert("width".to_string(), value);
+                    }
+                    "shadow" => {
+                        map.insert("boxShadow".to_string(), value);
+                    }
+                    "writing-mode" => {
+                        match value.as_str() {
+                            // According to the MDN the replacement for "rl" and "rl-tb" is also "horizontal-tb" apparently
+                            "lr-tb" | "lr" | "rl" | "rl-tb" => {
+                                map.insert("writingMode".to_string(), "horizontal-tb".to_string());
+                            }
+                            // MDN says "tb" is supposed to be replaced by "vertical-lr", but the ODT definition says that "tb" is a synonym for "tb-rl"
+                            "tb-rl" | "tb" => {
+                                map.insert("writingMode".to_string(), "vertical-rl".to_string());
+                            }
+                            "tb-lr" => {
+                                map.insert("writingMode".to_string(), "vertical-lr".to_string());
+                            }
+                            _ => (),
+                        }
+                    }
+                    _ => (),
+                }
+            } else if prefix == "table" {
+                match local_name {
+                    "align" => match value.as_str() {
+                        "center" => table_alignment = TableAlign::Center,
+                        "left" => table_alignment = TableAlign::Left,
+                        "right" => table_alignment = TableAlign::Right,
+                        "margins" => table_alignment = TableAlign::Margins,
+                        _ => (),
+                    },
+                    "border-model" => match value.as_str() {
+                        "collapsing" => {
+                            map.insert("borderCollapse".to_string(), "collapse".to_string());
+                        }
+                        "separating" => {
+                            map.insert("borderCollapse".to_string(), "separate".to_string());
+                        }
+                        _ => (),
+                    },
+                    "display" => {
+                        if value == "false" {
+                            map.insert("display".to_string(), "none".to_string());
+                        }
+                    }
+                    _ => (),
+                }
+            }
+        }
+    }
+    match table_alignment {
+        // The specification says to ignore the right margin if it is aligned left
+        TableAlign::Left => {
+            map.insert("marginRight".to_string(), "unset".to_string());
+        }
+        // Similarly for align right
+        TableAlign::Right => {
+            map.insert("marginLeft".to_string(), "unset".to_string());
+        }
+        // For center alignment we are supposed to ignore both side margins, while in CSS centering is done by making both of them auto
+        TableAlign::Center => {
+            map.insert("marginLeft".to_string(), "auto".to_string());
+            map.insert("marginRight".to_string(), "auto".to_string());
+        }
+        TableAlign::Margins => {
+            map.insert(
+                "width".to_string(),
+                format!("calc(100% - {} - {})", margin_left, margin_right),
+            );
+        }
     }
     map
 }
