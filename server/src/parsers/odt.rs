@@ -743,6 +743,9 @@ fn table_row_properties_begin(attributes: Attributes) -> HashMap<String, String>
                         map.insert("breakBefore".to_string(), value);
                     }
                 }
+                "fo:background-color" => {
+                    map.insert("backgroundColor".to_string(), value);
+                }
                 "style:row-height" => {
                     map.insert("height".to_string(), value);
                 }
