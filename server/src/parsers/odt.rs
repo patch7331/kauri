@@ -73,12 +73,16 @@ impl ODTParser {
             // Iterate through the XML
             match parser.read_event(&mut buffer) {
                 Ok(Event::Start(contents)) => {
-                    let current_style_name_new = self.handle_element_start(
-                        std::str::from_utf8(contents.name()).unwrap_or(":"),
-                        contents.attributes(),
-                    );
+                    let (current_style_name_new, current_style_value_new) = self
+                        .handle_element_start(
+                            std::str::from_utf8(contents.name()).unwrap_or(":"),
+                            contents.attributes(),
+                        );
                     if let Some(x) = current_style_name_new {
                         current_style_name = x;
+                    }
+                    if let Some(x) = current_style_value_new {
+                        current_style_value = x;
                     }
                 }
                 Ok(Event::Text(contents)) => {
@@ -128,17 +132,22 @@ impl ODTParser {
     }
 
     /// Handles a StartElement event from the XML parser by taking its contents (only name and attributes needed)
-    /// and returns the new value of current_style_name if it was set as a result
+    /// and returns the new values of current_style_name and current_style_value if either was set as a result
     /// as well as mutating internal state accordingly
-    fn handle_element_start(&mut self, name: &str, attributes: Attributes) -> Option<String> {
+    fn handle_element_start(
+        &mut self,
+        name: &str,
+        attributes: Attributes,
+    ) -> (Option<String>, Option<HashMap<String, String>>) {
         let mut current_style_name: Option<String> = None;
+        let mut current_style_value: Option<HashMap<String, String>> = None;
         let (prefix, local_name) = name.split_at(name.find(':').unwrap_or(0));
         let local_name = &local_name[1..];
         if name == "office:body" {
             self.body_begin = true;
         } else if self.body_begin {
             if prefix != "text" {
-                return current_style_name;
+                return (current_style_name, current_style_value);
             }
             match local_name {
                 "h" => {
@@ -192,8 +201,10 @@ impl ODTParser {
             self.styles_begin = true;
         } else if self.styles_begin && name == "style:style" {
             current_style_name = Some(style_begin(attributes));
+        } else if name == "style:table-row-properties" {
+            current_style_value = Some(table_row_properties_begin(attributes));
         }
-        current_style_name
+        (current_style_name, current_style_value)
     }
 
     /// Handles an EmptyElement event from the XML parser by taking its contents (only name and attributes needed)
@@ -700,6 +711,48 @@ fn table_column_properties_begin(attributes: Attributes) -> HashMap<String, Stri
                     if value == "true" {
                         map.insert("width".to_string(), "auto".to_string());
                     }
+                }
+                _ => (),
+            }
+        }
+    }
+    map
+}
+
+/// Takes the set of attributes of a style:table-row-properties tag in the ODT's content.xml,
+/// and creates a map of CSS properties based on the attributes
+fn table_row_properties_begin(attributes: Attributes) -> HashMap<String, String> {
+    let mut map: HashMap<String, String> = HashMap::new();
+    for i in attributes {
+        if let Ok(i) = i {
+            let name = std::str::from_utf8(i.key).unwrap_or(":");
+            let value = std::str::from_utf8(
+                &i.unescaped_value()
+                    .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+            )
+            .unwrap_or("what")
+            .to_string();
+            match name {
+                "fo:break-after" => {
+                    if value == "auto" || value == "column" || value == "page" {
+                        map.insert("breakAfter".to_string(), value);
+                    }
+                }
+                "fo:break-before" => {
+                    if value == "auto" || value == "column" || value == "page" {
+                        map.insert("breakBefore".to_string(), value);
+                    }
+                }
+                "style:row-height" => {
+                    map.insert("height".to_string(), value);
+                }
+                "style:use-optimal-row-height" => {
+                    if value == "true" {
+                        map.insert("height".to_string(), "auto".to_string());
+                    }
+                }
+                "style:min-row-height" => {
+                    map.insert("min-height".to_string(), value);
                 }
                 _ => (),
             }
