@@ -205,6 +205,8 @@ impl ODTParser {
             current_style_value = Some(table_row_properties_begin(attributes));
         } else if name == "style:table-properties" {
             current_style_value = Some(table_properties_begin(attributes))
+        } else if name == "style:table-cell-properties" {
+            current_style_value = Some(table_cell_properties_begin(attributes))
         }
         (current_style_name, current_style_value)
     }
@@ -756,6 +758,106 @@ fn table_row_properties_begin(attributes: Attributes) -> HashMap<String, String>
                 }
                 "style:min-row-height" => {
                     map.insert("min-height".to_string(), value);
+                }
+                _ => (),
+            }
+        }
+    }
+    map
+}
+
+/// Takes the set of attributes of a style:table-cell-properties tag in the ODT's content.xml,
+/// and creates a map of CSS properties based on the attributes
+fn table_cell_properties_begin(attributes: Attributes) -> HashMap<String, String> {
+    let mut map: HashMap<String, String> = HashMap::new();
+    for i in attributes {
+        if let Ok(i) = i {
+            let name = std::str::from_utf8(i.key).unwrap_or(":");
+            let (prefix, local_name) = name.split_at(name.find(':').unwrap_or(0));
+            let local_name = &local_name[1..];
+            let value = std::str::from_utf8(
+                &i.unescaped_value()
+                    .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+            )
+            .unwrap_or("what")
+            .to_string();
+            match prefix {
+                "fo" => match local_name {
+                    "background-color" => {
+                        map.insert("backgroundColor".to_string(), value);
+                    }
+                    "border" => {
+                        map.insert("border".to_string(), value);
+                    }
+                    "border-left" => {
+                        map.insert("borderLeft".to_string(), value);
+                    }
+                    "border-right" => {
+                        map.insert("borderRight".to_string(), value);
+                    }
+                    "border-top" => {
+                        map.insert("borderTop".to_string(), value);
+                    }
+                    "border-bottom" => {
+                        map.insert("borderBottom".to_string(), value);
+                    }
+                    "padding" => {
+                        map.insert("padding".to_string(), value);
+                    }
+                    "padding-top" => {
+                        map.insert("paddingTop".to_string(), value);
+                    }
+                    "padding-bottom" => {
+                        map.insert("paddingBottom".to_string(), value);
+                    }
+                    "padding-left" => {
+                        map.insert("paddingLeft".to_string(), value);
+                    }
+                    "padding-right" => {
+                        map.insert("paddingRight".to_string(), value);
+                    }
+                    _ => (),
+                },
+                "style" => {
+                    match local_name {
+                        "rotation-angle" => {
+                            map.insert("transform".to_string(), format!("rotate({})", value));
+                        }
+                        "shadow" => {
+                            map.insert("boxShadow".to_string(), value);
+                        }
+                        "writing-mode" => {
+                            match value.as_str() {
+                                // According to the MDN the replacement for "rl" and "rl-tb" is also "horizontal-tb" apparently
+                                "lr-tb" | "lr" | "rl" | "rl-tb" => {
+                                    map.insert(
+                                        "writingMode".to_string(),
+                                        "horizontal-tb".to_string(),
+                                    );
+                                }
+                                // MDN says "tb" is supposed to be replaced by "vertical-lr", but the ODT definition says that "tb" is a synonym for "tb-rl"
+                                "tb-rl" | "tb" => {
+                                    map.insert(
+                                        "writingMode".to_string(),
+                                        "vertical-rl".to_string(),
+                                    );
+                                }
+                                "tb-lr" => {
+                                    map.insert(
+                                        "writingMode".to_string(),
+                                        "vertical-lr".to_string(),
+                                    );
+                                }
+                                _ => (),
+                            }
+                        }
+                        "vertical-align" => {
+                            if value == "middle" || value == "top" || value == "bottom" {
+                                map.insert("verticalAlign".to_string(), value);
+                            }
+                        }
+                        _ => (),
+                    }
                 }
                 _ => (),
             }
