@@ -146,56 +146,64 @@ impl ODTParser {
         if name == "office:body" {
             self.body_begin = true;
         } else if self.body_begin {
-            if prefix != "text" {
-                return (current_style_name, current_style_value);
-            }
-            match local_name {
-                "h" => {
-                    let (element, set_children_underline_new, ensure_children_no_underline_new) =
-                        check_underline(
-                            heading_begin(attributes),
-                            &self.auto_styles,
-                            !self.set_children_underline.is_empty()
-                                && *self.set_children_underline.last().unwrap(),
-                            !self.ensure_children_no_underline.is_empty()
-                                && *self.ensure_children_no_underline.last().unwrap(),
-                        );
-                    self.ensure_children_no_underline
-                        .push(ensure_children_no_underline_new);
-                    self.set_children_underline.push(set_children_underline_new);
-                    self.document_hierarchy.push(element);
-                }
-                "p" => {
-                    let (element, set_children_underline_new, ensure_children_no_underline_new) =
-                        check_underline(
-                            paragraph_begin(attributes),
-                            &self.auto_styles,
-                            !self.set_children_underline.is_empty()
-                                && *self.set_children_underline.last().unwrap(),
-                            !self.ensure_children_no_underline.is_empty()
-                                && *self.ensure_children_no_underline.last().unwrap(),
-                        );
-                    self.ensure_children_no_underline
-                        .push(ensure_children_no_underline_new);
-                    self.set_children_underline.push(set_children_underline_new);
-                    self.document_hierarchy.push(element);
-                }
-                "span" => {
-                    let (element, set_children_underline_new, ensure_children_no_underline_new) =
-                        check_underline(
-                            span_begin(attributes),
-                            &self.auto_styles,
-                            !self.set_children_underline.is_empty()
-                                && *self.set_children_underline.last().unwrap(),
-                            !self.ensure_children_no_underline.is_empty()
-                                && *self.ensure_children_no_underline.last().unwrap(),
-                        );
-                    self.ensure_children_no_underline
-                        .push(ensure_children_no_underline_new);
-                    self.set_children_underline.push(set_children_underline_new);
-                    self.document_hierarchy.push(element);
-                }
-                _ => (),
+            match prefix {
+                "text" => match local_name {
+                    "h" => {
+                        let (element, set_children_underline_new, ensure_children_no_underline_new) =
+                            check_underline(
+                                heading_begin(attributes),
+                                &self.auto_styles,
+                                !self.set_children_underline.is_empty()
+                                    && *self.set_children_underline.last().unwrap(),
+                                !self.ensure_children_no_underline.is_empty()
+                                    && *self.ensure_children_no_underline.last().unwrap(),
+                            );
+                        self.ensure_children_no_underline
+                            .push(ensure_children_no_underline_new);
+                        self.set_children_underline.push(set_children_underline_new);
+                        self.document_hierarchy.push(element);
+                    }
+                    "p" => {
+                        let (element, set_children_underline_new, ensure_children_no_underline_new) =
+                            check_underline(
+                                paragraph_begin(attributes),
+                                &self.auto_styles,
+                                !self.set_children_underline.is_empty()
+                                    && *self.set_children_underline.last().unwrap(),
+                                !self.ensure_children_no_underline.is_empty()
+                                    && *self.ensure_children_no_underline.last().unwrap(),
+                            );
+                        self.ensure_children_no_underline
+                            .push(ensure_children_no_underline_new);
+                        self.set_children_underline.push(set_children_underline_new);
+                        self.document_hierarchy.push(element);
+                    }
+                    "span" => {
+                        let (element, set_children_underline_new, ensure_children_no_underline_new) =
+                            check_underline(
+                                span_begin(attributes),
+                                &self.auto_styles,
+                                !self.set_children_underline.is_empty()
+                                    && *self.set_children_underline.last().unwrap(),
+                                !self.ensure_children_no_underline.is_empty()
+                                    && *self.ensure_children_no_underline.last().unwrap(),
+                            );
+                        self.ensure_children_no_underline
+                            .push(ensure_children_no_underline_new);
+                        self.set_children_underline.push(set_children_underline_new);
+                        self.document_hierarchy.push(element);
+                    }
+                    _ => (),
+                },
+                "table" => match local_name {
+                    "table" => {
+                        self.document_hierarchy
+                            .push(table_begin(attributes, &self.auto_styles));
+                    }
+                    "table-row" => {}
+                    _ => return (current_style_name, current_style_value),
+                },
+                _ => return (current_style_name, current_style_value),
             }
         } else if name == "office:automatic-styles" {
             self.styles_begin = true;
@@ -256,15 +264,15 @@ impl ODTParser {
         let (prefix, local_name) = name.split_at(name.find(':').unwrap_or(0));
         let local_name = &local_name[1..];
         if self.body_begin {
+            if self.document_hierarchy.is_empty() {
+                // It shouldn't be empty now, if it is then this is an unmatched end tag
+                return Some((current_style_name, current_style_value));
+            }
             if name == "office:body" {
                 return Some((current_style_name, current_style_value));
             } else if prefix == "text"
                 && (local_name == "h" || local_name == "p" || local_name == "span")
             {
-                if self.document_hierarchy.is_empty() {
-                    // It shouldn't be empty now, if it is then this is an unmatched end tag
-                    return Some((current_style_name, current_style_value));
-                }
                 // The top of set_children_underline and ensure_children_no_underline is for this node's children,
                 // so pop them here before we finish up with this node
                 self.set_children_underline.pop();
@@ -279,6 +287,17 @@ impl ODTParser {
                             && *self.ensure_children_no_underline.last().unwrap(),
                     );
                 }
+                if self.document_hierarchy.is_empty() {
+                    self.document_root.children.push(Node::Element(child));
+                } else {
+                    self.document_hierarchy
+                        .last_mut()
+                        .unwrap()
+                        .children
+                        .push(Node::Element(child));
+                }
+            } else if name == "table:table" {
+                let child = self.document_hierarchy.pop().unwrap();
                 if self.document_hierarchy.is_empty() {
                     self.document_root.children.push(Node::Element(child));
                 } else {
@@ -864,4 +883,33 @@ fn table_cell_properties_begin(attributes: Attributes) -> HashMap<String, String
         }
     }
     map
+}
+
+/// Takes the set of attributes of a table:table tag in the ODT's content.xml
+/// and a reference to the map of automatic style names to the map of CSS properties,
+/// then returns a paragraph element with styles attached
+fn table_begin(
+    attributes: Attributes,
+    auto_styles: &HashMap<String, HashMap<String, String>>,
+) -> Element {
+    let mut style_name = String::new();
+    for i in attributes {
+        if let Ok(i) = i {
+            let name = std::str::from_utf8(i.key).unwrap_or(":");
+            if name == "text:style-name" {
+                style_name = std::str::from_utf8(
+                    &i.unescaped_value()
+                        .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                )
+                .unwrap_or("")
+                .to_string();
+            }
+        }
+    }
+    let mut element = Element::new("table".to_string());
+    element.styles = auto_styles
+        .get(&style_name)
+        .unwrap_or(&HashMap::new())
+        .clone();
+    element
 }
