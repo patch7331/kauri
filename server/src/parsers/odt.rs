@@ -304,8 +304,8 @@ impl ODTParser {
 
 /// Takes the results of either heading_begin() or paragraph_begin() (called params)
 /// and a reference to the map of automatic style names to the map of CSS properties,
-/// and returns the element from params together with the values for set_children_underline
-/// and ensure_children_no_underline in ODTParser
+/// and returns the element from params with its styles attached together
+/// with the values for set_children_underline and ensure_children_no_underline in ODTParser
 fn check_underline(
     params: (Element, String),
     auto_styles: &HashMap<String, HashMap<String, String>>,
