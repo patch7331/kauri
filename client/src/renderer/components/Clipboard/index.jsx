@@ -26,7 +26,7 @@ export default class Clipboard extends Component {
   componentWillUnmount() {
     clipboard.stopWatching();
     clipboard.off("text-changed");
-    clipboard.off("image-changed");
+    clipboard.off("image-changed");v
   }
 
   handleTextChanged() {
@@ -56,8 +56,9 @@ export default class Clipboard extends Component {
   render(props, state) {
     return (
       <ul class="clipboard">
-        {state.clipboardStack.map(item => (
-          <li class="clipboard__item">
+        {state.clipboardStack.map((item, index) => (
+          <li class="clipboard__item" id={"cp_it_" + index}>
+            <button onclick = {() => state.clipboardStack.splice(index, 1) && this.setState()}>X</button>
             {item.type === "txt" ? (
               <p>{item.data}</p>
             ) : (
