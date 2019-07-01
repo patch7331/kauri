@@ -14,6 +14,7 @@ use std::io::BufReader;
 pub struct ODTParser {
     body_begin: bool,
     styles_begin: bool,
+    in_column_group: bool,
     auto_styles: HashMap<String, HashMap<String, String>>,
     set_children_underline: Vec<bool>,
     ensure_children_no_underline: Vec<bool>,
@@ -32,6 +33,7 @@ impl ODTParser {
         ODTParser {
             body_begin: false,
             styles_begin: false,
+            in_column_group: false,
             auto_styles: HashMap::new(),
             set_children_underline: Vec::new(),
             ensure_children_no_underline: Vec::new(),
@@ -231,6 +233,31 @@ impl ODTParser {
             Some(text_properties_begin(attributes))
         } else if name == "style:table-column-properties" {
             Some(table_column_properties_begin(attributes))
+        } else if name == "table:table-column" {
+            // We should be inside a table if we see this, so if it is empty ignore
+            if self.document_hierarchy.is_empty() {
+                return None;
+            }
+            // If we are in a column group then put this column in there
+            if self.in_column_group {
+                self.document_hierarchy
+                    .last_mut()
+                    .unwrap()
+                    .children
+                    .push(Node::Element(table_column_begin(
+                        attributes,
+                        &self.auto_styles,
+                    )));
+            // Otherwise we put it in the default column group
+            } else if let Node::Element(ref mut element) =
+                &mut self.document_hierarchy.last_mut().unwrap().children[1]
+            {
+                element.children.push(Node::Element(table_column_begin(
+                    attributes,
+                    &self.auto_styles,
+                )));
+            }
+            None
         } else {
             None
         }
@@ -907,6 +934,53 @@ fn table_begin(
         }
     }
     let mut element = Element::new("table".to_string());
+    element.styles = auto_styles
+        .get(&style_name)
+        .unwrap_or(&HashMap::new())
+        .clone();
+    // Caption is always the first child of a table in HTML if it exists, and colgroup always comes after if it is there too,
+    // so we add it in in order to have a definitive position as to where the colgroup will come
+    element
+        .children
+        .push(Node::Element(Element::new("caption".to_string())));
+    element
+        .children
+        .push(Node::Element(Element::new("colgroup".to_string())));
+    element
+}
+
+/// Takes the set of attributes of a table:table-column tag in the ODT's content.xml
+/// and a reference to the map of automatic style names to the map of CSS properties,
+/// then returns a paragraph element with styles attached
+fn table_column_begin(
+    attributes: Attributes,
+    auto_styles: &HashMap<String, HashMap<String, String>>,
+) -> Element {
+    let mut style_name = String::new();
+    let mut element = Element::new("col".to_string());
+    for i in attributes {
+        if let Ok(i) = i {
+            let name = std::str::from_utf8(i.key).unwrap_or(":");
+            if name == "table:style-name" {
+                style_name = std::str::from_utf8(
+                    &i.unescaped_value()
+                        .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                )
+                .unwrap_or("")
+                .to_string();
+            } else if name == "text:number-columns-repeated" {
+                element.attributes.insert(
+                    "span".to_string(),
+                    std::str::from_utf8(
+                        &i.unescaped_value()
+                            .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                    )
+                    .unwrap_or("1")
+                    .to_string(),
+                );
+            }
+        }
+    }
     element.styles = auto_styles
         .get(&style_name)
         .unwrap_or(&HashMap::new())
