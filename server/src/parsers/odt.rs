@@ -368,7 +368,8 @@ impl ODTParser {
     /// Handles a Characters event from the XML parser by taking its contents
     /// and mutating internal state accordingly
     fn handle_characters(&mut self, contents: String) {
-        if self.document_hierarchy.is_empty() {
+        // Apparently in between tags this will be called with an empty string, so ignore that
+        if self.document_hierarchy.is_empty() || contents == "" {
             return;
         }
         // Currently the only type of tag expected to emit this event is the ones in the body,
