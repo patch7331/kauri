@@ -896,7 +896,7 @@ fn table_begin(
     for i in attributes {
         if let Ok(i) = i {
             let name = std::str::from_utf8(i.key).unwrap_or(":");
-            if name == "text:style-name" {
+            if name == "table:style-name" {
                 style_name = std::str::from_utf8(
                     &i.unescaped_value()
                         .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
