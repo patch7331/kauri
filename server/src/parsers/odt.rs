@@ -15,12 +15,14 @@ pub struct ODTParser {
     body_begin: bool,
     styles_begin: bool,
     table_column_number: Vec<u32>,
+    table_row_number: Vec<u32>,
     auto_styles: HashMap<String, HashMap<String, String>>,
     set_children_underline: Vec<bool>,
     ensure_children_no_underline: Vec<bool>,
     document_root: Document,
     document_hierarchy: Vec<Element>,
     table_column_default_style_names: Vec<Vec<String>>,
+    table_row_default_style_names: Vec<Vec<String>>,
 }
 
 impl ODTParser {
@@ -34,12 +36,14 @@ impl ODTParser {
             body_begin: false,
             styles_begin: false,
             table_column_number: Vec::new(),
+            table_row_number: Vec::new(),
             auto_styles: HashMap::new(),
             set_children_underline: Vec::new(),
             ensure_children_no_underline: Vec::new(),
             document_root,
             document_hierarchy: Vec::new(),
             table_column_default_style_names: Vec::new(),
+            table_row_default_style_names: Vec::new(),
         }
     }
 
@@ -204,8 +208,24 @@ impl ODTParser {
                             .push(table_begin(attributes, &self.auto_styles));
                         self.table_column_default_style_names.push(Vec::new());
                         self.table_column_number.push(0);
+                        self.table_row_default_style_names.push(Vec::new());
+                        self.table_row_number.push(0);
                     }
-                    "table-row" => {}
+                    "table-row" => {
+                        if self.table_column_default_style_names.is_empty() {
+                            return (current_style_name, current_style_value);
+                        }
+                        let (row, default_cell_style_name) =
+                            table_row_begin(attributes, &self.auto_styles);
+                        self.document_hierarchy.push(row);
+                        let table_row_default_style_names =
+                            self.table_row_default_style_names.last_mut().unwrap();
+                        if let Some(default_cell_style_name) = default_cell_style_name {
+                            table_row_default_style_names.push(default_cell_style_name.clone());
+                        } else {
+                            table_row_default_style_names.push("".to_string());
+                        }
+                    }
                     _ => return (current_style_name, current_style_value),
                 },
                 _ => return (current_style_name, current_style_value),
@@ -342,6 +362,30 @@ impl ODTParser {
                 }
                 self.table_column_default_style_names.pop();
                 self.table_column_number.pop();
+                self.table_row_default_style_names.pop();
+                self.table_row_number.pop();
+            } else if name == "table:table-row" {
+                let mut child = self.document_hierarchy.pop().unwrap();
+                let mut repeat = child
+                    .attributes
+                    .remove("_repeat")
+                    .unwrap()
+                    .parse::<u32>()
+                    .unwrap_or(1);
+                while repeat != 0 {
+                    if self.document_hierarchy.is_empty() {
+                        self.document_root
+                            .children
+                            .push(Node::Element(child.clone()));
+                    } else {
+                        self.document_hierarchy
+                            .last_mut()
+                            .unwrap()
+                            .children
+                            .push(Node::Element(child.clone()));
+                    }
+                    repeat -= 1;
+                }
             }
         } else if self.styles_begin {
             if name == "office:automatic-styles" {
@@ -1010,4 +1054,59 @@ fn table_column_begin(
         return (element, Some(default_cell_style_name), repeat);
     }
     (element, None, repeat)
+}
+
+/// Takes the set of attributes of a table:table-row tag in the ODT's content.xml
+/// and a reference to the map of automatic style names to the map of CSS properties,
+/// then returns a table row element with styles attached, the default cell style name (if any)
+/// and how many times it should be repeated
+fn table_row_begin(
+    attributes: Attributes,
+    auto_styles: &HashMap<String, HashMap<String, String>>,
+) -> (Element, Option<String>) {
+    let mut style_name = String::new();
+    let mut element = Element::new("tr".to_string());
+    let repeat = "1".to_string();
+    let mut default_cell_style_name: Option<String> = None;
+    for i in attributes {
+        if let Ok(i) = i {
+            let name = std::str::from_utf8(i.key).unwrap_or(":");
+            if name == "table:style-name" {
+                style_name = std::str::from_utf8(
+                    &i.unescaped_value()
+                        .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                )
+                .unwrap_or("")
+                .to_string();
+            } else if name == "table:number-rows-repeated" {
+                let repeat = std::str::from_utf8(
+                    &i.unescaped_value()
+                        .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                )
+                .unwrap_or("1")
+                .to_string();
+                element
+                    .attributes
+                    .insert("span".to_string(), repeat.clone());
+            } else if name == "table:default-cell-style-name" {
+                default_cell_style_name = Some(
+                    std::str::from_utf8(
+                        &i.unescaped_value()
+                            .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                    )
+                    .unwrap_or("1")
+                    .to_string(),
+                );
+            }
+        }
+    }
+    element.styles = auto_styles
+        .get(&style_name)
+        .unwrap_or(&HashMap::new())
+        .clone();
+    element.attributes.insert("_repeat".to_string(), repeat);
+    if let Some(default_cell_style_name) = default_cell_style_name {
+        return (element, Some(default_cell_style_name));
+    }
+    (element, None)
 }
