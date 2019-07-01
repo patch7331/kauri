@@ -14,11 +14,13 @@ use std::io::BufReader;
 pub struct ODTParser {
     body_begin: bool,
     styles_begin: bool,
+    table_column_number: Vec<u32>,
     auto_styles: HashMap<String, HashMap<String, String>>,
     set_children_underline: Vec<bool>,
     ensure_children_no_underline: Vec<bool>,
     document_root: Document,
     document_hierarchy: Vec<Element>,
+    table_column_default_style_names: Vec<Vec<String>>,
 }
 
 impl ODTParser {
@@ -28,15 +30,16 @@ impl ODTParser {
             "Kauri (Working Title)".to_string(),
             PaperSize::new(297, 210, DistanceUnit::Millimetres),
         );
-        let document_hierarchy: Vec<Element> = Vec::new();
         ODTParser {
             body_begin: false,
             styles_begin: false,
+            table_column_number: Vec::new(),
             auto_styles: HashMap::new(),
             set_children_underline: Vec::new(),
             ensure_children_no_underline: Vec::new(),
             document_root,
-            document_hierarchy,
+            document_hierarchy: Vec::new(),
+            table_column_default_style_names: Vec::new(),
         }
     }
 
@@ -199,6 +202,8 @@ impl ODTParser {
                     "table" => {
                         self.document_hierarchy
                             .push(table_begin(attributes, &self.auto_styles));
+                        self.table_column_default_style_names.push(Vec::new());
+                        self.table_column_number.push(0);
                     }
                     "table-row" => {}
                     _ => return (current_style_name, current_style_value),
@@ -239,10 +244,16 @@ impl ODTParser {
             if let Node::Element(ref mut element) =
                 &mut self.document_hierarchy.last_mut().unwrap().children[1]
             {
-                element.children.push(Node::Element(table_column_begin(
-                    attributes,
-                    &self.auto_styles,
-                )));
+                let (table, default_cell_style_name, repeat) =
+                    table_column_begin(attributes, &self.auto_styles);
+                element.children.push(Node::Element(table));
+                if let Some(default_cell_style_name) = default_cell_style_name {
+                    let table_column_default_style_names =
+                        self.table_column_default_style_names.last_mut().unwrap();
+                    for _i in 0..repeat {
+                        table_column_default_style_names.push(default_cell_style_name.clone());
+                    }
+                }
             }
             None
         } else {
@@ -321,6 +332,8 @@ impl ODTParser {
                         .children
                         .push(Node::Element(child));
                 }
+                self.table_column_default_style_names.pop();
+                self.table_column_number.pop();
             }
         } else if self.styles_begin {
             if name == "office:automatic-styles" {
@@ -901,7 +914,7 @@ fn table_cell_properties_begin(attributes: Attributes) -> HashMap<String, String
 
 /// Takes the set of attributes of a table:table tag in the ODT's content.xml
 /// and a reference to the map of automatic style names to the map of CSS properties,
-/// then returns a paragraph element with styles attached
+/// then returns a table element with styles attached
 fn table_begin(
     attributes: Attributes,
     auto_styles: &HashMap<String, HashMap<String, String>>,
@@ -938,13 +951,16 @@ fn table_begin(
 
 /// Takes the set of attributes of a table:table-column tag in the ODT's content.xml
 /// and a reference to the map of automatic style names to the map of CSS properties,
-/// then returns a paragraph element with styles attached
+/// then returns a table column element with styles attached, the default cell style name (if any)
+/// and how many times it should be repeated (as in the HTML span attribute for columns)
 fn table_column_begin(
     attributes: Attributes,
     auto_styles: &HashMap<String, HashMap<String, String>>,
-) -> Element {
+) -> (Element, Option<String>, u32) {
     let mut style_name = String::new();
     let mut element = Element::new("col".to_string());
+    let repeat = "1".to_string();
+    let mut default_cell_style_name: Option<String> = None;
     for i in attributes {
         if let Ok(i) = i {
             let name = std::str::from_utf8(i.key).unwrap_or(":");
@@ -955,9 +971,18 @@ fn table_column_begin(
                 )
                 .unwrap_or("")
                 .to_string();
-            } else if name == "text:number-columns-repeated" {
-                element.attributes.insert(
-                    "span".to_string(),
+            } else if name == "table:number-columns-repeated" {
+                let repeat = std::str::from_utf8(
+                    &i.unescaped_value()
+                        .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                )
+                .unwrap_or("1")
+                .to_string();
+                element
+                    .attributes
+                    .insert("span".to_string(), repeat.clone());
+            } else if name == "table:default-cell-style-name" {
+                default_cell_style_name = Some(
                     std::str::from_utf8(
                         &i.unescaped_value()
                             .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
@@ -972,5 +997,9 @@ fn table_column_begin(
         .get(&style_name)
         .unwrap_or(&HashMap::new())
         .clone();
-    element
+    let repeat = repeat.parse::<u32>().unwrap_or(1);
+    if let Some(default_cell_style_name) = default_cell_style_name {
+        return (element, Some(default_cell_style_name), repeat);
+    }
+    (element, None, repeat)
 }
