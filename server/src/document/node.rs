@@ -3,12 +3,14 @@ use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(tag = "type")]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub enum Node {
     Text(Text),
     Element(Element),
 }
 
 #[derive(Serialize, Deserialize, Clone)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Text {
     content: String,
 }
@@ -23,6 +25,7 @@ impl Text {
 }
 
 #[derive(Serialize, Deserialize, Clone)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Element {
     tag: String,
     pub attributes: HashMap<String, String>,
