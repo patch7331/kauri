@@ -212,7 +212,7 @@ impl ODTParser {
                         self.table_row_number.push(0);
                     }
                     "table-row" => {
-                        if self.table_column_default_style_names.is_empty() {
+                        if self.table_row_default_style_names.is_empty() {
                             return (current_style_name, current_style_value);
                         }
                         let (row, default_cell_style_name) =
@@ -225,6 +225,29 @@ impl ODTParser {
                         } else {
                             table_row_default_style_names.push("".to_string());
                         }
+                        let len = self.table_column_number.len();
+                        self.table_column_number[len - 1] = 0;
+                    }
+                    "table-cell" => {
+                        // This should not be empty, just check this since the other three will be set up together with it
+                        if self.table_row_default_style_names.is_empty() {
+                            return (current_style_name, current_style_value);
+                        }
+                        let mut default_style_name = String::new();
+                        let row_default = &self.table_row_default_style_names.last().unwrap()
+                            [*self.table_row_number.last().unwrap() as usize];
+                        let column_default = &self.table_column_default_style_names.last().unwrap()
+                            [*self.table_column_number.last().unwrap() as usize];
+                        if row_default != "" {
+                            default_style_name = row_default.to_string();
+                        } else if column_default != "" {
+                            default_style_name = column_default.to_string();
+                        }
+                        self.document_hierarchy.push(table_cell_begin(
+                            attributes,
+                            &self.auto_styles,
+                            default_style_name,
+                        ));
                     }
                     _ => return (current_style_name, current_style_value),
                 },
@@ -252,6 +275,8 @@ impl ODTParser {
         name: &str,
         attributes: Attributes,
     ) -> Option<HashMap<String, String>> {
+        let (prefix, local_name) = name.split_at(name.find(':').unwrap_or(0));
+        let local_name = &local_name[1..];
         if name == "style:text-properties" {
             Some(text_properties_begin(attributes))
         } else if name == "style:table-column-properties" {
@@ -420,9 +445,35 @@ impl ODTParser {
                 let mut repeat = child
                     .attributes
                     .remove("_repeat")
-                    .unwrap()
+                    .unwrap_or_else(|| "1".to_string())
                     .parse::<u32>()
                     .unwrap_or(1);
+                let len = self.table_row_number.len();
+                self.table_row_number[len - 1] += repeat;
+                while repeat != 0 {
+                    if self.document_hierarchy.is_empty() {
+                        self.document_root
+                            .children
+                            .push(Node::Element(child.clone()));
+                    } else {
+                        self.document_hierarchy
+                            .last_mut()
+                            .unwrap()
+                            .children
+                            .push(Node::Element(child.clone()));
+                    }
+                    repeat -= 1;
+                }
+            } else if name == "table:table-cell" {
+                let mut child = self.document_hierarchy.pop().unwrap();
+                let mut repeat = child
+                    .attributes
+                    .remove("_repeat")
+                    .unwrap_or_else(|| "1".to_string())
+                    .parse::<u32>()
+                    .unwrap_or(1);
+                let len = self.table_column_number.len();
+                self.table_column_number[len - 1] += repeat;
                 while repeat != 0 {
                     if self.document_hierarchy.is_empty() {
                         self.document_root
@@ -1062,7 +1113,7 @@ fn table_column_begin(
 ) -> (Element, Option<String>, u32) {
     let mut style_name = String::new();
     let mut element = Element::new("col".to_string());
-    let repeat = "1".to_string();
+    let mut repeat = "1".to_string();
     let mut default_cell_style_name: Option<String> = None;
     for i in attributes {
         if let Ok(i) = i {
@@ -1075,7 +1126,7 @@ fn table_column_begin(
                 .unwrap_or("")
                 .to_string();
             } else if name == "table:number-columns-repeated" {
-                let repeat = std::str::from_utf8(
+                repeat = std::str::from_utf8(
                     &i.unescaped_value()
                         .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
                 )
@@ -1110,14 +1161,13 @@ fn table_column_begin(
 /// Takes the set of attributes of a table:table-row tag in the ODT's content.xml
 /// and a reference to the map of automatic style names to the map of CSS properties,
 /// then returns a table row element with styles attached, the default cell style name (if any)
-/// and how many times it should be repeated
+/// and how many times it should be repeated (stored inside the element as an attribute called "_repeat")
 fn table_row_begin(
     attributes: Attributes,
     auto_styles: &HashMap<String, HashMap<String, String>>,
 ) -> (Element, Option<String>) {
     let mut style_name = String::new();
     let mut element = Element::new("tr".to_string());
-    let repeat = "1".to_string();
     let mut default_cell_style_name: Option<String> = None;
     for i in attributes {
         if let Ok(i) = i {
@@ -1130,15 +1180,15 @@ fn table_row_begin(
                 .unwrap_or("")
                 .to_string();
             } else if name == "table:number-rows-repeated" {
-                let repeat = std::str::from_utf8(
-                    &i.unescaped_value()
-                        .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
-                )
-                .unwrap_or("1")
-                .to_string();
-                element
-                    .attributes
-                    .insert("span".to_string(), repeat.clone());
+                element.attributes.insert(
+                    "span".to_string(),
+                    std::str::from_utf8(
+                        &i.unescaped_value()
+                            .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                    )
+                    .unwrap_or("1")
+                    .to_string(),
+                );
             } else if name == "table:default-cell-style-name" {
                 default_cell_style_name = Some(
                     std::str::from_utf8(
@@ -1155,9 +1205,77 @@ fn table_row_begin(
         .get(&style_name)
         .unwrap_or(&HashMap::new())
         .clone();
-    element.attributes.insert("_repeat".to_string(), repeat);
     if let Some(default_cell_style_name) = default_cell_style_name {
         return (element, Some(default_cell_style_name));
     }
     (element, None)
+}
+
+/// Takes the set of attributes of a table:table-cell tag in the ODT's content.xml,
+/// a reference to the map of automatic style names to the map of CSS properties,
+/// and the default cell style name,
+/// then returns a table cell element with styles attached and how many times it should be repeated
+/// (stored inside the element as an attribute called "_repeat")
+fn table_cell_begin(
+    attributes: Attributes,
+    auto_styles: &HashMap<String, HashMap<String, String>>,
+    default_style_name: String,
+) -> Element {
+    let mut style_name = String::new();
+    let mut element = Element::new("td".to_string());
+    for i in attributes {
+        if let Ok(i) = i {
+            let name = std::str::from_utf8(i.key).unwrap_or(":");
+            if name == "table:style-name" {
+                style_name = std::str::from_utf8(
+                    &i.unescaped_value()
+                        .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                )
+                .unwrap_or("")
+                .to_string();
+            } else if name == "table:number-columns-repeated" {
+                element.attributes.insert(
+                    "_repeat".to_string(),
+                    std::str::from_utf8(
+                        &i.unescaped_value()
+                            .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                    )
+                    .unwrap_or("1")
+                    .to_string(),
+                );
+            } else if name == "table:number-columns-spanned" {
+                element.attributes.insert(
+                    "colspan".to_string(),
+                    std::str::from_utf8(
+                        &i.unescaped_value()
+                            .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                    )
+                    .unwrap_or("1")
+                    .to_string(),
+                );
+            } else if name == "table:number-rows-spanned" {
+                element.attributes.insert(
+                    "rowspan".to_string(),
+                    std::str::from_utf8(
+                        &i.unescaped_value()
+                            .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                    )
+                    .unwrap_or("1")
+                    .to_string(),
+                );
+            }
+        }
+    }
+    if default_style_name != "" {
+        element.styles = auto_styles
+            .get(&default_style_name)
+            .unwrap_or(&HashMap::new())
+            .clone();
+    } else {
+        element.styles = auto_styles
+            .get(&style_name)
+            .unwrap_or(&HashMap::new())
+            .clone();
+    }
+    element
 }
