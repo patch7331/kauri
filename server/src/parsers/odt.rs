@@ -284,6 +284,57 @@ impl ODTParser {
                 }
             }
             None
+        } else if prefix == "text" {
+            let mut child: Option<Element> = None;
+            match local_name {
+                "h" => {
+                    let (element, ..) = check_underline(
+                        heading_begin(attributes),
+                        &self.auto_styles,
+                        !self.set_children_underline.is_empty()
+                            && *self.set_children_underline.last().unwrap(),
+                        !self.ensure_children_no_underline.is_empty()
+                            && *self.ensure_children_no_underline.last().unwrap(),
+                    );
+                    child = Some(element);
+                }
+                "p" => {
+                    let (element, ..) = check_underline(
+                        paragraph_begin(attributes),
+                        &self.auto_styles,
+                        !self.set_children_underline.is_empty()
+                            && *self.set_children_underline.last().unwrap(),
+                        !self.ensure_children_no_underline.is_empty()
+                            && *self.ensure_children_no_underline.last().unwrap(),
+                    );
+                    child = Some(element);
+                }
+                "span" => {
+                    let (element, ..) = check_underline(
+                        span_begin(attributes),
+                        &self.auto_styles,
+                        !self.set_children_underline.is_empty()
+                            && *self.set_children_underline.last().unwrap(),
+                        !self.ensure_children_no_underline.is_empty()
+                            && *self.ensure_children_no_underline.last().unwrap(),
+                    );
+                    child = Some(element);
+                }
+                _ => (),
+            }
+            if let Some(element) = child {
+                if self.document_hierarchy.is_empty() {
+                    self.document_root.children.push(Node::Element(element));
+                } else {
+                    self.document_hierarchy
+                        .last_mut()
+                        .unwrap()
+                        .children
+                        .push(Node::Element(element));
+                }
+            }
+
+            None
         } else {
             None
         }
