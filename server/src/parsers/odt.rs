@@ -14,7 +14,6 @@ use std::io::BufReader;
 pub struct ODTParser {
     body_begin: bool,
     styles_begin: bool,
-    in_column_group: bool,
     auto_styles: HashMap<String, HashMap<String, String>>,
     set_children_underline: Vec<bool>,
     ensure_children_no_underline: Vec<bool>,
@@ -33,7 +32,6 @@ impl ODTParser {
         ODTParser {
             body_begin: false,
             styles_begin: false,
-            in_column_group: false,
             auto_styles: HashMap::new(),
             set_children_underline: Vec::new(),
             ensure_children_no_underline: Vec::new(),
@@ -238,18 +236,7 @@ impl ODTParser {
             if self.document_hierarchy.is_empty() {
                 return None;
             }
-            // If we are in a column group then put this column in there
-            if self.in_column_group {
-                self.document_hierarchy
-                    .last_mut()
-                    .unwrap()
-                    .children
-                    .push(Node::Element(table_column_begin(
-                        attributes,
-                        &self.auto_styles,
-                    )));
-            // Otherwise we put it in the default column group
-            } else if let Node::Element(ref mut element) =
+            if let Node::Element(ref mut element) =
                 &mut self.document_hierarchy.last_mut().unwrap().children[1]
             {
                 element.children.push(Node::Element(table_column_begin(
