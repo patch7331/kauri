@@ -154,117 +154,135 @@ impl ODTParser {
             self.body_begin = true;
         } else if self.body_begin {
             match prefix {
-                "text" => match local_name {
-                    "h" => {
-                        let (element, set_children_underline_new, ensure_children_no_underline_new) =
-                            check_underline(
-                                heading_begin(attributes),
-                                &self.auto_styles,
-                                !self.set_children_underline.is_empty()
-                                    && *self.set_children_underline.last().unwrap(),
-                                !self.ensure_children_no_underline.is_empty()
-                                    && *self.ensure_children_no_underline.last().unwrap(),
-                            );
-                        self.ensure_children_no_underline
-                            .push(ensure_children_no_underline_new);
-                        self.set_children_underline.push(set_children_underline_new);
-                        self.document_hierarchy.push(element);
-                    }
-                    "p" => {
-                        let (element, set_children_underline_new, ensure_children_no_underline_new) =
-                            check_underline(
-                                paragraph_begin(attributes),
-                                &self.auto_styles,
-                                !self.set_children_underline.is_empty()
-                                    && *self.set_children_underline.last().unwrap(),
-                                !self.ensure_children_no_underline.is_empty()
-                                    && *self.ensure_children_no_underline.last().unwrap(),
-                            );
-                        self.ensure_children_no_underline
-                            .push(ensure_children_no_underline_new);
-                        self.set_children_underline.push(set_children_underline_new);
-                        self.document_hierarchy.push(element);
-                    }
-                    "span" => {
-                        let (element, set_children_underline_new, ensure_children_no_underline_new) =
-                            check_underline(
-                                span_begin(attributes),
-                                &self.auto_styles,
-                                !self.set_children_underline.is_empty()
-                                    && *self.set_children_underline.last().unwrap(),
-                                !self.ensure_children_no_underline.is_empty()
-                                    && *self.ensure_children_no_underline.last().unwrap(),
-                            );
-                        self.ensure_children_no_underline
-                            .push(ensure_children_no_underline_new);
-                        self.set_children_underline.push(set_children_underline_new);
-                        self.document_hierarchy.push(element);
-                    }
-                    _ => (),
-                },
-                "table" => match local_name {
-                    "table" => {
-                        self.document_hierarchy
-                            .push(table_begin(attributes, &self.auto_styles));
-                        self.table_column_default_style_names.push(Vec::new());
-                        self.table_column_number.push(0);
-                        self.table_row_default_style_names.push(Vec::new());
-                        self.table_row_number.push(0);
-                    }
-                    "table-row" => {
-                        if self.table_row_default_style_names.is_empty() {
-                            return (current_style_name, current_style_value);
-                        }
-                        let (row, default_cell_style_name) =
-                            table_row_begin(attributes, &self.auto_styles);
-                        self.document_hierarchy.push(row);
-                        let table_row_default_style_names =
-                            self.table_row_default_style_names.last_mut().unwrap();
-                        if let Some(default_cell_style_name) = default_cell_style_name {
-                            table_row_default_style_names.push(default_cell_style_name.clone());
-                        } else {
-                            table_row_default_style_names.push("".to_string());
-                        }
-                        let len = self.table_column_number.len();
-                        self.table_column_number[len - 1] = 0;
-                    }
-                    "table-cell" => {
-                        // This should not be empty, just check this since the other three will be set up together with it
-                        if self.table_row_default_style_names.is_empty() {
-                            return (current_style_name, current_style_value);
-                        }
-                        let mut default_style_name = String::new();
-                        let row_default = &self.table_row_default_style_names.last().unwrap()
-                            [*self.table_row_number.last().unwrap() as usize];
-                        let column_default = &self.table_column_default_style_names.last().unwrap()
-                            [*self.table_column_number.last().unwrap() as usize];
-                        if row_default != "" {
-                            default_style_name = row_default.to_string();
-                        } else if column_default != "" {
-                            default_style_name = column_default.to_string();
-                        }
-                        self.document_hierarchy.push(table_cell_begin(
-                            attributes,
-                            &self.auto_styles,
-                            default_style_name,
-                        ));
-                    }
-                    _ => return (current_style_name, current_style_value),
-                },
+                "text" => self.handle_element_start_text(local_name, attributes),
+                "table" => self.handle_element_start_table(local_name, attributes),
                 _ => return (current_style_name, current_style_value),
             }
         } else if name == "office:automatic-styles" {
             self.styles_begin = true;
-        } else if self.styles_begin && name == "style:style" {
-            current_style_name = Some(style_begin(attributes));
-        } else if name == "style:table-row-properties" {
-            current_style_value = Some(table_row_properties_begin(attributes));
-        } else if name == "style:table-properties" {
-            current_style_value = Some(table_properties_begin(attributes))
-        } else if name == "style:table-cell-properties" {
-            current_style_value = Some(table_cell_properties_begin(attributes))
+        } else if self.styles_begin {
+            if prefix != "style" {
+                return (current_style_name, current_style_value);
+            }
+            match local_name {
+                "style" => current_style_name = Some(style_begin(attributes)),
+                "table-row-properties" => {
+                    current_style_value = Some(table_row_properties_begin(attributes))
+                }
+                "table-properties" => {
+                    current_style_value = Some(table_properties_begin(attributes))
+                }
+                "table-cell-properties" => {
+                    current_style_value = Some(table_cell_properties_begin(attributes))
+                }
+                _ => (),
+            }
         }
         (current_style_name, current_style_value)
+    }
+
+    /// Helper for handle_element_start() to respond to tags with "text" prefix
+    fn handle_element_start_text(&mut self, local_name: &str, attributes: Attributes) {
+        match local_name {
+            "h" => {
+                let (element, set_children_underline_new, ensure_children_no_underline_new) =
+                    check_underline(
+                        heading_begin(attributes),
+                        &self.auto_styles,
+                        !self.set_children_underline.is_empty()
+                            && *self.set_children_underline.last().unwrap(),
+                        !self.ensure_children_no_underline.is_empty()
+                            && *self.ensure_children_no_underline.last().unwrap(),
+                    );
+                self.ensure_children_no_underline
+                    .push(ensure_children_no_underline_new);
+                self.set_children_underline.push(set_children_underline_new);
+                self.document_hierarchy.push(element);
+            }
+            "p" => {
+                let (element, set_children_underline_new, ensure_children_no_underline_new) =
+                    check_underline(
+                        paragraph_begin(attributes),
+                        &self.auto_styles,
+                        !self.set_children_underline.is_empty()
+                            && *self.set_children_underline.last().unwrap(),
+                        !self.ensure_children_no_underline.is_empty()
+                            && *self.ensure_children_no_underline.last().unwrap(),
+                    );
+                self.ensure_children_no_underline
+                    .push(ensure_children_no_underline_new);
+                self.set_children_underline.push(set_children_underline_new);
+                self.document_hierarchy.push(element);
+            }
+            "span" => {
+                let (element, set_children_underline_new, ensure_children_no_underline_new) =
+                    check_underline(
+                        span_begin(attributes),
+                        &self.auto_styles,
+                        !self.set_children_underline.is_empty()
+                            && *self.set_children_underline.last().unwrap(),
+                        !self.ensure_children_no_underline.is_empty()
+                            && *self.ensure_children_no_underline.last().unwrap(),
+                    );
+                self.ensure_children_no_underline
+                    .push(ensure_children_no_underline_new);
+                self.set_children_underline.push(set_children_underline_new);
+                self.document_hierarchy.push(element);
+            }
+            _ => (),
+        }
+    }
+
+    /// Helper for handle_element_start() to respond to tags with "table" prefix
+    fn handle_element_start_table(&mut self, local_name: &str, attributes: Attributes) {
+        match local_name {
+            "table" => {
+                self.document_hierarchy
+                    .push(table_begin(attributes, &self.auto_styles));
+                self.table_column_default_style_names.push(Vec::new());
+                self.table_column_number.push(0);
+                self.table_row_default_style_names.push(Vec::new());
+                self.table_row_number.push(0);
+            }
+            "table-row" => {
+                if self.table_row_default_style_names.is_empty() {
+                    return;
+                }
+                let (row, default_cell_style_name) = table_row_begin(attributes, &self.auto_styles);
+                self.document_hierarchy.push(row);
+                let table_row_default_style_names =
+                    self.table_row_default_style_names.last_mut().unwrap();
+                if let Some(default_cell_style_name) = default_cell_style_name {
+                    table_row_default_style_names.push(default_cell_style_name.clone());
+                } else {
+                    table_row_default_style_names.push("".to_string());
+                }
+                let len = self.table_column_number.len();
+                self.table_column_number[len - 1] = 0;
+            }
+            "table-cell" => {
+                // This should not be empty, just check this since the other three will be set up together with it
+                if self.table_row_default_style_names.is_empty() {
+                    return;
+                }
+                let mut default_style_name = String::new();
+                let row_default = &self.table_row_default_style_names.last().unwrap()
+                    [*self.table_row_number.last().unwrap() as usize];
+                let column_default = &self.table_column_default_style_names.last().unwrap()
+                    [*self.table_column_number.last().unwrap() as usize];
+                if row_default != "" {
+                    default_style_name = row_default.to_string();
+                } else if column_default != "" {
+                    default_style_name = column_default.to_string();
+                }
+                self.document_hierarchy.push(table_cell_begin(
+                    attributes,
+                    &self.auto_styles,
+                    default_style_name,
+                ));
+            }
+            _ => (),
+        }
     }
 
     /// Handles an EmptyElement event from the XML parser by taking its contents (only name and attributes needed)
@@ -310,58 +328,62 @@ impl ODTParser {
             }
             None
         } else if prefix == "text" {
-            let mut child: Option<Element> = None;
-            match local_name {
-                "h" => {
-                    let (element, ..) = check_underline(
-                        heading_begin(attributes),
-                        &self.auto_styles,
-                        !self.set_children_underline.is_empty()
-                            && *self.set_children_underline.last().unwrap(),
-                        !self.ensure_children_no_underline.is_empty()
-                            && *self.ensure_children_no_underline.last().unwrap(),
-                    );
-                    child = Some(element);
-                }
-                "p" => {
-                    let (element, ..) = check_underline(
-                        paragraph_begin(attributes),
-                        &self.auto_styles,
-                        !self.set_children_underline.is_empty()
-                            && *self.set_children_underline.last().unwrap(),
-                        !self.ensure_children_no_underline.is_empty()
-                            && *self.ensure_children_no_underline.last().unwrap(),
-                    );
-                    child = Some(element);
-                }
-                "span" => {
-                    let (element, ..) = check_underline(
-                        span_begin(attributes),
-                        &self.auto_styles,
-                        !self.set_children_underline.is_empty()
-                            && *self.set_children_underline.last().unwrap(),
-                        !self.ensure_children_no_underline.is_empty()
-                            && *self.ensure_children_no_underline.last().unwrap(),
-                    );
-                    child = Some(element);
-                }
-                _ => (),
-            }
-            if let Some(element) = child {
-                if self.document_hierarchy.is_empty() {
-                    self.document_root.children.push(Node::Element(element));
-                } else {
-                    self.document_hierarchy
-                        .last_mut()
-                        .unwrap()
-                        .children
-                        .push(Node::Element(element));
-                }
-            }
-
+            self.handle_element_empty_text(local_name, attributes);
             None
         } else {
             None
+        }
+    }
+
+    /// Helper for handle_element_empty() to respond to tags with "text" prefix
+    fn handle_element_empty_text(&mut self, local_name: &str, attributes: Attributes) {
+        let mut child: Option<Element> = None;
+        match local_name {
+            "h" => {
+                let (element, ..) = check_underline(
+                    heading_begin(attributes),
+                    &self.auto_styles,
+                    !self.set_children_underline.is_empty()
+                        && *self.set_children_underline.last().unwrap(),
+                    !self.ensure_children_no_underline.is_empty()
+                        && *self.ensure_children_no_underline.last().unwrap(),
+                );
+                child = Some(element);
+            }
+            "p" => {
+                let (element, ..) = check_underline(
+                    paragraph_begin(attributes),
+                    &self.auto_styles,
+                    !self.set_children_underline.is_empty()
+                        && *self.set_children_underline.last().unwrap(),
+                    !self.ensure_children_no_underline.is_empty()
+                        && *self.ensure_children_no_underline.last().unwrap(),
+                );
+                child = Some(element);
+            }
+            "span" => {
+                let (element, ..) = check_underline(
+                    span_begin(attributes),
+                    &self.auto_styles,
+                    !self.set_children_underline.is_empty()
+                        && *self.set_children_underline.last().unwrap(),
+                    !self.ensure_children_no_underline.is_empty()
+                        && *self.ensure_children_no_underline.last().unwrap(),
+                );
+                child = Some(element);
+            }
+            _ => (),
+        }
+        if let Some(element) = child {
+            if self.document_hierarchy.is_empty() {
+                self.document_root.children.push(Node::Element(element));
+            } else {
+                self.document_hierarchy
+                    .last_mut()
+                    .unwrap()
+                    .children
+                    .push(Node::Element(element));
+            }
         }
     }
 
@@ -426,7 +448,25 @@ impl ODTParser {
                         .children
                         .push(Node::Element(child));
                 }
-            } else if name == "table:table" {
+            } else if prefix == "table" {
+                self.handle_element_end_table(local_name);
+            }
+        } else if self.styles_begin {
+            if name == "office:automatic-styles" {
+                self.styles_begin = false;
+            } else if name == "style:style" {
+                self.auto_styles
+                    .insert(current_style_name, current_style_value);
+                return None;
+            }
+        }
+        Some((current_style_name, current_style_value))
+    }
+
+    /// Helper for handle_element_end() to respond to tags with "table" prefix
+    fn handle_element_end_table(&mut self, local_name: &str) {
+        match local_name {
+            "table" => {
                 let child = self.document_hierarchy.pop().unwrap();
                 if self.document_hierarchy.is_empty() {
                     self.document_root.children.push(Node::Element(child));
@@ -441,7 +481,8 @@ impl ODTParser {
                 self.table_column_number.pop();
                 self.table_row_default_style_names.pop();
                 self.table_row_number.pop();
-            } else if name == "table:table-row" {
+            }
+            "table-row" => {
                 let mut child = self.document_hierarchy.pop().unwrap();
                 let mut repeat = child
                     .attributes
@@ -465,7 +506,8 @@ impl ODTParser {
                     }
                     repeat -= 1;
                 }
-            } else if name == "table:table-cell" {
+            }
+            "table-cell" => {
                 let mut child = self.document_hierarchy.pop().unwrap();
                 let mut repeat = child
                     .attributes
@@ -490,16 +532,8 @@ impl ODTParser {
                     repeat -= 1;
                 }
             }
-        } else if self.styles_begin {
-            if name == "office:automatic-styles" {
-                self.styles_begin = false;
-            } else if name == "style:style" {
-                self.auto_styles
-                    .insert(current_style_name, current_style_value);
-                return None;
-            }
+            _ => (),
         }
-        Some((current_style_name, current_style_value))
     }
 }
 
