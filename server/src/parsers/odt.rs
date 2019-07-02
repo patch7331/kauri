@@ -714,55 +714,10 @@ fn text_properties_begin(attributes: Attributes) -> HashMap<String, String> {
             .unwrap_or("what")
             .to_string();
             if prefix == "fo" {
-                if local_name == "font-weight" {
-                    // All valid values for this attribute is also valid in the CSS equivalent, so just use it as is
-                    map.insert("fontWeight".to_string(), value);
-                } else if local_name == "font-style" && value != "backslant" {
-                    // `backslant` is not valid in CSS, but all the other ones are
-                    map.insert("fontStyle".to_string(), value);
-                } else if local_name == "color" {
-                    map.insert("color".to_string(), value);
-                } else if local_name == "font-size" {
-                    map.insert("fontSize".to_string(), value);
-                }
-            } else if prefix == "style" {
-                if local_name == "text-underline-style" {
-                    if value == "none" {
-                        map.insert("textDecorationLine".to_string(), "none".to_string());
-                    } else {
-                        map.insert("textDecorationLine".to_string(), "underline".to_string());
-                        match value.as_str() {
-                            "dash" => {
-                                map.insert("textDecorationStyle".to_string(), "dashed".to_string())
-                            }
-                            "dotted" => {
-                                map.insert("textDecorationStyle".to_string(), "dotted".to_string())
-                            }
-                            "wave" => {
-                                map.insert("textDecorationStyle".to_string(), "wavy".to_string())
-                            }
-                            // There are a few possible styles in ODF that aren't present in CSS
-                            // (dot-dash, dot-dot-dash, long-dash), so just put in a basic underline?
-                            "solid" | _ => {
-                                map.insert("textDecorationStyle".to_string(), "solid".to_string())
-                            }
-                        };
-                    }
-                } else if local_name == "text-underline-type" && value == "double" {
-                    is_double_underline = true;
-                } else if local_name == "text-underline-color" {
-                    if value == "font-color" {
-                        map.insert(
-                            "textDecorationColor".to_string(),
-                            "currentcolor".to_string(),
-                        );
-                    } else {
-                        // The other valid values are all in hex format
-                        map.insert("textDecorationColor".to_string(), value);
-                    }
-                } else if local_name == "font-name" {
-                    map.insert("fontFamily".to_string(), value);
-                }
+                text_properties_begin_fo(local_name, value, &mut map);
+            } else if prefix == "style" && text_properties_begin_style(local_name, value, &mut map)
+            {
+                is_double_underline = true;
             }
         }
     }
@@ -772,6 +727,61 @@ fn text_properties_begin(attributes: Attributes) -> HashMap<String, String> {
         map.insert("textDecorationStyle".to_string(), "double".to_string());
     }
     map
+}
+
+/// Helper for text_properties_begin() to respond to attributes with "fo" prefix
+fn text_properties_begin_fo(local_name: &str, value: String, map: &mut HashMap<String, String>) {
+    if local_name == "font-weight" {
+        // All valid values for this attribute is also valid in the CSS equivalent, so just use it as is
+        map.insert("fontWeight".to_string(), value);
+    } else if local_name == "font-style" && value != "backslant" {
+        // `backslant` is not valid in CSS, but all the other ones are
+        map.insert("fontStyle".to_string(), value);
+    } else if local_name == "color" {
+        map.insert("color".to_string(), value);
+    } else if local_name == "font-size" {
+        map.insert("fontSize".to_string(), value);
+    }
+}
+
+/// Helper for text_properties_begin() to respond to attributes with "style" prefix,
+/// returns true if the attribute indicates that the underline style should be a double underline,
+/// returns false otherwise
+fn text_properties_begin_style(
+    local_name: &str,
+    value: String,
+    map: &mut HashMap<String, String>,
+) -> bool {
+    if local_name == "text-underline-style" {
+        if value == "none" {
+            map.insert("textDecorationLine".to_string(), "none".to_string());
+        } else {
+            map.insert("textDecorationLine".to_string(), "underline".to_string());
+            match value.as_str() {
+                "dash" => map.insert("textDecorationStyle".to_string(), "dashed".to_string()),
+                "dotted" => map.insert("textDecorationStyle".to_string(), "dotted".to_string()),
+                "wave" => map.insert("textDecorationStyle".to_string(), "wavy".to_string()),
+                // There are a few possible styles in ODF that aren't present in CSS
+                // (dot-dash, dot-dot-dash, long-dash), so just put in a basic underline?
+                "solid" | _ => map.insert("textDecorationStyle".to_string(), "solid".to_string()),
+            };
+        }
+    } else if local_name == "text-underline-type" && value == "double" {
+        return true;
+    } else if local_name == "text-underline-color" {
+        if value == "font-color" {
+            map.insert(
+                "textDecorationColor".to_string(),
+                "currentcolor".to_string(),
+            );
+        } else {
+            // The other valid values are all in hex format
+            map.insert("textDecorationColor".to_string(), value);
+        }
+    } else if local_name == "font-name" {
+        map.insert("fontFamily".to_string(), value);
+    }
+    false
 }
 
 enum TableAlign {
@@ -800,95 +810,21 @@ fn table_properties_begin(attributes: Attributes) -> HashMap<String, String> {
             .unwrap_or("what")
             .to_string();
             if prefix == "fo" {
-                match local_name {
-                    "background-color" => {
-                        map.insert("fontWeight".to_string(), value);
-                    }
-                    "break-after" => {
-                        if value == "auto" || value == "column" || value == "page" {
-                            map.insert("breakAfter".to_string(), value);
-                        }
-                    }
-                    "break-before" => {
-                        if value == "auto" || value == "column" || value == "page" {
-                            map.insert("breakBefore".to_string(), value);
-                        }
-                    }
-                    "margin" => {
-                        let margin_split = value.clone();
-                        let mut margin_split = margin_split.split(' ');
-                        let right = margin_split.nth(1);
-                        let left = margin_split.nth(1);
-                        margin_left = left.unwrap_or("0cm").to_string();
-                        margin_right = right.unwrap_or("0cm").to_string();
-                        map.insert("margin".to_string(), value);
-                    }
-                    "margin-top" => {
-                        map.insert("marginTop".to_string(), value);
-                    }
-                    "margin-bottom" => {
-                        map.insert("marginLeft".to_string(), value);
-                    }
-                    "margin-left" => {
-                        margin_left = value.clone();
-                        map.insert("marginRight".to_string(), value);
-                    }
-                    "margin-right" => {
-                        margin_right = value.clone();
-                        map.insert("marginBottom".to_string(), value);
-                    }
-                    _ => (),
+                let (margin_left_option, margin_right_option) =
+                    table_properties_begin_fo(local_name, value, &mut map);
+                if let Some(margin_left_option) = margin_left_option {
+                    margin_left = margin_left_option;
+                }
+                if let Some(margin_right_option) = margin_right_option {
+                    margin_right = margin_right_option;
                 }
             } else if prefix == "style" {
-                match local_name {
-                    "rel-width" | "width" => {
-                        map.insert("width".to_string(), value);
-                    }
-                    "shadow" => {
-                        map.insert("boxShadow".to_string(), value);
-                    }
-                    "writing-mode" => {
-                        match value.as_str() {
-                            // According to the MDN the replacement for "rl" and "rl-tb" is also "horizontal-tb" apparently
-                            "lr-tb" | "lr" | "rl" | "rl-tb" => {
-                                map.insert("writingMode".to_string(), "horizontal-tb".to_string());
-                            }
-                            // MDN says "tb" is supposed to be replaced by "vertical-lr", but the ODT definition says that "tb" is a synonym for "tb-rl"
-                            "tb-rl" | "tb" => {
-                                map.insert("writingMode".to_string(), "vertical-rl".to_string());
-                            }
-                            "tb-lr" => {
-                                map.insert("writingMode".to_string(), "vertical-lr".to_string());
-                            }
-                            _ => (),
-                        }
-                    }
-                    _ => (),
-                }
+                table_properties_begin_style(local_name, value, &mut map);
             } else if prefix == "table" {
-                match local_name {
-                    "align" => match value.as_str() {
-                        "center" => table_alignment = TableAlign::Center,
-                        "left" => table_alignment = TableAlign::Left,
-                        "right" => table_alignment = TableAlign::Right,
-                        "margins" => table_alignment = TableAlign::Margins,
-                        _ => (),
-                    },
-                    "border-model" => match value.as_str() {
-                        "collapsing" => {
-                            map.insert("borderCollapse".to_string(), "collapse".to_string());
-                        }
-                        "separating" => {
-                            map.insert("borderCollapse".to_string(), "separate".to_string());
-                        }
-                        _ => (),
-                    },
-                    "display" => {
-                        if value == "false" {
-                            map.insert("display".to_string(), "none".to_string());
-                        }
-                    }
-                    _ => (),
+                if let Some(table_alignment_option) =
+                    table_properties_begin_table(local_name, value, &mut map)
+                {
+                    table_alignment = table_alignment_option;
                 }
             }
         }
@@ -915,6 +851,124 @@ fn table_properties_begin(attributes: Attributes) -> HashMap<String, String> {
         }
     }
     map
+}
+
+/// Helper for table_properties_begin() for attributes with "fo" prefix,
+/// returns the values of the left and right margin if the attribute specifies either
+fn table_properties_begin_fo(
+    local_name: &str,
+    value: String,
+    map: &mut HashMap<String, String>,
+) -> (Option<String>, Option<String>) {
+    match local_name {
+        "background-color" => {
+            map.insert("fontWeight".to_string(), value);
+        }
+        "break-after" => {
+            if value == "auto" || value == "column" || value == "page" {
+                map.insert("breakAfter".to_string(), value);
+            }
+        }
+        "break-before" => {
+            if value == "auto" || value == "column" || value == "page" {
+                map.insert("breakBefore".to_string(), value);
+            }
+        }
+        "margin" => {
+            let margin_split = value.clone();
+            let mut margin_split = margin_split.split(' ');
+            let right = margin_split.nth(1);
+            let left = margin_split.nth(1);
+            let left = left.unwrap_or("0cm").to_string();
+            let right = right.unwrap_or("0cm").to_string();
+            map.insert("margin".to_string(), value);
+            return (Some(left), Some(right));
+        }
+        "margin-top" => {
+            map.insert("marginTop".to_string(), value);
+        }
+        "margin-bottom" => {
+            map.insert("marginLeft".to_string(), value);
+        }
+        "margin-left" => {
+            let left = value.clone();
+            map.insert("marginRight".to_string(), value);
+            return (Some(left), None);
+        }
+        "margin-right" => {
+            let right = value.clone();
+            map.insert("marginBottom".to_string(), value);
+            return (None, Some(right));
+        }
+        _ => (),
+    }
+    (None, None)
+}
+
+/// Helper for table_properties_begin() for attributes with "style" prefix
+fn table_properties_begin_style(
+    local_name: &str,
+    value: String,
+    map: &mut HashMap<String, String>,
+) {
+    match local_name {
+        "rel-width" | "width" => {
+            map.insert("width".to_string(), value);
+        }
+        "shadow" => {
+            map.insert("boxShadow".to_string(), value);
+        }
+        "writing-mode" => {
+            match value.as_str() {
+                // According to the MDN the replacement for "rl" and "rl-tb" is also "horizontal-tb" apparently
+                "lr-tb" | "lr" | "rl" | "rl-tb" => {
+                    map.insert("writingMode".to_string(), "horizontal-tb".to_string());
+                }
+                // MDN says "tb" is supposed to be replaced by "vertical-lr", but the ODT definition says that "tb" is a synonym for "tb-rl"
+                "tb-rl" | "tb" => {
+                    map.insert("writingMode".to_string(), "vertical-rl".to_string());
+                }
+                "tb-lr" => {
+                    map.insert("writingMode".to_string(), "vertical-lr".to_string());
+                }
+                _ => (),
+            }
+        }
+        _ => (),
+    }
+}
+
+/// Helper for table_properties_begin() for attributes with "table" prefix
+fn table_properties_begin_table(
+    local_name: &str,
+    value: String,
+    map: &mut HashMap<String, String>,
+) -> Option<TableAlign> {
+    match local_name {
+        "align" => match value.as_str() {
+            "center" => return Some(TableAlign::Center),
+            "left" => return Some(TableAlign::Left),
+            "right" => return Some(TableAlign::Right),
+            "margins" => return Some(TableAlign::Margins),
+            _ => return None,
+        },
+        "border-model" => match value.as_str() {
+            "collapsing" => {
+                map.insert("borderCollapse".to_string(), "collapse".to_string());
+            }
+            "separating" => {
+                map.insert("borderCollapse".to_string(), "separate".to_string());
+            }
+            _ => (),
+        },
+        "display" => {
+            if value == "false" {
+                map.insert("display".to_string(), "none".to_string());
+            }
+        }
+        _ => (),
+    }
+    None
 }
 
 /// Takes the set of attributes of a style:table-column-properties tag in the ODT's content.xml,
@@ -1017,88 +1071,95 @@ fn table_cell_properties_begin(attributes: Attributes) -> HashMap<String, String
             .unwrap_or("what")
             .to_string();
             match prefix {
-                "fo" => match local_name {
-                    "background-color" => {
-                        map.insert("backgroundColor".to_string(), value);
-                    }
-                    "border" => {
-                        map.insert("border".to_string(), value);
-                    }
-                    "border-left" => {
-                        map.insert("borderLeft".to_string(), value);
-                    }
-                    "border-right" => {
-                        map.insert("borderRight".to_string(), value);
-                    }
-                    "border-top" => {
-                        map.insert("borderTop".to_string(), value);
-                    }
-                    "border-bottom" => {
-                        map.insert("borderBottom".to_string(), value);
-                    }
-                    "padding" => {
-                        map.insert("padding".to_string(), value);
-                    }
-                    "padding-top" => {
-                        map.insert("paddingTop".to_string(), value);
-                    }
-                    "padding-bottom" => {
-                        map.insert("paddingBottom".to_string(), value);
-                    }
-                    "padding-left" => {
-                        map.insert("paddingLeft".to_string(), value);
-                    }
-                    "padding-right" => {
-                        map.insert("paddingRight".to_string(), value);
-                    }
-                    _ => (),
-                },
-                "style" => {
-                    match local_name {
-                        "rotation-angle" => {
-                            map.insert("transform".to_string(), format!("rotate({})", value));
-                        }
-                        "shadow" => {
-                            map.insert("boxShadow".to_string(), value);
-                        }
-                        "writing-mode" => {
-                            match value.as_str() {
-                                // According to the MDN the replacement for "rl" and "rl-tb" is also "horizontal-tb" apparently
-                                "lr-tb" | "lr" | "rl" | "rl-tb" => {
-                                    map.insert(
-                                        "writingMode".to_string(),
-                                        "horizontal-tb".to_string(),
-                                    );
-                                }
-                                // MDN says "tb" is supposed to be replaced by "vertical-lr", but the ODT definition says that "tb" is a synonym for "tb-rl"
-                                "tb-rl" | "tb" => {
-                                    map.insert(
-                                        "writingMode".to_string(),
-                                        "vertical-rl".to_string(),
-                                    );
-                                }
-                                "tb-lr" => {
-                                    map.insert(
-                                        "writingMode".to_string(),
-                                        "vertical-lr".to_string(),
-                                    );
-                                }
-                                _ => (),
-                            }
-                        }
-                        "vertical-align" => {
-                            if value == "middle" || value == "top" || value == "bottom" {
-                                map.insert("verticalAlign".to_string(), value);
-                            }
-                        }
-                        _ => (),
-                    }
-                }
+                "fo" => table_cell_properties_begin_fo(local_name, value, &mut map),
+                "style" => table_cell_properties_begin_style(local_name, value, &mut map),
                 _ => (),
             }
         }
     }
     map
+}
+
+/// Helper for table_cell_properties_begin() for attributes with "fo" prefix
+fn table_cell_properties_begin_fo(
+    local_name: &str,
+    value: String,
+    map: &mut HashMap<String, String>,
+) {
+    match local_name {
+        "background-color" => {
+            map.insert("backgroundColor".to_string(), value);
+        }
+        "border" => {
+            map.insert("border".to_string(), value);
+        }
+        "border-left" => {
+            map.insert("borderLeft".to_string(), value);
+        }
+        "border-right" => {
+            map.insert("borderRight".to_string(), value);
+        }
+        "border-top" => {
+            map.insert("borderTop".to_string(), value);
+        }
+        "border-bottom" => {
+            map.insert("borderBottom".to_string(), value);
+        }
+        "padding" => {
+            map.insert("padding".to_string(), value);
+        }
+        "padding-top" => {
+            map.insert("paddingTop".to_string(), value);
+        }
+        "padding-bottom" => {
+            map.insert("paddingBottom".to_string(), value);
+        }
+        "padding-left" => {
+            map.insert("paddingLeft".to_string(), value);
+        }
+        "padding-right" => {
+            map.insert("paddingRight".to_string(), value);
+        }
+        _ => (),
+    }
+}
+
+/// Helper for table_cell_properties_begin() for attributes with "style" prefix
+fn table_cell_properties_begin_style(
+    local_name: &str,
+    value: String,
+    map: &mut HashMap<String, String>,
+) {
+    match local_name {
+        "rotation-angle" => {
+            map.insert("transform".to_string(), format!("rotate({})", value));
+        }
+        "shadow" => {
+            map.insert("boxShadow".to_string(), value);
+        }
+        "writing-mode" => {
+            match value.as_str() {
+                // According to the MDN the replacement for "rl" and "rl-tb" is also "horizontal-tb" apparently
+                "lr-tb" | "lr" | "rl" | "rl-tb" => {
+                    map.insert("writingMode".to_string(), "horizontal-tb".to_string());
+                }
+                // MDN says "tb" is supposed to be replaced by "vertical-lr", but the ODT definition says that "tb" is a synonym for "tb-rl"
+                "tb-rl" | "tb" => {
+                    map.insert("writingMode".to_string(), "vertical-rl".to_string());
+                }
+                "tb-lr" => {
+                    map.insert("writingMode".to_string(), "vertical-lr".to_string());
+                }
+                _ => (),
+            }
+        }
+        "vertical-align" => {
+            if value == "middle" || value == "top" || value == "bottom" {
+                map.insert("verticalAlign".to_string(), value);
+            }
+        }
+        _ => (),
+    }
 }
 
 /// Takes the set of attributes of a table:table tag in the ODT's content.xml
