@@ -49,7 +49,6 @@
     "webpack-cli": "^3.3.0"
   },
   "dependencies": {
-    "clipboard": "^2.0.4",
     "electron-clipboard-extended": "^1.1.1",
     "preact": "^8.4.2",
     "source-map-support": "^0.5.12",
