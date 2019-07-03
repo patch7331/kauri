@@ -10,6 +10,10 @@ import clipboard from "electron-clipboard-extended";
  */
 
 export default class Clipboard extends Component {
+  /**
+   * Constructs a new Clipboard component
+   * @param {Object} props Component properties
+   */
   constructor(props) {
     super(props);
     this.state = { clipboardStack: [] };
@@ -29,6 +33,10 @@ export default class Clipboard extends Component {
     clipboard.off("image-changed");v
   }
 
+  /**
+   * Reacts to changes in system clipboard
+   * @listens {text-changed} listens for text change event
+   */
   handleTextChanged() {
     this.setState(prevState => {
       return {
@@ -39,7 +47,10 @@ export default class Clipboard extends Component {
       };
     });
   }
-
+  /**
+   * Reacts to changes in system clipboard
+   * @listens {text-changed} listens for text change event
+   */
   handleImageChanged() {
     this.setState(prevState => {
       const img = clipboard.readImage();
@@ -53,6 +64,20 @@ export default class Clipboard extends Component {
     });
   }
 
+  /**
+   * Renders component
+   * 
+   * Returns unordered list, each list item corresponding to some clipboard datum and the button to remove the item
+   * @example
+   * <ul>
+   * ...
+   *   <li>
+   *   <button>{remove item from list}</button>
+   *   <p>{clipboard text}</p>
+   *   </li>
+   * ...
+   * </ul>
+   */
   render(props, state) {
     return (
       <ul class="clipboard">
