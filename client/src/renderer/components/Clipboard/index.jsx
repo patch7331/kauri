@@ -82,8 +82,13 @@ export default class Clipboard extends Component {
     return (
       <ul class="clipboard">
         {state.clipboardStack.map((item, index) => (
-          <li class="clipboard__item" id={"cp_it_" + index}>
-            <button onclick = {() => state.clipboardStack.splice(index, 1) && this.setState()}>X</button>
+          <li class="clipboard__item" data-index={"cp_it_" + index}>
+            <button onclick = {this.setState(() => {
+              clipboardStack: [
+                ...this.state.clipboardStack.slice(i, index),
+                ...this.state.clipboardStack.slice(index + 1)
+              ]
+            })}>X</button>
             {item.type === "txt" ? (
               <p>{item.data}</p>
             ) : (
