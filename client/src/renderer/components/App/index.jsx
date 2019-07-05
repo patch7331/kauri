@@ -18,7 +18,7 @@ export default class App extends Component {
    */
   constructor(props) {
     super(props);
-    this.state = { document: demo.document };
+    this.state = { document: demo };
     this.loadFile = this.loadFile.bind(this);
     this.editor = createRef();
     setApplicationMenu(this.loadFile);
@@ -36,7 +36,7 @@ export default class App extends Component {
       .then(resp => resp.json())
       .then(json => {
         this.editor.current.clearContentEditable();
-        this.setState(json);
+        this.setState({ document: json });
       })
       .catch(e => console.log(e));
   }
