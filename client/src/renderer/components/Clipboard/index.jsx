@@ -19,6 +19,7 @@ export default class Clipboard extends Component {
     this.state = { clipboardStack: [] };
     this.handleTextChanged = this.handleTextChanged.bind(this);
     this.handleImageChanged = this.handleImageChanged.bind(this);
+    this.handleItemRemoved = this.handleItemRemoved.bind(this);
   }
 
   componentDidMount() {
@@ -30,7 +31,8 @@ export default class Clipboard extends Component {
   componentWillUnmount() {
     clipboard.stopWatching();
     clipboard.off("text-changed");
-    clipboard.off("image-changed");v
+    clipboard.off("image-changed");
+    v;
   }
 
   /**
@@ -64,9 +66,20 @@ export default class Clipboard extends Component {
     });
   }
 
+  handleItemRemoved(index) {
+    this.setState(prevState => {
+      return {
+        clipboardStack: [
+          ...prevState.clipboardStack.slice(i, index),
+          ...prevState.clipboardStack.slice(index + 1),
+        ];
+      }
+    });
+  }
+
   /**
    * Renders component
-   * 
+   *
    * Returns unordered list, each list item corresponding to some clipboard datum and the button to remove the item
    * @example
    * <ul>
@@ -82,13 +95,8 @@ export default class Clipboard extends Component {
     return (
       <ul class="clipboard">
         {state.clipboardStack.map((item, index) => (
-          <li class="clipboard__item" data-index={"cp_it_" + index}>
-            <button onclick = {this.setState(() => {
-              clipboardStack: [
-                ...this.state.clipboardStack.slice(i, index),
-                ...this.state.clipboardStack.slice(index + 1)
-              ]
-            })}>X</button>
+          <li class="clipboard__item" data-index={index}>
+            <button onclick={() => this.handleItemRemoved(index)}>X</button>
             {item.type === "txt" ? (
               <p>{item.data}</p>
             ) : (
