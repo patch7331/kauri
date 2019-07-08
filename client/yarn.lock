@@ -2663,6 +2663,13 @@ electron-builder@^20.44.4:
     update-notifier "^3.0.0"
     yargs "^13.2.4"
 
+electron-clipboard-extended@^1.1.1:
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/electron-clipboard-extended/-/electron-clipboard-extended-1.1.1.tgz#f2ee6efc8ff08fd490d279e847920280d9ed8ddb"
+  integrity sha512-XA5ugkm+xA4FKVl5ebpRF8kGl9gZuKOCUf1gKZXOzrkDhUyfiRi2RWehBALA1jPlp4/JIjYpB49lhnzi0O9j8w==
+  dependencies:
+    events "^1.1.1"
+
 electron-devtools-installer@^2.2.4:
   version "2.2.4"
   resolved "https://registry.yarnpkg.com/electron-devtools-installer/-/electron-devtools-installer-2.2.4.tgz#261a50337e37121d338b966f07922eb4939a8763"
@@ -2921,6 +2928,11 @@ eventemitter3@^3.0.0:
   version "3.1.2"
   resolved "https://registry.yarnpkg.com/eventemitter3/-/eventemitter3-3.1.2.tgz#2d3d48f9c346698fce83a85d7d664e98535df6e7"
   integrity sha512-tvtQIeLVHjDkJYnzf2dgVMxfuSGJeM/7UCG17TT4EumTfNtF+0nebF/4zWOIkCreAbtNqhGEboB6BWrwqNaw4Q==
+
+events@^1.1.1:
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/events/-/events-1.1.1.tgz#9ebdb7635ad099c70dcc4c2a1f5004288e8bd924"
+  integrity sha1-nr23Y1rQmccNzEwqH1AEKI6L2SQ=
 
 events@^3.0.0:
   version "3.0.0"
