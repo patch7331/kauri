@@ -69,7 +69,7 @@ export default class Clipboard extends Component {
   /**
    * Removes saved item from history
    * @param {int} index - index of item to be removed
-   * 
+   *
    * Called when user presses "X" button on item in history
    */
   handleItemRemoved(index) {
@@ -78,8 +78,8 @@ export default class Clipboard extends Component {
         clipboardStack: [
           ...prevState.clipboardStack.slice(i, index),
           ...prevState.clipboardStack.slice(index + 1),
-        ];
-      }
+        ],
+      };
     });
   }
 
