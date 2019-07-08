@@ -12,7 +12,7 @@ import clipboard from "electron-clipboard-extended";
 export default class Clipboard extends Component {
   /**
    * Constructs a new Clipboard component
-   * @param {Object} props Component properties
+   * @param {Object} props - Component properties
    */
   constructor(props) {
     super(props);
@@ -66,6 +66,12 @@ export default class Clipboard extends Component {
     });
   }
 
+  /**
+   * Removes saved item from history
+   * @param {int} index - index of item to be removed
+   * 
+   * Called when user presses "X" button on item in history
+   */
   handleItemRemoved(index) {
     this.setState(prevState => {
       return {
@@ -85,7 +91,7 @@ export default class Clipboard extends Component {
    * <ul>
    * ...
    *   <li>
-   *   <button>{remove item from list}</button>
+   *   <button {remove item from list} />
    *   <p>{clipboard text}</p>
    *   </li>
    * ...
