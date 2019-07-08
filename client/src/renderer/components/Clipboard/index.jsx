@@ -95,7 +95,7 @@ export default class Clipboard extends Component {
     return (
       <ul class="clipboard">
         {state.clipboardStack.map((item, index) => (
-          <li class="clipboard__item" data-index={index}>
+          <li class="clipboard__item">
             <button onclick={() => this.handleItemRemoved(index)}>X</button>
             {item.type === "txt" ? (
               <p>{item.data}</p>
