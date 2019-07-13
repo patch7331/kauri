@@ -200,6 +200,8 @@ impl ODTParser {
             Some(text_properties_begin(attributes))
         } else if name == "style:table-column-properties" {
             Some(table_column_properties_begin(attributes))
+        } else if name == "style:table-cell-properties" {
+            Some(table_cell_properties_begin(attributes))
         } else if name == "table:table-column" {
             // We should be inside a table if we see this, so if it is empty ignore
             if self.document_hierarchy.is_empty()
