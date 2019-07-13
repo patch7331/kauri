@@ -705,14 +705,14 @@ fn table_cell_begin(
             }
         }
     }
-    if default_style_name != "" {
+    if style_name != "" {
         element.styles = auto_styles
-            .get(&default_style_name)
+            .get(&style_name)
             .unwrap_or(&HashMap::new())
             .clone();
     } else {
         element.styles = auto_styles
-            .get(&style_name)
+            .get(&default_style_name)
             .unwrap_or(&HashMap::new())
             .clone();
     }
