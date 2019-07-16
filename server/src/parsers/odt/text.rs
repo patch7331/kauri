@@ -126,13 +126,15 @@ fn check_underline(
     let underline = style.get("textDecorationLine");
     let underline_color = style.get("textDecorationColor");
     if let Some(x) = underline {
-        if x == "underline" {
-            ensure_children_no_underline = true;
-            if let Some(x) = underline_color {
-                set_children_underline = x == "currentcolor";
+        match x.as_str() {
+            "underline" => {
+                ensure_children_no_underline = true;
+                if let Some(x) = underline_color {
+                    set_children_underline = x == "currentcolor";
+                }
             }
-        } else if x == "none" {
-            ensure_children_no_underline = false;
+            "none" => ensure_children_no_underline = false,
+            _ => (),
         }
     }
     element.styles = style;
@@ -182,21 +184,25 @@ fn heading_begin(attributes: Attributes) -> (Element, String) {
     for i in attributes {
         if let Ok(i) = i {
             let name = std::str::from_utf8(i.key).unwrap_or(":");
-            if name == "text:outline-level" {
-                level = std::str::from_utf8(
-                    &i.unescaped_value()
-                        .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
-                )
-                .unwrap_or("1")
-                .parse::<f64>()
-                .unwrap_or(1.0);
-            } else if name == "text:style-name" {
-                style_name = std::str::from_utf8(
-                    &i.unescaped_value()
-                        .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
-                )
-                .unwrap_or("")
-                .to_string();
+            match name {
+                "text:outline-level" => {
+                    level = std::str::from_utf8(
+                        &i.unescaped_value()
+                            .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                    )
+                    .unwrap_or("1")
+                    .parse::<f64>()
+                    .unwrap_or(1.0)
+                }
+                "text:style-name" => {
+                    style_name = std::str::from_utf8(
+                        &i.unescaped_value()
+                            .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                    )
+                    .unwrap_or("")
+                    .to_string()
+                }
+                _ => (),
             }
         }
     }
@@ -281,17 +287,23 @@ pub fn text_properties_begin(attributes: Attributes) -> HashMap<String, String> 
 
 /// Helper for text_properties_begin() to respond to attributes with "fo" prefix
 fn text_properties_begin_fo(local_name: &str, value: String, map: &mut HashMap<String, String>) {
-    if local_name == "font-weight" {
-        // All valid values for this attribute is also valid in the CSS equivalent, so just use it as is
-        map.insert("fontWeight".to_string(), value);
-    } else if local_name == "font-style" && value != "backslant" {
-        // `backslant` is not valid in CSS, but all the other ones are
-        map.insert("fontStyle".to_string(), value);
-    } else if local_name == "color" {
-        map.insert("color".to_string(), value);
-    } else if local_name == "font-size" {
-        map.insert("fontSize".to_string(), value);
-    }
+    match local_name {
+        "font-weight" => {
+            // All valid values for this attribute is also valid in the CSS equivalent, so just use it as is
+            map.insert("fontWeight".to_string(), value);
+        }
+        "font-style" if value != "backslant" => {
+            // `backslant` is not valid in CSS, but all the other ones are
+            map.insert("fontStyle".to_string(), value);
+        }
+        "color" => {
+            map.insert("color".to_string(), value);
+        }
+        "font-size" => {
+            map.insert("fontSize".to_string(), value);
+        }
+        _ => (),
+    };
 }
 
 /// Helper for text_properties_begin() to respond to attributes with "style" prefix,
@@ -303,39 +315,56 @@ fn text_properties_begin_style(
     value: String,
     styles: &mut HashMap<String, String>,
 ) -> bool {
-    if local_name == "text-underline-type" && value == "double" {
-        return true;
-    }
-    if local_name == "font-name" {
-        styles.insert("fontFamily".to_string(), value);
-        return false;
-    }
-    if local_name == "text-underline-style" {
-        if value == "none" {
-            styles.insert("textDecorationLine".to_string(), "none".to_string());
-        } else {
-            styles.insert("textDecorationLine".to_string(), "underline".to_string());
-            match value.as_str() {
-                "dash" => styles.insert("textDecorationStyle".to_string(), "dashed".to_string()),
-                "dotted" => styles.insert("textDecorationStyle".to_string(), "dotted".to_string()),
-                "wave" => styles.insert("textDecorationStyle".to_string(), "wavy".to_string()),
-                // There are a few possible styles in ODF that aren't present in CSS
-                // (dot-dash, dot-dot-dash, long-dash), so just put in a basic underline?
-                "solid" | _ => {
-                    styles.insert("textDecorationStyle".to_string(), "solid".to_string())
-                }
-            };
+    match local_name {
+        "text-underline-type" if value == "double" => true,
+        "font-name" => {
+            styles.insert("fontFamily".to_string(), value);
+            false
         }
-    } else if local_name == "text-underline-color" {
-        if value == "font-color" {
-            styles.insert(
-                "textDecorationColor".to_string(),
-                "currentcolor".to_string(),
-            );
-        } else {
-            // The other valid values are all in hex format
-            styles.insert("textDecorationColor".to_string(), value);
+        "text-underline-style" => {
+            text_properties_begin_style_underline_style(value, styles);
+            false
         }
+        "text-underline-color" => {
+            text_properties_begin_style_underline_color(value, styles);
+            false
+        }
+        _ => false,
     }
-    false
+}
+
+/// Helper for text_properties_begin_style() to handle underline style
+fn text_properties_begin_style_underline_style(
+    value: String,
+    styles: &mut HashMap<String, String>,
+) {
+    if value == "none" {
+        styles.insert("textDecorationLine".to_string(), "none".to_string());
+    } else {
+        styles.insert("textDecorationLine".to_string(), "underline".to_string());
+        match value.as_str() {
+            "dash" => styles.insert("textDecorationStyle".to_string(), "dashed".to_string()),
+            "dotted" => styles.insert("textDecorationStyle".to_string(), "dotted".to_string()),
+            "wave" => styles.insert("textDecorationStyle".to_string(), "wavy".to_string()),
+            // There are a few possible styles in ODF that aren't present in CSS
+            // (dot-dash, dot-dot-dash, long-dash), so just put in a basic underline?
+            "solid" | _ => styles.insert("textDecorationStyle".to_string(), "solid".to_string()),
+        };
+    }
+}
+
+/// Helper for text_properties_begin_style() to handle underline color
+fn text_properties_begin_style_underline_color(
+    value: String,
+    styles: &mut HashMap<String, String>,
+) {
+    if value == "font-color" {
+        styles.insert(
+            "textDecorationColor".to_string(),
+            "currentcolor".to_string(),
+        );
+    } else {
+        // The other valid values are all in hex format
+        styles.insert("textDecorationColor".to_string(), value);
+    }
 }
