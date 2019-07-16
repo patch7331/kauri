@@ -151,39 +151,35 @@ impl ODTParser {
         name: &str,
         attributes: Attributes,
     ) -> (Option<String>, Option<HashMap<String, String>>) {
-        let mut current_style_name: Option<String> = None;
-        let mut current_style_value: Option<HashMap<String, String>> = None;
         let (prefix, local_name) = name.split_at(name.find(':').unwrap_or(0));
         let local_name = &local_name[1..];
-        if name == "office:body" {
-            self.body_begin = true;
-        } else if self.body_begin {
-            match prefix {
-                "text" => self.handle_element_start_text(local_name, attributes),
-                "table" => self.handle_element_start_table(local_name, attributes),
-                _ => return (current_style_name, current_style_value),
+        match name {
+            "office:body" => self.body_begin = true,
+            _ if self.body_begin => {
+                self.handle_element_start_body(prefix, local_name, attributes);
+                return (None, None);
             }
-        } else if name == "office:automatic-styles" {
-            self.styles_begin = true;
-        } else if self.styles_begin {
-            if prefix != "style" {
-                return (current_style_name, current_style_value);
+            "office:automatic-styles" => self.styles_begin = true,
+            _ if self.styles_begin && prefix == "style" => {
+                return handle_element_start_style(local_name, attributes)
             }
-            match local_name {
-                "style" => current_style_name = Some(style_begin(attributes)),
-                "table-row-properties" => {
-                    current_style_value = Some(table_row_properties_begin(attributes))
-                }
-                "table-properties" => {
-                    current_style_value = Some(table_properties_begin(attributes))
-                }
-                "table-cell-properties" => {
-                    current_style_value = Some(table_cell_properties_begin(attributes))
-                }
-                _ => (),
-            }
+            _ => (),
         }
-        (current_style_name, current_style_value)
+        (None, None)
+    }
+
+    /// Helper for handle_element_start() to handle tags when in the body
+    fn handle_element_start_body(
+        &mut self,
+        prefix: &str,
+        local_name: &str,
+        attributes: Attributes,
+    ) {
+        match prefix {
+            "text" => self.handle_element_start_text(local_name, attributes),
+            "table" => self.handle_element_start_table(local_name, attributes),
+            _ => (),
+        }
     }
 
     /// Handles an EmptyElement event from the XML parser by taking its contents (only name and attributes needed)
@@ -196,45 +192,17 @@ impl ODTParser {
     ) -> Option<HashMap<String, String>> {
         let (prefix, local_name) = name.split_at(name.find(':').unwrap_or(0));
         let local_name = &local_name[1..];
-        if name == "style:text-properties" {
-            Some(text_properties_begin(attributes))
-        } else if name == "style:table-column-properties" {
-            Some(table_column_properties_begin(attributes))
-        } else if name == "style:table-cell-properties" {
-            Some(table_cell_properties_begin(attributes))
-        } else if name == "table:table-column" {
-            // We should be inside a table if we see this, so if it is empty ignore
-            if self.document_hierarchy.is_empty()
-                || self.table_column_default_style_names.is_empty()
-            {
-                return None;
+        match prefix {
+            "style" => handle_element_empty_style(local_name, attributes),
+            "text" => {
+                self.handle_element_empty_text(local_name, attributes);
+                None
             }
-            if let Node::Element(ref mut element) =
-                &mut self.document_hierarchy.last_mut().unwrap().children[1]
-            {
-                let (table, default_cell_style_name, mut repeat) =
-                    table_column_begin(attributes, &self.auto_styles);
-                element.children.push(Node::Element(table));
-                let table_column_default_style_names =
-                    self.table_column_default_style_names.last_mut().unwrap();
-                if let Some(default_cell_style_name) = default_cell_style_name {
-                    while repeat != 0 {
-                        table_column_default_style_names.push(default_cell_style_name.clone());
-                        repeat -= 1;
-                    }
-                } else {
-                    while repeat != 0 {
-                        table_column_default_style_names.push("".to_string());
-                        repeat -= 1;
-                    }
-                }
+            "table" => {
+                self.handle_element_empty_table(local_name, attributes);
+                None
             }
-            None
-        } else if prefix == "text" {
-            self.handle_element_empty_text(local_name, attributes);
-            None
-        } else {
-            None
+            _ => None,
         }
     }
 
@@ -332,4 +300,40 @@ fn style_begin(attributes: Attributes) -> String {
         }
     }
     String::new()
+}
+
+/// Helper for handle_element_empty() to respond to tags with "style" prefix
+/// local_name here is the name of the tag without the prefix
+fn handle_element_empty_style(
+    local_name: &str,
+    attributes: Attributes,
+) -> Option<HashMap<String, String>> {
+    match local_name {
+        "text-properties" => Some(text_properties_begin(attributes)),
+        "table-column-properties" => Some(table_column_properties_begin(attributes)),
+        "table-cell-properties" => Some(table_cell_properties_begin(attributes)),
+        _ => None,
+    }
+}
+
+/// Helper for handle_element_start() to respond to tags with "style" prefix
+/// local_name here is the name of the tag without the prefix
+fn handle_element_start_style(
+    local_name: &str,
+    attributes: Attributes,
+) -> (Option<String>, Option<HashMap<String, String>>) {
+    let mut current_style_name: Option<String> = None;
+    let mut current_style_value: Option<HashMap<String, String>> = None;
+    match local_name {
+        "style" => current_style_name = Some(style_begin(attributes)),
+        "table-row-properties" => {
+            current_style_value = Some(table_row_properties_begin(attributes))
+        }
+        "table-properties" => current_style_value = Some(table_properties_begin(attributes)),
+        "table-cell-properties" => {
+            current_style_value = Some(table_cell_properties_begin(attributes))
+        }
+        _ => (),
+    }
+    (current_style_name, current_style_value)
 }

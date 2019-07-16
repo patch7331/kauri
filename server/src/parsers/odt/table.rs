@@ -125,6 +125,36 @@ impl ODTParser {
             _ => (),
         }
     }
+
+    pub fn handle_element_empty_table(&mut self, local_name: &str, attributes: Attributes) {
+        if local_name != "table-column" {
+            return;
+        }
+        // We should be inside a table if we see this, so if it is empty ignore
+        if self.document_hierarchy.is_empty() || self.table_column_default_style_names.is_empty() {
+            return;
+        }
+        if let Node::Element(ref mut element) =
+            &mut self.document_hierarchy.last_mut().unwrap().children[1]
+        {
+            let (table, default_cell_style_name, mut repeat) =
+                table_column_begin(attributes, &self.auto_styles);
+            element.children.push(Node::Element(table));
+            let table_column_default_style_names =
+                self.table_column_default_style_names.last_mut().unwrap();
+            if let Some(default_cell_style_name) = default_cell_style_name {
+                while repeat != 0 {
+                    table_column_default_style_names.push(default_cell_style_name.clone());
+                    repeat -= 1;
+                }
+            } else {
+                while repeat != 0 {
+                    table_column_default_style_names.push("".to_string());
+                    repeat -= 1;
+                }
+            }
+        }
+    }
 }
 
 enum TableAlign {
