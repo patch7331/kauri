@@ -182,23 +182,26 @@ pub fn table_properties_begin(attributes: Attributes) -> HashMap<String, String>
             )
             .unwrap_or("what")
             .to_string();
-            if prefix == "fo" {
-                let (margin_left_option, margin_right_option) =
-                    table_properties_begin_fo(local_name, value, &mut map);
-                if let Some(margin_left_option) = margin_left_option {
-                    margin_left = margin_left_option;
+            match prefix {
+                "fo" => {
+                    let (margin_left_option, margin_right_option) =
+                        table_properties_begin_fo(local_name, value, &mut map);
+                    if let Some(margin_left_option) = margin_left_option {
+                        margin_left = margin_left_option;
+                    }
+                    if let Some(margin_right_option) = margin_right_option {
+                        margin_right = margin_right_option;
+                    }
                 }
-                if let Some(margin_right_option) = margin_right_option {
-                    margin_right = margin_right_option;
+                "style" => table_properties_begin_style(local_name, value, &mut map),
+                "table" => {
+                    if let Some(table_alignment_option) =
+                        table_properties_begin_table(local_name, value, &mut map)
+                    {
+                        table_alignment = table_alignment_option;
+                    }
                 }
-            } else if prefix == "style" {
-                table_properties_begin_style(local_name, value, &mut map);
-            } else if prefix == "table" {
-                if let Some(table_alignment_option) =
-                    table_properties_begin_table(local_name, value, &mut map)
-                {
-                    table_alignment = table_alignment_option;
-                }
+                _ => (),
             }
         }
     }
@@ -231,20 +234,20 @@ pub fn table_properties_begin(attributes: Attributes) -> HashMap<String, String>
 fn table_properties_begin_fo(
     local_name: &str,
     value: String,
-    map: &mut HashMap<String, String>,
+    styles: &mut HashMap<String, String>,
 ) -> (Option<String>, Option<String>) {
     match local_name {
         "background-color" => {
-            map.insert("fontWeight".to_string(), value);
+            styles.insert("fontWeight".to_string(), value);
         }
         "break-after" => {
             if value == "auto" || value == "column" || value == "page" {
-                map.insert("breakAfter".to_string(), value);
+                styles.insert("breakAfter".to_string(), value);
             }
         }
         "break-before" => {
             if value == "auto" || value == "column" || value == "page" {
-                map.insert("breakBefore".to_string(), value);
+                styles.insert("breakBefore".to_string(), value);
             }
         }
         "margin" => {
@@ -254,23 +257,23 @@ fn table_properties_begin_fo(
             let left = margin_split.nth(1);
             let left = left.unwrap_or("0cm").to_string();
             let right = right.unwrap_or("0cm").to_string();
-            map.insert("margin".to_string(), value);
+            styles.insert("margin".to_string(), value);
             return (Some(left), Some(right));
         }
         "margin-top" => {
-            map.insert("marginTop".to_string(), value);
+            styles.insert("marginTop".to_string(), value);
         }
         "margin-bottom" => {
-            map.insert("marginLeft".to_string(), value);
+            styles.insert("marginLeft".to_string(), value);
         }
         "margin-left" => {
             let left = value.clone();
-            map.insert("marginRight".to_string(), value);
+            styles.insert("marginRight".to_string(), value);
             return (Some(left), None);
         }
         "margin-right" => {
             let right = value.clone();
-            map.insert("marginBottom".to_string(), value);
+            styles.insert("marginBottom".to_string(), value);
             return (None, Some(right));
         }
         _ => (),
@@ -282,30 +285,33 @@ fn table_properties_begin_fo(
 fn table_properties_begin_style(
     local_name: &str,
     value: String,
-    map: &mut HashMap<String, String>,
+    styles: &mut HashMap<String, String>,
 ) {
     match local_name {
         "rel-width" | "width" => {
-            map.insert("width".to_string(), value);
+            styles.insert("width".to_string(), value);
         }
         "shadow" => {
-            map.insert("boxShadow".to_string(), value);
+            styles.insert("boxShadow".to_string(), value);
         }
-        "writing-mode" => {
-            match value.as_str() {
-                // According to the MDN the replacement for "rl" and "rl-tb" is also "horizontal-tb" apparently
-                "lr-tb" | "lr" | "rl" | "rl-tb" => {
-                    map.insert("writingMode".to_string(), "horizontal-tb".to_string());
-                }
-                // MDN says "tb" is supposed to be replaced by "vertical-lr", but the ODT definition says that "tb" is a synonym for "tb-rl"
-                "tb-rl" | "tb" => {
-                    map.insert("writingMode".to_string(), "vertical-rl".to_string());
-                }
-                "tb-lr" => {
-                    map.insert("writingMode".to_string(), "vertical-lr".to_string());
-                }
-                _ => (),
-            }
+        "writing-mode" => table_properties_begin_style_writing_mode(value, styles),
+        _ => (),
+    }
+}
+
+/// Helper for table_properties_begin_style() and table_cell_properties_begin_style() for the writing mode
+fn table_properties_begin_style_writing_mode(value: String, styles: &mut HashMap<String, String>) {
+    match value.as_str() {
+        // According to the MDN the replacement for "rl" and "rl-tb" is also "horizontal-tb" apparently
+        "lr-tb" | "lr" | "rl" | "rl-tb" => {
+            styles.insert("writingMode".to_string(), "horizontal-tb".to_string());
+        }
+        // MDN says "tb" is supposed to be replaced by "vertical-lr", but the ODT definition says that "tb" is a synonym for "tb-rl"
+        "tb-rl" | "tb" => {
+            styles.insert("writingMode".to_string(), "vertical-rl".to_string());
+        }
+        "tb-lr" => {
+            styles.insert("writingMode".to_string(), "vertical-lr".to_string());
         }
         _ => (),
     }
@@ -315,33 +321,41 @@ fn table_properties_begin_style(
 fn table_properties_begin_table(
     local_name: &str,
     value: String,
-    map: &mut HashMap<String, String>,
+    styles: &mut HashMap<String, String>,
 ) -> Option<TableAlign> {
     match local_name {
-        "align" => match value.as_str() {
-            "center" => return Some(TableAlign::Center),
-            "left" => return Some(TableAlign::Left),
-            "right" => return Some(TableAlign::Right),
-            "margins" => return Some(TableAlign::Margins),
-            _ => return None,
-        },
-        "border-model" => match value.as_str() {
-            "collapsing" => {
-                map.insert("borderCollapse".to_string(), "collapse".to_string());
-            }
-            "separating" => {
-                map.insert("borderCollapse".to_string(), "separate".to_string());
-            }
-            _ => (),
-        },
-        "display" => {
-            if value == "false" {
-                map.insert("display".to_string(), "none".to_string());
-            }
+        "align" => return table_properties_begin_table_align(value),
+        "border-model" => table_properties_begin_table_border_model(value, styles),
+        "display" if value == "false" => {
+            styles.insert("display".to_string(), "none".to_string());
         }
         _ => (),
     }
     None
+}
+
+/// Helper for table_properties_begin_table() for the alignment attribute
+fn table_properties_begin_table_align(value: String) -> Option<TableAlign> {
+    match value.as_str() {
+        "center" => Some(TableAlign::Center),
+        "left" => Some(TableAlign::Left),
+        "right" => Some(TableAlign::Right),
+        "margins" => Some(TableAlign::Margins),
+        _ => None,
+    }
+}
+
+/// Helper for table_properties_begin_table() for the border-model attribute
+fn table_properties_begin_table_border_model(value: String, styles: &mut HashMap<String, String>) {
+    match value.as_str() {
+        "collapsing" => {
+            styles.insert("borderCollapse".to_string(), "collapse".to_string());
+        }
+        "separating" => {
+            styles.insert("borderCollapse".to_string(), "separate".to_string());
+        }
+        _ => (),
+    }
 }
 
 /// Takes the set of attributes of a style:table-column-properties tag in the ODT's content.xml,
@@ -457,41 +471,41 @@ pub fn table_cell_properties_begin(attributes: Attributes) -> HashMap<String, St
 fn table_cell_properties_begin_fo(
     local_name: &str,
     value: String,
-    map: &mut HashMap<String, String>,
+    styles: &mut HashMap<String, String>,
 ) {
     match local_name {
         "background-color" => {
-            map.insert("backgroundColor".to_string(), value);
+            styles.insert("backgroundColor".to_string(), value);
         }
         "border" => {
-            map.insert("border".to_string(), value);
+            styles.insert("border".to_string(), value);
         }
         "border-left" => {
-            map.insert("borderLeft".to_string(), value);
+            styles.insert("borderLeft".to_string(), value);
         }
         "border-right" => {
-            map.insert("borderRight".to_string(), value);
+            styles.insert("borderRight".to_string(), value);
         }
         "border-top" => {
-            map.insert("borderTop".to_string(), value);
+            styles.insert("borderTop".to_string(), value);
         }
         "border-bottom" => {
-            map.insert("borderBottom".to_string(), value);
+            styles.insert("borderBottom".to_string(), value);
         }
         "padding" => {
-            map.insert("padding".to_string(), value);
+            styles.insert("padding".to_string(), value);
         }
         "padding-top" => {
-            map.insert("paddingTop".to_string(), value);
+            styles.insert("paddingTop".to_string(), value);
         }
         "padding-bottom" => {
-            map.insert("paddingBottom".to_string(), value);
+            styles.insert("paddingBottom".to_string(), value);
         }
         "padding-left" => {
-            map.insert("paddingLeft".to_string(), value);
+            styles.insert("paddingLeft".to_string(), value);
         }
         "padding-right" => {
-            map.insert("paddingRight".to_string(), value);
+            styles.insert("paddingRight".to_string(), value);
         }
         _ => (),
     }
@@ -501,34 +515,19 @@ fn table_cell_properties_begin_fo(
 fn table_cell_properties_begin_style(
     local_name: &str,
     value: String,
-    map: &mut HashMap<String, String>,
+    styles: &mut HashMap<String, String>,
 ) {
     match local_name {
         "rotation-angle" => {
-            map.insert("transform".to_string(), format!("rotate({})", value));
+            styles.insert("transform".to_string(), format!("rotate({})", value));
         }
         "shadow" => {
-            map.insert("boxShadow".to_string(), value);
+            styles.insert("boxShadow".to_string(), value);
         }
-        "writing-mode" => {
-            match value.as_str() {
-                // According to the MDN the replacement for "rl" and "rl-tb" is also "horizontal-tb" apparently
-                "lr-tb" | "lr" | "rl" | "rl-tb" => {
-                    map.insert("writingMode".to_string(), "horizontal-tb".to_string());
-                }
-                // MDN says "tb" is supposed to be replaced by "vertical-lr", but the ODT definition says that "tb" is a synonym for "tb-rl"
-                "tb-rl" | "tb" => {
-                    map.insert("writingMode".to_string(), "vertical-rl".to_string());
-                }
-                "tb-lr" => {
-                    map.insert("writingMode".to_string(), "vertical-lr".to_string());
-                }
-                _ => (),
-            }
-        }
+        "writing-mode" => table_properties_begin_style_writing_mode(value, styles),
         "vertical-align" => {
             if value == "middle" || value == "top" || value == "bottom" {
-                map.insert("verticalAlign".to_string(), value);
+                styles.insert("verticalAlign".to_string(), value);
             }
         }
         _ => (),
@@ -587,32 +586,37 @@ pub fn table_column_begin(
     for i in attributes {
         if let Ok(i) = i {
             let name = std::str::from_utf8(i.key).unwrap_or(":");
-            if name == "table:style-name" {
-                style_name = std::str::from_utf8(
-                    &i.unescaped_value()
-                        .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
-                )
-                .unwrap_or("")
-                .to_string();
-            } else if name == "table:number-columns-repeated" {
-                repeat = std::str::from_utf8(
-                    &i.unescaped_value()
-                        .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
-                )
-                .unwrap_or("1")
-                .to_string();
-                element
-                    .attributes
-                    .insert("span".to_string(), repeat.clone());
-            } else if name == "table:default-cell-style-name" {
-                default_cell_style_name = Some(
-                    std::str::from_utf8(
+            match name {
+                "table:style-name" => {
+                    style_name = std::str::from_utf8(
+                        &i.unescaped_value()
+                            .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                    )
+                    .unwrap_or("")
+                    .to_string()
+                }
+                "table:number-columns-repeated" => {
+                    repeat = std::str::from_utf8(
                         &i.unescaped_value()
                             .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
                     )
                     .unwrap_or("1")
-                    .to_string(),
-                );
+                    .to_string();
+                    element
+                        .attributes
+                        .insert("span".to_string(), repeat.clone());
+                }
+                "table:default-cell-style-name" => {
+                    default_cell_style_name = Some(
+                        std::str::from_utf8(
+                            &i.unescaped_value()
+                                .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                        )
+                        .unwrap_or("1")
+                        .to_string(),
+                    )
+                }
+                _ => (),
             }
         }
     }
@@ -641,32 +645,37 @@ fn table_row_begin(
     for i in attributes {
         if let Ok(i) = i {
             let name = std::str::from_utf8(i.key).unwrap_or(":");
-            if name == "table:style-name" {
-                style_name = std::str::from_utf8(
-                    &i.unescaped_value()
-                        .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
-                )
-                .unwrap_or("")
-                .to_string();
-            } else if name == "table:number-rows-repeated" {
-                element.attributes.insert(
-                    "span".to_string(),
-                    std::str::from_utf8(
+            match name {
+                "table:style-name" => {
+                    style_name = std::str::from_utf8(
                         &i.unescaped_value()
                             .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
                     )
-                    .unwrap_or("1")
-                    .to_string(),
-                );
-            } else if name == "table:default-cell-style-name" {
-                default_cell_style_name = Some(
-                    std::str::from_utf8(
-                        &i.unescaped_value()
-                            .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                    .unwrap_or("")
+                    .to_string()
+                }
+                "table:number-rows-repeated" => {
+                    element.attributes.insert(
+                        "span".to_string(),
+                        std::str::from_utf8(
+                            &i.unescaped_value()
+                                .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                        )
+                        .unwrap_or("1")
+                        .to_string(),
+                    );
+                }
+                "table:default-cell-style-name" => {
+                    default_cell_style_name = Some(
+                        std::str::from_utf8(
+                            &i.unescaped_value()
+                                .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                        )
+                        .unwrap_or("1")
+                        .to_string(),
                     )
-                    .unwrap_or("1")
-                    .to_string(),
-                );
+                }
+                _ => (),
             }
         }
     }
@@ -695,43 +704,49 @@ fn table_cell_begin(
     for i in attributes {
         if let Ok(i) = i {
             let name = std::str::from_utf8(i.key).unwrap_or(":");
-            if name == "table:style-name" {
-                style_name = std::str::from_utf8(
-                    &i.unescaped_value()
-                        .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
-                )
-                .unwrap_or("")
-                .to_string();
-            } else if name == "table:number-columns-repeated" {
-                element.attributes.insert(
-                    "_repeat".to_string(),
-                    std::str::from_utf8(
+            match name {
+                "table:style-name" => {
+                    style_name = std::str::from_utf8(
                         &i.unescaped_value()
                             .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
                     )
-                    .unwrap_or("1")
-                    .to_string(),
-                );
-            } else if name == "table:number-columns-spanned" {
-                element.attributes.insert(
-                    "colspan".to_string(),
-                    std::str::from_utf8(
-                        &i.unescaped_value()
-                            .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
-                    )
-                    .unwrap_or("1")
-                    .to_string(),
-                );
-            } else if name == "table:number-rows-spanned" {
-                element.attributes.insert(
-                    "rowspan".to_string(),
-                    std::str::from_utf8(
-                        &i.unescaped_value()
-                            .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
-                    )
-                    .unwrap_or("1")
-                    .to_string(),
-                );
+                    .unwrap_or("")
+                    .to_string()
+                }
+                "table:number-columns-repeated" => {
+                    element.attributes.insert(
+                        "_repeat".to_string(),
+                        std::str::from_utf8(
+                            &i.unescaped_value()
+                                .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                        )
+                        .unwrap_or("1")
+                        .to_string(),
+                    );
+                }
+                "table:number-columns-spanned" => {
+                    element.attributes.insert(
+                        "colspan".to_string(),
+                        std::str::from_utf8(
+                            &i.unescaped_value()
+                                .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                        )
+                        .unwrap_or("1")
+                        .to_string(),
+                    );
+                }
+                "table:number-rows-spanned" => {
+                    element.attributes.insert(
+                        "rowspan".to_string(),
+                        std::str::from_utf8(
+                            &i.unescaped_value()
+                                .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                        )
+                        .unwrap_or("1")
+                        .to_string(),
+                    );
+                }
+                _ => (),
             }
         }
     }

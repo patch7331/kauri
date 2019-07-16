@@ -286,21 +286,21 @@ pub fn text_properties_begin(attributes: Attributes) -> HashMap<String, String> 
 }
 
 /// Helper for text_properties_begin() to respond to attributes with "fo" prefix
-fn text_properties_begin_fo(local_name: &str, value: String, map: &mut HashMap<String, String>) {
+fn text_properties_begin_fo(local_name: &str, value: String, styles: &mut HashMap<String, String>) {
     match local_name {
         "font-weight" => {
             // All valid values for this attribute is also valid in the CSS equivalent, so just use it as is
-            map.insert("fontWeight".to_string(), value);
+            styles.insert("fontWeight".to_string(), value);
         }
         "font-style" if value != "backslant" => {
             // `backslant` is not valid in CSS, but all the other ones are
-            map.insert("fontStyle".to_string(), value);
+            styles.insert("fontStyle".to_string(), value);
         }
         "color" => {
-            map.insert("color".to_string(), value);
+            styles.insert("color".to_string(), value);
         }
         "font-size" => {
-            map.insert("fontSize".to_string(), value);
+            styles.insert("fontSize".to_string(), value);
         }
         _ => (),
     };
