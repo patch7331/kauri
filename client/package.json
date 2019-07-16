@@ -34,7 +34,7 @@
     "clean-check": "yarn prettier --check \"src/**/*.js?(x)\" *.js"
   },
   "devDependencies": {
-    "@babel/core": "^7.4.5",
+    "@babel/core": "^7.5.4",
     "@babel/preset-env": "^7.5.4",
     "@babel/preset-react": "^7.0.0",
     "babel-loader": "^8.0.5",
