@@ -1,5 +1,12 @@
 use super::*;
 
+enum TableAlign {
+    Center,
+    Left,
+    Right,
+    Margins,
+}
+
 impl ODTParser {
     /// Helper for handle_element_start() to respond to tags with "table" prefix
     pub fn handle_element_start_table(&mut self, local_name: &str, attributes: Attributes) {
@@ -155,13 +162,6 @@ impl ODTParser {
             }
         }
     }
-}
-
-enum TableAlign {
-    Center,
-    Left,
-    Right,
-    Margins,
 }
 
 /// Takes the set of attributes of a style:table-properties tag in the ODT's content.xml,

@@ -297,39 +297,45 @@ fn text_properties_begin_fo(local_name: &str, value: String, map: &mut HashMap<S
 /// Helper for text_properties_begin() to respond to attributes with "style" prefix,
 /// returns true if the attribute indicates that the underline style should be a double underline,
 /// returns false otherwise
+/// local_name here is the name of the tag without the prefix
 fn text_properties_begin_style(
     local_name: &str,
     value: String,
-    map: &mut HashMap<String, String>,
+    styles: &mut HashMap<String, String>,
 ) -> bool {
+    if local_name == "text-underline-type" && value == "double" {
+        return true;
+    }
+    if local_name == "font-name" {
+        styles.insert("fontFamily".to_string(), value);
+        return false;
+    }
     if local_name == "text-underline-style" {
         if value == "none" {
-            map.insert("textDecorationLine".to_string(), "none".to_string());
+            styles.insert("textDecorationLine".to_string(), "none".to_string());
         } else {
-            map.insert("textDecorationLine".to_string(), "underline".to_string());
+            styles.insert("textDecorationLine".to_string(), "underline".to_string());
             match value.as_str() {
-                "dash" => map.insert("textDecorationStyle".to_string(), "dashed".to_string()),
-                "dotted" => map.insert("textDecorationStyle".to_string(), "dotted".to_string()),
-                "wave" => map.insert("textDecorationStyle".to_string(), "wavy".to_string()),
+                "dash" => styles.insert("textDecorationStyle".to_string(), "dashed".to_string()),
+                "dotted" => styles.insert("textDecorationStyle".to_string(), "dotted".to_string()),
+                "wave" => styles.insert("textDecorationStyle".to_string(), "wavy".to_string()),
                 // There are a few possible styles in ODF that aren't present in CSS
                 // (dot-dash, dot-dot-dash, long-dash), so just put in a basic underline?
-                "solid" | _ => map.insert("textDecorationStyle".to_string(), "solid".to_string()),
+                "solid" | _ => {
+                    styles.insert("textDecorationStyle".to_string(), "solid".to_string())
+                }
             };
         }
-    } else if local_name == "text-underline-type" && value == "double" {
-        return true;
     } else if local_name == "text-underline-color" {
         if value == "font-color" {
-            map.insert(
+            styles.insert(
                 "textDecorationColor".to_string(),
                 "currentcolor".to_string(),
             );
         } else {
             // The other valid values are all in hex format
-            map.insert("textDecorationColor".to_string(), value);
+            styles.insert("textDecorationColor".to_string(), value);
         }
-    } else if local_name == "font-name" {
-        map.insert("fontFamily".to_string(), value);
     }
     false
 }
