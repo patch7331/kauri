@@ -7,6 +7,18 @@ enum TableAlign {
     Margins,
 }
 
+impl TableAlign {
+    fn from_string(direction: String) -> Option<TableAlign> {
+        match direction.as_str() {
+            "center" => Some(TableAlign::Center),
+            "left" => Some(TableAlign::Left),
+            "right" => Some(TableAlign::Right),
+            "margins" => Some(TableAlign::Margins),
+            _ => None,
+        }
+    }
+}
+
 impl ODTParser {
     /// Helper for handle_element_start() to respond to tags with "table" prefix
     pub fn handle_element_start_table(&mut self, local_name: &str, attributes: Attributes) {
@@ -324,7 +336,7 @@ fn table_properties_begin_table(
     styles: &mut HashMap<String, String>,
 ) -> Option<TableAlign> {
     match local_name {
-        "align" => return table_properties_begin_table_align(value),
+        "align" => return TableAlign::from_string(value),
         "border-model" => table_properties_begin_table_border_model(value, styles),
         "display" if value == "false" => {
             styles.insert("display".to_string(), "none".to_string());
@@ -332,17 +344,6 @@ fn table_properties_begin_table(
         _ => (),
     }
     None
-}
-
-/// Helper for table_properties_begin_table() for the alignment attribute
-fn table_properties_begin_table_align(value: String) -> Option<TableAlign> {
-    match value.as_str() {
-        "center" => Some(TableAlign::Center),
-        "left" => Some(TableAlign::Left),
-        "right" => Some(TableAlign::Right),
-        "margins" => Some(TableAlign::Margins),
-        _ => None,
-    }
 }
 
 /// Helper for table_properties_begin_table() for the border-model attribute
