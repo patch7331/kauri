@@ -9,3 +9,4 @@ not include technical details.
 **Release date:** Upcoming release
 
  - Added basic clipboard functionality [(#20)](https://github.com/sean0x42/kauri/pull/20)
+ - Added support for tables in ODT files [(#52)](https://github.com/sean0x42/kauri/pull/52)
