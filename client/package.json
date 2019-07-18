@@ -34,8 +34,8 @@
     "clean-check": "yarn prettier --check \"src/**/*.js?(x)\" *.js"
   },
   "devDependencies": {
-    "@babel/core": "^7.4.5",
-    "@babel/preset-env": "^7.4.5",
+    "@babel/core": "^7.5.4",
+    "@babel/preset-env": "^7.5.4",
     "@babel/preset-react": "^7.0.0",
     "babel-loader": "^8.0.5",
     "css-loader": "^3.0.0",
@@ -45,10 +45,11 @@
     "node-sass": "^4.11.0",
     "prettier": "1.18.2",
     "sass-loader": "^7.1.0",
-    "webpack": "^4.35.0",
+    "webpack": "^4.35.3",
     "webpack-cli": "^3.3.5"
   },
   "dependencies": {
+    "electron-clipboard-extended": "^1.1.1",
     "preact": "^8.4.2",
     "source-map-support": "^0.5.12",
     "system-font-families": "^0.4.1"
