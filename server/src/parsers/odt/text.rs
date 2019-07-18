@@ -340,17 +340,17 @@ fn text_properties_begin_style_underline_style(
 ) {
     if value == "none" {
         styles.insert("textDecorationLine".to_string(), "none".to_string());
-    } else {
-        styles.insert("textDecorationLine".to_string(), "underline".to_string());
-        match value.as_str() {
-            "dash" => styles.insert("textDecorationStyle".to_string(), "dashed".to_string()),
-            "dotted" => styles.insert("textDecorationStyle".to_string(), "dotted".to_string()),
-            "wave" => styles.insert("textDecorationStyle".to_string(), "wavy".to_string()),
-            // There are a few possible styles in ODF that aren't present in CSS
-            // (dot-dash, dot-dot-dash, long-dash), so just put in a basic underline?
-            "solid" | _ => styles.insert("textDecorationStyle".to_string(), "solid".to_string()),
-        };
+        return;
     }
+    styles.insert("textDecorationLine".to_string(), "underline".to_string());
+    match value.as_str() {
+        "dash" => styles.insert("textDecorationStyle".to_string(), "dashed".to_string()),
+        "dotted" => styles.insert("textDecorationStyle".to_string(), "dotted".to_string()),
+        "wave" => styles.insert("textDecorationStyle".to_string(), "wavy".to_string()),
+        // There are a few possible styles in ODF that aren't present in CSS
+        // (dot-dash, dot-dot-dash, long-dash), so just put in a basic underline?
+        "solid" | _ => styles.insert("textDecorationStyle".to_string(), "solid".to_string()),
+    };
 }
 
 /// Helper for text_properties_begin_style() to handle underline color
