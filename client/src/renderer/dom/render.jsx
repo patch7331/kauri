@@ -11,6 +11,7 @@ import TableColumnGroup from "components/Editor/TableColumnGroup";
 import TableColumn from "components/Editor/TableColumn";
 import TableRow from "components/Editor/TableRow";
 import TableCell from "components/Editor/TableCell";
+import Anchor from "components/Editor/Anchor";
 import RenderError from "dom/RenderError";
 
 /**
@@ -78,6 +79,8 @@ function renderTag(node) {
       return <TableRow node={node} />;
     case "td":
       return <TableCell node={node} />;
+    case "a":
+      return <Anchor node={node} />;
     default:
       throw new RenderError(node, `Unknown tag '${node.tag}'.`);
   }
