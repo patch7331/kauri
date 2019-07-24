@@ -242,7 +242,10 @@ impl ODTParser {
             if name == "office:body" {
                 return Some((current_style_name, current_style_value));
             } else if prefix == "text"
-                && (local_name == "h" || local_name == "p" || local_name == "span")
+                && (local_name == "h"
+                    || local_name == "p"
+                    || local_name == "span"
+                    || local_name == "a")
             {
                 // The top of set_children_underline and ensure_children_no_underline is for this node's children,
                 // so pop them here before we finish up with this node
