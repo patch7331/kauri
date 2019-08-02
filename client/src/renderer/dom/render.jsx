@@ -5,6 +5,13 @@ import { h } from "preact";
 import Heading from "components/Editor/Heading";
 import Paragraph from "components/Editor/Paragraph";
 import Span from "components/Editor/Span";
+import Table from "components/Editor/Table";
+import TableCaption from "components/Editor/TableCaption";
+import TableColumnGroup from "components/Editor/TableColumnGroup";
+import TableColumn from "components/Editor/TableColumn";
+import TableRow from "components/Editor/TableRow";
+import TableCell from "components/Editor/TableCell";
+import Anchor from "components/Editor/Anchor";
 import RenderError from "dom/RenderError";
 
 /**
@@ -60,6 +67,20 @@ function renderTag(node) {
       return <Paragraph node={node} />;
     case "span":
       return <Span node={node} />;
+    case "table":
+      return <Table node={node} />;
+    case "caption":
+      return <TableCaption node={node} />;
+    case "colgroup":
+      return <TableColumnGroup node={node} />;
+    case "col":
+      return <TableColumn node={node} />;
+    case "tr":
+      return <TableRow node={node} />;
+    case "td":
+      return <TableCell node={node} />;
+    case "a":
+      return <Anchor node={node} />;
     default:
       throw new RenderError(node, `Unknown tag '${node.tag}'.`);
   }
