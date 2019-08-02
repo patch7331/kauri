@@ -8,68 +8,85 @@ This guide will walk you through the process of making contributions to the
 guide whenever you make a contribution to this project.
 
 
-## Contributing on GitHub
+## Step-By-Step Instructions
 
-> **Note:** If you've contributed to a repository on GitHub before, then you can
-> safely skip this section, and move onto the repository specific discussion.
-> In particular, check out the [Branching Model](#branching-model) and
-> [Versioning](#versioning) sections.
+If you follow the instructions laid out below, it makes everyone's lives a
+little easier, and will improve the speed with which your pull requests can be
+reviewed!
 
-You'll first want to clone the repo to your GitHub account.
+ 1. **Fork the repo**: You can learn more about forking repositories in [this
+    GitHub Help article](https://help.github.com/en/articles/fork-a-repo), or
+    you can just get started at: <https://github.com/sean0x42/kauri/fork>.
 
-![Imgur](https://i.imgur.com/IeiKED6.png)
+ 2. **Clone**: Cloning will download the repository to your file system. You can
+    learn how to do that [here](https://help.github.com/en/articles/cloning-a-repository).
+    ![Clone button](https://help.github.com/assets/images/help/repository/clone-repo-clone-url-button.png)
 
+ 3. **Create a branch**: Please use *one* branch per feature/bug fix. You can
+    learn more about our branching model by reading Vincent Driessen's [A
+    Successful Git branching model](https://nvie.com/posts/a-successful-git-branching-model/?).
 
-## Branching Model
+    > **Note**: do not include the angle brackets (`<` and `>`) in your branch
+      name.
 
-Our approach to branching is heavily inspired by the branching model outlined in
-Vincent Driessen's [A Successful Git branching
-model](https://nvie.com/posts/a-successful-git-branching-model/?). Here's what
-you need to know: there are two primary, protected branches.
+      * For feature branches:
+        ```
+        git checkout -b feature-<feature-name> develop
+        ```
 
- - `master`: contains the most recent release version of Kauri.
- - `develop`: contains current feature work, and development for the next major
-   release.
+      * For hotfixes (bug fixes for the production version of Kauri):
+      	```
+      	git checkout -b hotfix-<hotfix-name> master
+      	```
 
-Unless you're writing a bug fix for something in `master`, then `develop` is
-definitely the place to start.
+    If it's been a while since you cloned the repository, be sure to pull the
+    latest changes into `master` or `develop` *before* creating your new branch.
+    ```
+    git checkout master
+    git pull
+    ```
 
+ 4. **Make your changes**: Now you can safely make your changes!
 
-### Features
+ 5. **Run linters**
 
-Feature development should be added in a branch titled `feature-{feature name}`,
-referred to herein as *feature branches*. Feature branches **must** branch from
-`develop`, and should contain work for a single feature.
+     * For JavaScript contributions, simply run prettier:
+       ```
+       yarn clean
+       ```
+     * For Rust contributions, you'll need to run clippy and rustfmt:
+       ```
+       cargo fmt --all
+       cargo clippy
+       ```
 
+ 6. **Stage and commit**: Please write a meaningful commit message which
+    summarises what you've done. You can always go into more detail in the
+    commit description.
 
-### Hotfixes
+    You can learn more about writing great commit messages by reading through
+    [these conventions](https://gist.github.com/robertpainsi/b632364184e70900af4ab688decf6f53#file-commit-message-guidelines-md).
 
-If you're patching a bug within the release version of Kauri, then you'll want
-to create a *hotfix branch*. These branches should be titled `hotfix-{fix name}`,
-and **must** branch from `master`. Unlike feature branches, hotfix branches may
-have one or more closely related fixes within. Please do not try to smuggle
-features in alongside hotfixes.
+    ```
+    git add *
+    git commit -m "Made a meaningful change"
+    ```
 
-Hotfixes will also bump Kauri's patch version. This is usually a straightforward
-process, but if you get lost, the project maintainers will be more than happy to
-bump it for you. See [Versioning](#versioning) for more on versioning Kauri.
+ 7. **Push**: Push your changes upstream to your fork.
+    ````
+    git push origin <branch>
+    ````
 
+ 8. **Make a pull request**: Make sure your PR targets the correct branch!
+    *(i.e. `develop` for feature branches, and `master` for hotfixes).*
 
-### Releases
-
-> **Note**: Only project maintainers will ever need to create release branches.
-
-*Release branches* are used to bump either the major or minor versions of the
-project. Which type of version is bumped depends on the features that have been
-added to `develop`, and should be agreed upon by the project lead (Sean Bailey).
-
-These branches are titled `release-{version}`, and merge from `develop` into
-`master`. When the merge has been complete, be sure to tag the merge commit with
-the version name, and add a release on GitHub. More detail can be found in the
-[versioning](#versioning) section.
+    > *Remember*: you're not done yet. Kauri maintainers will review and discuss
+      your pull request. They may request changes, or close your PR entirely.
+      It's best to keep an eye on your pull request for a few days whilst we
+      consider your proposal.
 
 
 ## Versioning
 
-Wherever possible, Kauri conforms to the versioning spec outlined in
-[Semantic Versioning](https://semver.org/).
+Wherever possible, Kauri conforms to the versioning spec outlined in [Semantic
+Versioning](https://semver.org/).

@@ -7,6 +7,15 @@
     "Sean Bailey <sean@seanbailey.io>"
   ],
   "version": "0.1.0-alpha",
+  "scripts": {
+    "start": "electron-webpack dev",
+    "build": "electron-webpack",
+    "test": "jest",
+    "dist": "yarn build && electron-builder",
+    "pack": "yarn build --dir && electron-builder",
+    "clean": "yarn prettier --write \"src/**/*.js?(x)\" *.js",
+    "clean-check": "yarn prettier --check \"src/**/*.js?(x)\" *.js"
+  },
   "build": {
     "appId": "io.seanbailey.kauri",
     "productName": "kauri",
@@ -18,39 +27,39 @@
     }
   },
   "electronWebpack": {
+    "title": true,
     "whiteListedModules": [
       "preact"
     ],
+    "main": {
+      "sourceDirectory": "src/main"
+    },
     "renderer": {
-      "webpackConfig": "webpack.renderer.js"
+      "sourceDirectory": "src/renderer",
+      "webpackConfig": "webpack.renderer.additions.js"
     }
   },
-  "scripts": {
-    "start": "electron-webpack dev",
-    "build": "electron-webpack",
-    "dist": "yarn build && electron-builder",
-    "pack": "yarn build --dir && electron-builder",
-    "clean": "yarn prettier --write \"src/**/*.js?(x)\" *.js",
-    "clean-check": "yarn prettier --check \"src/**/*.js?(x)\" *.js"
-  },
-  "devDependencies": {
-    "@babel/core": "^7.4.3",
-    "@babel/preset-env": "^7.4.3",
-    "@babel/preset-react": "^7.0.0",
-    "babel-loader": "^8.0.5",
-    "css-loader": "^2.1.1",
-    "electron": "^4.1.4",
-    "electron-builder": "^20.40.2",
-    "electron-webpack": "^2.6.2",
-    "node-sass": "^4.11.0",
-    "prettier": "1.16.4",
-    "sass-loader": "^7.1.0",
-    "webpack": "^4.29.6",
-    "webpack-cli": "^3.3.0"
-  },
   "dependencies": {
+    "electron-clipboard-extended": "^1.1.1",
     "preact": "^8.4.2",
     "source-map-support": "^0.5.12",
     "system-font-families": "^0.4.1"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.5.4",
+    "@babel/preset-env": "^7.5.4",
+    "@babel/preset-react": "^7.0.0",
+    "babel-loader": "^8.0.5",
+    "css-loader": "^3.0.0",
+    "electron": "^5.0.6",
+    "electron-builder": "^20.44.4",
+    "electron-webpack": "^2.6.2",
+    "jest": "^24.8.0",
+    "node-sass": "^4.11.0",
+    "prettier": "^1.18.2",
+    "sass-loader": "^7.1.0",
+    "webpack": "^4.35.2",
+    "webpack-build-notifier": "^1.0.3",
+    "webpack-cli": "^3.3.5"
   }
 }
