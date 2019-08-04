@@ -2,6 +2,8 @@
 
 import "./styles.scss";
 import { Component, h } from "preact";
+import {connect} from "react-redux";
+import {addCommand} from "redux/actions";
 import clipboard from "electron-clipboard-extended";
 
 /**
@@ -23,6 +25,7 @@ export default class Clipboard extends Component {
   }
 
   componentDidMount() {
+    addCommand("Clipboard:copy", "copy", "CmdOrCtrl+C", Clipboard.write);
     clipboard.startWatching();
     clipboard.on("text-changed", this.handleTextChanged);
     clipboard.on("image-changed", this.handleImageChanged);
