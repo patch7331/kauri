@@ -46,3 +46,27 @@ impl Element {
         }
     }
 }
+
+// KDF from here (also uses the old Text node)
+
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum KDFNode {
+    Text(Text),
+    Heading(Heading),
+    Paragraph(NodeCommon),
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct NodeCommon {
+    class: String,
+    pub styles: HashMap<String, String>,
+    pub children: Vec<KDFNode>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct Heading {
+    #[serde(flatten)]
+    common: NodeCommon,
+    level: u32,
+}
