@@ -14,7 +14,7 @@ module.exports = {
           presets: ["@babel/preset-env", "@babel/preset-react"],
           plugins: [
             ["@babel/plugin-transform-react-jsx", { pragma: "h" }],
-            "@babel/plugin-proposal-class-properties"
+            "@babel/plugin-proposal-class-properties",
           ],
         },
       },
@@ -22,8 +22,8 @@ module.exports = {
   },
   resolve: {
     alias: {
-      "react": "preact/compat",
-      "react-dom": "preact/compat"
+      react: "preact/compat",
+      "react-dom": "preact/compat",
     },
     extensions: [".js", ".jsx"],
     modules: [
