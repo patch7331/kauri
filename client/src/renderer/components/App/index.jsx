@@ -7,6 +7,7 @@ import Editor from "components/Editor";
 import Header from "components/Header";
 import { remote } from "electron";
 import setApplicationMenu from "util/MenuConfigurator.js";
+import Clipboard from "components/Clipboard";
 
 const POST_URI_OPEN_FILE = "http://127.0.0.1:3000/load";
 
@@ -17,7 +18,7 @@ export default class App extends Component {
    */
   constructor(props) {
     super(props);
-    this.state = { document: demo.document };
+    this.state = { document: demo };
     this.loadFile = this.loadFile.bind(this);
     this.editor = createRef();
     setApplicationMenu(this.loadFile);
@@ -35,7 +36,7 @@ export default class App extends Component {
       .then(resp => resp.json())
       .then(json => {
         this.editor.current.clearContentEditable();
-        this.setState(json);
+        this.setState({ document: json });
       })
       .catch(e => console.log(e));
   }
@@ -44,7 +45,10 @@ export default class App extends Component {
     return (
       <div class="app">
         <Header title={state.document.title} />
-        <Editor ref={this.editor} dom={state.document} />
+        <div class="app__wrapper">
+          <Editor ref={this.editor} dom={state.document} />
+          <Clipboard />
+        </div>
       </div>
     );
   }
