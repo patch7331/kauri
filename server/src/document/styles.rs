@@ -2,30 +2,24 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Styles {
-    page: PageStyle,
+    pub page: HashMap<String, String>,
     pub classes: HashMap<String, Style>,
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct PageStyle {
-    size: String, //use enum or leave as string?
-    height: String,
-    width: String,
-    orientation: Orientation,
-    margin_top: String, //there will be more here (borders, background), list all explicitly or use a flattened HashMap instead?
-    margin_bottom: String,
-    margin_left: String,
-    margin_right: String,
+impl Styles {
+    /// Constructs a new Styles struct
+    pub fn new() -> Styles {
+        Styles {
+            page: HashMap::new(),
+            classes: HashMap::new(),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize)]
-pub enum Orientation {
-    Portrait,
-    Landscape,
-}
-
-#[derive(Serialize, Deserialize)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Style {
     display: String,
     inherit: Option<String>,
@@ -33,7 +27,10 @@ pub struct Style {
 }
 
 impl Style {
-    /// Constructs a new Style for use in named styles
+    /// Constructs a new Style struct, which represents a style class
+    ///
+    /// - `display` A human-readable string which can be shown to users.
+    /// - `inherit` A string containing the unique ID of another class, from which to inherit styles from.
     pub fn new(display: String, inherit: Option<String>) -> Style {
         Style {
             display,
