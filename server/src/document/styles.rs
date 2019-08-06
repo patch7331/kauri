@@ -22,6 +22,7 @@ impl Styles {
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Style {
     display: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     inherit: Option<String>,
     pub styles: HashMap<String, String>,
 }
