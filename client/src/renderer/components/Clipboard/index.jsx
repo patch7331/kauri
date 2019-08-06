@@ -2,16 +2,19 @@
 
 import "./styles.scss";
 import { Component, h } from "preact";
-import {connect} from "react-redux";
-import {addCommand} from "redux/actions";
+import { connect } from "react-redux";
+import { addCommand } from "redux/actions";
+//import { Menu, MenuItem } from "electron";
+const {Menu, MenuItem} = require("electron").remote;
 import clipboard from "electron-clipboard-extended";
+const menu = new Menu();
 
 /**
  * Stores and lists contents of system clipboard
  * @extends Component
  */
 
-export default class Clipboard extends Component {
+class Clipboard extends Component {
   /**
    * Constructs a new Clipboard component
    * @param {Object} props - Component properties
@@ -25,7 +28,17 @@ export default class Clipboard extends Component {
   }
 
   componentDidMount() {
-    addCommand("Clipboard:copy", "copy", "CmdOrCtrl+C", Clipboard.write);
+    this.props.addCommand(
+      "Clipboard:copy",
+      "copy",
+      "CmdOrCtrl+C",
+      this.doClipboardCopy
+    );
+    menu.append(new MenuItem({
+      label: "copy",
+      accelerator: "CmdOrCtrl+C",
+      click: () => {console.log("Copied")}
+    }));
     clipboard.startWatching();
     clipboard.on("text-changed", this.handleTextChanged);
     clipboard.on("image-changed", this.handleImageChanged);
@@ -35,7 +48,17 @@ export default class Clipboard extends Component {
     clipboard.stopWatching();
     clipboard.off("text-changed");
     clipboard.off("image-changed");
-    v;
+  }
+
+  doClipboardCopy() {
+    console.log("Testing clipboard copy");
+  }
+
+  doClipboardPaste() {
+    /*
+      get clipboard
+      write to selection
+    */
   }
 
   /**
@@ -124,3 +147,8 @@ class ClipboardItem {
     this.data = data;
   }
 }
+
+export default connect(
+  null,
+  { addCommand }
+)(Clipboard);

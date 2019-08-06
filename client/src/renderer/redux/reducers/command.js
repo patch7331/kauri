@@ -1,6 +1,6 @@
 /** @format */
 
-import {} from "";
+import { ADDCOMMAND } from "../actionTypes";
 
 const initialState = {
   allIDs: [],
@@ -8,17 +8,23 @@ const initialState = {
 };
 
 export default function(state = initialState, action) {
-  const {ID, name, keys, behaviour} = action.payload;
-  return {
-    ...state,
-    allIDs: [...state.allIDs, id],
-    byIDs: {
-      ...state.byIDs,
-      [ID]: {
-        ID,
-        name,
-        keys,
-        behaviour
-      }
-    }
+  switch (action.type) {
+    case ADDCOMMAND:
+      const { ID, name, keys, behaviour } = action.payload;
+      return {
+        ...state,
+        allIDs: [...state.allIDs, ID],
+        byIDs: {
+          ...state.byIDs,
+          [ID]: {
+            ID,
+            name,
+            keys,
+            behaviour,
+          },
+        },
+      };
+    default:
+      return state;
   }
+}
