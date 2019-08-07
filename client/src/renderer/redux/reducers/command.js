@@ -4,7 +4,7 @@ import { ADDCOMMAND } from "../actionTypes";
 
 const initialState = {
   allIds: [],
-  byIDs: {},
+  byIds: {},
 };
 
 export default function(state = initialState, action) {
