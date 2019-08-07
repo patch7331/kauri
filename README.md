@@ -30,6 +30,9 @@ direction for branching, code quality and more.
 You can view design resources on our
 [Milanote board](https://app.milanote.com/1GmcQJ1TRrCk2Y).
 
+We also have a [technical specification](https://kauri.seanbailey.io) for
+Kauri's custom document format.
+
 
 ## ✍️ Authors
 

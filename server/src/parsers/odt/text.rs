@@ -49,6 +49,21 @@ impl ODTParser {
                 self.set_children_underline.push(set_children_underline_new);
                 self.document_hierarchy.push(element);
             }
+            "a" => {
+                let (element, set_children_underline_new, ensure_children_no_underline_new) =
+                    check_underline(
+                        a_begin(attributes),
+                        &self.auto_styles,
+                        !self.set_children_underline.is_empty()
+                            && *self.set_children_underline.last().unwrap(),
+                        !self.ensure_children_no_underline.is_empty()
+                            && *self.ensure_children_no_underline.last().unwrap(),
+                    );
+                self.ensure_children_no_underline
+                    .push(ensure_children_no_underline_new);
+                self.set_children_underline.push(set_children_underline_new);
+                self.document_hierarchy.push(element);
+            }
             _ => (),
         }
     }
@@ -82,6 +97,17 @@ impl ODTParser {
             "span" => {
                 let (element, ..) = check_underline(
                     span_begin(attributes),
+                    &self.auto_styles,
+                    !self.set_children_underline.is_empty()
+                        && *self.set_children_underline.last().unwrap(),
+                    !self.ensure_children_no_underline.is_empty()
+                        && *self.ensure_children_no_underline.last().unwrap(),
+                );
+                child = Some(element);
+            }
+            "a" => {
+                let (element, ..) = check_underline(
+                    a_begin(attributes),
                     &self.auto_styles,
                     !self.set_children_underline.is_empty()
                         && *self.set_children_underline.last().unwrap(),
@@ -251,6 +277,87 @@ fn span_begin(attributes: Attributes) -> (Element, String) {
         }
     }
     (Element::new("span".to_string()), style_name)
+}
+
+/// Takes the set of attributes of a text:a tag in the ODT's content.xml
+/// and returns an anchor element together with the value of the text:style-name attribute of the tag
+fn a_begin(attributes: Attributes) -> (Element, String) {
+    let mut element = Element::new("a".to_string());
+    let mut style_name = String::new();
+    for i in attributes {
+        if let Ok(i) = i {
+            let name = std::str::from_utf8(i.key).unwrap_or(":");
+            match name {
+                "text:style-name" => {
+                    style_name = std::str::from_utf8(
+                        &i.unescaped_value()
+                            .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                    )
+                    .unwrap_or("")
+                    .to_string();
+                }
+                "xlink:href" => {
+                    element.attributes.insert(
+                        "href".to_string(),
+                        std::str::from_utf8(
+                            &i.unescaped_value()
+                                .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                        )
+                        .unwrap_or("")
+                        .to_string(),
+                    );
+                }
+                "office:title" => {
+                    element.attributes.insert(
+                        "title".to_string(),
+                        std::str::from_utf8(
+                            &i.unescaped_value()
+                                .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                        )
+                        .unwrap_or("")
+                        .to_string(),
+                    );
+                }
+                "xlink:show" => {
+                    a_begin_xlink_show(
+                        std::str::from_utf8(
+                            &i.unescaped_value()
+                                .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                        )
+                        .unwrap_or(""),
+                        &mut element,
+                    );
+                }
+                "office:target-frame-name" => {
+                    element.attributes.insert(
+                        "target".to_string(),
+                        std::str::from_utf8(
+                            &i.unescaped_value()
+                                .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                        )
+                        .unwrap_or("")
+                        .to_string(),
+                    );
+                }
+                _ => (),
+            }
+        }
+    }
+    (element, style_name)
+}
+
+/// Helper for a_begin() to handle the xlink:show attribute
+/// Converts it into the equivalent value as the target HTML attribute accroding to https://www.w3.org/TR/2001/REC-xlink-20010627/#show-att
+fn a_begin_xlink_show(value: &str, element: &mut Element) {
+    let mut target: Option<String> = None;
+    match value {
+        "new" => target = Some("_blank".to_string()),
+        "replace" => target = Some("_self".to_string()),
+        _ => (),
+    };
+    if let Some(target) = target {
+        element.attributes.insert("target".to_string(), target);
+    }
 }
 
 /// Takes the set of attributes of a style:text-properties tag in the ODT's content.xml,

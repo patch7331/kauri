@@ -7,6 +7,15 @@
     "Sean Bailey <sean@seanbailey.io>"
   ],
   "version": "0.1.0-alpha",
+  "scripts": {
+    "start": "electron-webpack dev",
+    "build": "electron-webpack",
+    "test": "jest",
+    "dist": "yarn build && electron-builder",
+    "pack": "yarn build --dir && electron-builder",
+    "clean": "yarn prettier --write \"src/**/*.js?(x)\" *.js",
+    "clean-check": "yarn prettier --check \"src/**/*.js?(x)\" *.js"
+  },
   "build": {
     "appId": "io.seanbailey.kauri",
     "productName": "kauri",
@@ -18,40 +27,45 @@
     }
   },
   "electronWebpack": {
-    "whiteListedModules": [
-      "preact"
-    ],
+    "title": true,
+    "main": {
+      "sourceDirectory": "src/main"
+    },
     "renderer": {
-      "webpackConfig": "webpack.renderer.js"
-    }
-  },
-  "scripts": {
-    "start": "electron-webpack dev",
-    "build": "electron-webpack",
-    "dist": "yarn build && electron-builder",
-    "pack": "yarn build --dir && electron-builder",
-    "clean": "yarn prettier --write \"src/**/*.js?(x)\" *.js",
-    "clean-check": "yarn prettier --check \"src/**/*.js?(x)\" *.js"
-  },
-  "devDependencies": {
-    "@babel/core": "^7.5.4",
-    "@babel/preset-env": "^7.5.4",
-    "@babel/preset-react": "^7.0.0",
-    "babel-loader": "^8.0.5",
-    "css-loader": "^3.0.0",
-    "electron": "^5.0.6",
-    "electron-builder": "^20.44.4",
-    "electron-webpack": "^2.6.2",
-    "node-sass": "^4.11.0",
-    "prettier": "1.18.2",
-    "sass-loader": "^7.1.0",
-    "webpack": "^4.35.3",
-    "webpack-cli": "^3.3.5"
+      "sourceDirectory": "src/renderer",
+      "webpackConfig": "webpack.renderer.additions.js"
+    },
+    "whiteListedModules": [
+      "preact",
+      "react-redux"
+    ]
   },
   "dependencies": {
     "electron-clipboard-extended": "^1.1.1",
-    "preact": "^8.4.2",
+    "preact": "10.0.0-rc.0",
+    "react-redux": "^7.1.0",
+    "redux": "^4.0.4",
+    "redux-thunk": "^2.3.0",
     "source-map-support": "^0.5.12",
     "system-font-families": "^0.4.1"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.5.4",
+    "@babel/plugin-proposal-class-properties": "^7.5.5",
+    "@babel/preset-env": "^7.5.4",
+    "@babel/preset-react": "^7.0.0",
+    "babel-loader": "^8.0.5",
+    "css-loader": "^3.1.0",
+    "electron": "^5.0.6",
+    "electron-builder": "^21.2.0",
+    "electron-webpack": "^2.7.4",
+    "jest": "^24.8.0",
+    "node-sass": "^4.11.0",
+    "prettier": "^1.18.2",
+    "sass-loader": "^7.1.0",
+    "webpack": "^4.39.1",
+    "webpack-build-notifier": "^1.0.3",
+    "webpack-bundle-analyzer": "^3.4.1",
+    "webpack-cli": "^3.3.5"
   }
 }
