@@ -61,6 +61,17 @@ pub enum KDFNode {
     ListItem(ListItem),
     Caption(NodeCommon),
     Hyperlink(Hyperlink),
+    Table(NodeCommon),
+    TableHead(NodeCommon),
+    TableBody(NodeCommon),
+    TableFooter(NodeCommon),
+    TableRow(NodeCommon),
+    TableColumnGroup(NodeCommon),
+    TableColumn(TableColumn),
+    TableCell(TableCell),
+    Code(NodeCommon),
+    CodeBlock(CodeBlock),
+    Hint(Hint),
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -193,6 +204,109 @@ impl Hyperlink {
         Hyperlink {
             common: NodeCommon::new(class),
             href,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+pub struct TableColumn {
+    #[serde(flatten)]
+    pub common: NodeCommon,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    span: Option<u32>,
+}
+
+impl TableColumn {
+    /// Constructs a new TableColumn element
+    ///
+    /// - `class` Style class of the element.
+    /// - `span` Number of columns to span.
+    pub fn new(class: Option<String>, span: Option<u32>) -> TableColumn {
+        TableColumn {
+            common: NodeCommon::new(class),
+            span,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+pub struct TableCell {
+    #[serde(flatten)]
+    pub common: NodeCommon,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    row_span: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    col_span: Option<u32>,
+}
+
+impl TableCell {
+    /// Constructs a new TableCell element
+    ///
+    /// - `class` Style class of the element.
+    /// - `row_span` Number of rows to span.
+    /// - `col_span` Number of columns to span.
+    pub fn new(class: Option<String>, row_span: Option<u32>, col_span: Option<u32>) -> TableCell {
+        TableCell {
+            common: NodeCommon::new(class),
+            row_span,
+            col_span,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+pub struct CodeBlock {
+    #[serde(flatten)]
+    pub common: NodeCommon,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    language: Option<String>,
+    line_numbers: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    file_name: Option<String>,
+}
+
+impl CodeBlock {
+    /// Constructs a new CodeBlock element
+    ///
+    /// - `class` Style class of the element.
+    /// - `language` Language of the code inside the block.
+    /// - `line_numbers` Indicates whether to show line numbers.
+    /// - `file_name` The displayed file name of the code block.
+    pub fn new(
+        class: Option<String>,
+        language: Option<String>,
+        line_numbers: bool,
+        file_name: Option<String>,
+    ) -> CodeBlock {
+        CodeBlock {
+            common: NodeCommon::new(class),
+            language,
+            line_numbers,
+            file_name,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+pub struct Hint {
+    #[serde(flatten)]
+    pub common: NodeCommon,
+    variant: String,
+}
+
+impl Hint {
+    /// Constructs a new CodeBlock element
+    ///
+    /// - `class` Style class of the element.
+    /// - `variant` Variant of the hint element.
+    pub fn new(class: Option<String>, variant: String) -> Hint {
+        Hint {
+            common: NodeCommon::new(class),
+            variant,
         }
     }
 }
