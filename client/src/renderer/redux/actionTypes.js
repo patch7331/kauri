@@ -1,2 +1,2 @@
 /** @format */
-export const ADDCOMMAND = "ADDCOMMAND";
+export const ADD_COMMAND = "ADD_COMMAND";
