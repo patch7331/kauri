@@ -4,10 +4,7 @@ import "./styles.scss";
 import { Component, h } from "preact";
 import { connect } from "react-redux";
 import { addCommand } from "redux/actions";
-//import { Menu, MenuItem } from "electron";
-const {Menu, MenuItem} = require("electron").remote;
 import clipboard from "electron-clipboard-extended";
-const menu = new Menu();
 
 /**
  * Stores and lists contents of system clipboard
@@ -34,11 +31,6 @@ class Clipboard extends Component {
       "CmdOrCtrl+C",
       this.doClipboardCopy
     );
-    menu.append(new MenuItem({
-      label: "copy",
-      accelerator: "CmdOrCtrl+C",
-      click: () => {console.log("Copied")}
-    }));
     clipboard.startWatching();
     clipboard.on("text-changed", this.handleTextChanged);
     clipboard.on("image-changed", this.handleImageChanged);
