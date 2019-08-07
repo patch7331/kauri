@@ -2,9 +2,9 @@
 import { ADDCOMMAND } from "./actionTypes";
 
 export const addCommand = (id, name, keys, behaviour) => ({
-  type: ADDCOMMAND,
+  type: ADD_COMMAND,
   payload: {
-    ID,
+    id,
     name,
     keys,
     behaviour,
