@@ -1,8 +1,12 @@
+pub mod meta;
 pub mod node;
+pub mod styles;
 pub mod units;
 
-use node::Node;
+use self::meta::Meta; //need to specify self here for some reason
+use node::{ChildNode, Node};
 use serde::{Deserialize, Serialize};
+use styles::Styles;
 use units::DistanceUnit;
 
 #[derive(Serialize, Deserialize)]
@@ -58,4 +62,14 @@ impl Document {
     pub fn to_json(&self) -> serde_json::Result<String> {
         serde_json::to_string(self)
     }
+}
+
+// KDF from here
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct KDFDocument {
+    pub content: Vec<ChildNode>,
+    pub styles: Styles,
+    pub meta: Meta,
 }
