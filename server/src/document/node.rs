@@ -295,7 +295,7 @@ impl CodeBlock {
 pub struct Hint {
     #[serde(flatten)]
     pub common: NodeCommon,
-    variant: String,
+    variant: HintVariant,
 }
 
 impl Hint {
@@ -303,10 +303,19 @@ impl Hint {
     ///
     /// - `class` Style class of the element.
     /// - `variant` Variant of the hint element.
-    pub fn new(class: Option<String>, variant: String) -> Hint {
+    pub fn new(class: Option<String>, variant: HintVariant) -> Hint {
         Hint {
             common: NodeCommon::new(class),
             variant,
         }
     }
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+pub enum HintVariant {
+    Information,
+    Success,
+    Warning,
+    Error,
 }
