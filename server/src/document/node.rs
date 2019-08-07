@@ -50,46 +50,60 @@ impl Element {
 // KDF from here (also uses the old Text node)
 
 #[derive(Serialize, Deserialize, Clone)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[serde(untagged)]
+pub enum ChildNode {
+    Node(KDFNode),
+    Element(KDFElement),
+}
+
+#[derive(Serialize, Deserialize, Clone)]
 #[serde(tag = "type")]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub enum KDFNode {
     Text(Text),
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+#[serde(tag = "type")]
+#[cfg_attr(debug_assertions, derive(Debug))]
+pub enum KDFElement {
     Heading(Heading),
-    Paragraph(NodeCommon),
-    Span(NodeCommon),
+    Paragraph(ElementCommon),
+    Span(ElementCommon),
     List(List),
     ListItem(ListItem),
-    Caption(NodeCommon),
+    Caption(ElementCommon),
     Hyperlink(Hyperlink),
-    Table(NodeCommon),
-    TableHead(NodeCommon),
-    TableBody(NodeCommon),
-    TableFooter(NodeCommon),
-    TableRow(NodeCommon),
-    TableColumnGroup(NodeCommon),
+    Table(ElementCommon),
+    TableHead(ElementCommon),
+    TableBody(ElementCommon),
+    TableFooter(ElementCommon),
+    TableRow(ElementCommon),
+    TableColumnGroup(ElementCommon),
     TableColumn(TableColumn),
     TableCell(TableCell),
-    Code(NodeCommon),
+    Code(ElementCommon),
     CodeBlock(CodeBlock),
     Hint(Hint),
 }
 
 #[derive(Serialize, Deserialize, Clone)]
 #[cfg_attr(debug_assertions, derive(Debug))]
-pub struct NodeCommon {
+pub struct ElementCommon {
     #[serde(skip_serializing_if = "Option::is_none")]
     class: Option<String>,
     #[serde(skip_serializing_if = "HashMap::is_empty")]
     pub styles: HashMap<String, String>,
-    pub children: Vec<KDFNode>,
+    pub children: Vec<ChildNode>,
 }
 
-impl NodeCommon {
-    /// Constructs a new NodeCommon struct
+impl ElementCommon {
+    /// Constructs a new ElementCommon struct
     ///
     /// - `class` Style class of the element.
-    pub fn new(class: Option<String>) -> NodeCommon {
-        NodeCommon {
+    pub fn new(class: Option<String>) -> ElementCommon {
+        ElementCommon {
             class,
             styles: HashMap::new(),
             children: Vec::new(),
@@ -101,7 +115,7 @@ impl NodeCommon {
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Heading {
     #[serde(flatten)]
-    pub common: NodeCommon,
+    pub common: ElementCommon,
     level: u32,
 }
 
@@ -112,7 +126,7 @@ impl Heading {
     /// - `level` Level of the heading.
     pub fn new(class: Option<String>, level: u32) -> Heading {
         Heading {
-            common: NodeCommon::new(class),
+            common: ElementCommon::new(class),
             level,
         }
     }
@@ -122,7 +136,7 @@ impl Heading {
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct List {
     #[serde(flatten)]
-    pub common: NodeCommon,
+    pub common: ElementCommon,
     ordered: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     prefix: Option<String>,
@@ -148,7 +162,7 @@ impl List {
         bullet: ListBullet,
     ) -> List {
         List {
-            common: NodeCommon::new(class),
+            common: ElementCommon::new(class),
             ordered,
             prefix,
             suffix,
@@ -169,7 +183,7 @@ pub enum ListBullet {
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct ListItem {
     #[serde(flatten)]
-    pub common: NodeCommon,
+    pub common: ElementCommon,
     #[serde(flatten)]
     bullet: ListBullet,
 }
@@ -181,7 +195,7 @@ impl ListItem {
     /// - `bullet` Type of the list bullet.
     pub fn new(class: Option<String>, bullet: ListBullet) -> ListItem {
         ListItem {
-            common: NodeCommon::new(class),
+            common: ElementCommon::new(class),
             bullet,
         }
     }
@@ -191,7 +205,7 @@ impl ListItem {
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Hyperlink {
     #[serde(flatten)]
-    pub common: NodeCommon,
+    pub common: ElementCommon,
     href: String,
 }
 
@@ -202,7 +216,7 @@ impl Hyperlink {
     /// - `href` Hyperlink reference.
     pub fn new(class: Option<String>, href: String) -> Hyperlink {
         Hyperlink {
-            common: NodeCommon::new(class),
+            common: ElementCommon::new(class),
             href,
         }
     }
@@ -212,7 +226,7 @@ impl Hyperlink {
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct TableColumn {
     #[serde(flatten)]
-    pub common: NodeCommon,
+    pub common: ElementCommon,
     #[serde(skip_serializing_if = "Option::is_none")]
     span: Option<u32>,
 }
@@ -224,7 +238,7 @@ impl TableColumn {
     /// - `span` Number of columns to span.
     pub fn new(class: Option<String>, span: Option<u32>) -> TableColumn {
         TableColumn {
-            common: NodeCommon::new(class),
+            common: ElementCommon::new(class),
             span,
         }
     }
@@ -234,7 +248,7 @@ impl TableColumn {
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct TableCell {
     #[serde(flatten)]
-    pub common: NodeCommon,
+    pub common: ElementCommon,
     #[serde(skip_serializing_if = "Option::is_none")]
     row_span: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -249,7 +263,7 @@ impl TableCell {
     /// - `col_span` Number of columns to span.
     pub fn new(class: Option<String>, row_span: Option<u32>, col_span: Option<u32>) -> TableCell {
         TableCell {
-            common: NodeCommon::new(class),
+            common: ElementCommon::new(class),
             row_span,
             col_span,
         }
@@ -260,7 +274,7 @@ impl TableCell {
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct CodeBlock {
     #[serde(flatten)]
-    pub common: NodeCommon,
+    pub common: ElementCommon,
     #[serde(skip_serializing_if = "Option::is_none")]
     language: Option<String>,
     line_numbers: bool,
@@ -282,7 +296,7 @@ impl CodeBlock {
         file_name: Option<String>,
     ) -> CodeBlock {
         CodeBlock {
-            common: NodeCommon::new(class),
+            common: ElementCommon::new(class),
             language,
             line_numbers,
             file_name,
@@ -294,7 +308,7 @@ impl CodeBlock {
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Hint {
     #[serde(flatten)]
-    pub common: NodeCommon,
+    pub common: ElementCommon,
     variant: HintVariant,
 }
 
@@ -305,7 +319,7 @@ impl Hint {
     /// - `variant` Variant of the hint element.
     pub fn new(class: Option<String>, variant: HintVariant) -> Hint {
         Hint {
-            common: NodeCommon::new(class),
+            common: ElementCommon::new(class),
             variant,
         }
     }

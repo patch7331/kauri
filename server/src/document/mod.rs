@@ -4,7 +4,7 @@ pub mod styles;
 pub mod units;
 
 use self::meta::Meta; //need to specify self here for some reason
-use node::{KDFNode, Node};
+use node::{ChildNode, Node};
 use serde::{Deserialize, Serialize};
 use styles::Styles;
 use units::DistanceUnit;
@@ -69,7 +69,7 @@ impl Document {
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct KDFDocument {
-    pub content: Vec<KDFNode>,
+    pub content: Vec<ChildNode>,
     pub styles: Styles,
     pub meta: Meta,
 }
