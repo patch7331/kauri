@@ -1,30 +1,48 @@
 /** @format */
-
-import { ADDCOMMAND } from "../actionTypes";
+import { combineReducers } from "redux";
+import { ADD_COMMAND } from "../actionTypes";
 
 const initialState = {
-  allIds: [],
-  byIds: {},
+  commands: {
+    allIds: [],
+    byId: {},
+  }
 };
 
-export default function(state = initialState, action) {
+export default function rootReducer(state = initialState, action) {
   switch (action.type) {
-    case ADDCOMMAND:
-      const { ID, name, keys, behaviour } = action.payload;
+    case ADD_COMMAND:
       return {
         ...state,
-        allIDs: [...state.allIDs, ID],
-        byIDs: {
-          ...state.byIDs,
-          [ID]: {
-            ID,
-            name,
-            keys,
-            behaviour,
-          },
-        },
-      };
+        commands: commandsReducer(state.commands, action)
+      }
     default:
       return state;
   }
+}
+
+const commandsReducer = combineReducers({
+    allIds: allCommands, 
+    byId: commandsById
+});
+
+function allCommands(state = [], action) {
+  switch (action.type) {
+    case ADD_COMMAND:
+      return [...state.allIds, action.payload.id];      
+    default:
+      return state;
+  }
+}
+
+function commandsById(state = {}, action) {
+  switch (action.type) {
+    case ADD_COMMAND:
+      return {
+        ...state,
+        [action.payload.id]: { ...action.payload }
+      }
+    default:
+      return state;
+  } 
 }
