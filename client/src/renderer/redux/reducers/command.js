@@ -3,7 +3,7 @@
 import { ADDCOMMAND } from "../actionTypes";
 
 const initialState = {
-  allIDs: [],
+  allIds: [],
   byIDs: {},
 };
 
