@@ -2,14 +2,6 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Clone)]
-#[serde(tag = "type")]
-#[cfg_attr(debug_assertions, derive(Debug))]
-pub enum Node {
-    Text(Text),
-    Element(Element),
-}
-
-#[derive(Serialize, Deserialize, Clone)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Text {
     content: String,
@@ -26,48 +18,23 @@ impl Text {
 
 #[derive(Serialize, Deserialize, Clone)]
 #[cfg_attr(debug_assertions, derive(Debug))]
-pub struct Element {
-    tag: String,
-    pub attributes: HashMap<String, String>,
-    pub styles: HashMap<String, String>,
-    pub children: Vec<Node>,
-}
-
-impl Element {
-    /// Constructs a new element
-    ///
-    /// - `tag`: Tag name.
-    pub fn new(tag: String) -> Element {
-        Element {
-            tag,
-            attributes: HashMap::new(),
-            styles: HashMap::new(),
-            children: Vec::new(),
-        }
-    }
-}
-
-// KDF from here (also uses the old Text node)
-
-#[derive(Serialize, Deserialize, Clone)]
-#[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(untagged)]
 pub enum ChildNode {
-    Node(KDFNode),
-    Element(KDFElement),
+    Node(Node),
+    Element(Element),
 }
 
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(tag = "type")]
 #[cfg_attr(debug_assertions, derive(Debug))]
-pub enum KDFNode {
+pub enum Node {
     Text(Text),
 }
 
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(tag = "type")]
 #[cfg_attr(debug_assertions, derive(Debug))]
-pub enum KDFElement {
+pub enum Element {
     Heading(Heading),
     Paragraph(ElementCommon),
     Span(ElementCommon),
@@ -88,6 +55,32 @@ pub enum KDFElement {
     Hint(Hint),
 }
 
+impl Element {
+    /// Returns the ElementCommon struct contained in the given Element enum
+    pub fn get_common(&mut self) -> &mut ElementCommon {
+        match self {
+            Element::Paragraph(common)
+            | Element::Span(common)
+            | Element::Caption(common)
+            | Element::Table(common)
+            | Element::TableHead(common)
+            | Element::TableBody(common)
+            | Element::TableFooter(common)
+            | Element::TableRow(common)
+            | Element::TableColumnGroup(common)
+            | Element::Code(common) => common,
+            Element::Heading(heading) => &mut heading.common,
+            Element::List(list) => &mut list.common,
+            Element::ListItem(list_item) => &mut list_item.common,
+            Element::Hyperlink(hyperlink) => &mut hyperlink.common,
+            Element::TableColumn(table_column) => &mut table_column.common,
+            Element::TableCell(table_cell) => &mut table_cell.common,
+            Element::CodeBlock(code_block) => &mut code_block.common,
+            Element::Hint(hint) => &mut hint.common,
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct ElementCommon {
@@ -96,6 +89,10 @@ pub struct ElementCommon {
     #[serde(skip_serializing_if = "HashMap::is_empty")]
     pub styles: HashMap<String, String>,
     pub children: Vec<ChildNode>,
+    #[serde(skip)]
+    // This is meant to store attributes that can only be processed after all of this Element's children has been accounted for,
+    // so this should not be part of the JSON
+    pub attributes: HashMap<String, String>,
 }
 
 impl ElementCommon {
@@ -107,6 +104,7 @@ impl ElementCommon {
             class,
             styles: HashMap::new(),
             children: Vec::new(),
+            attributes: HashMap::new(),
         }
     }
 }
