@@ -89,6 +89,10 @@ pub struct ElementCommon {
     #[serde(skip_serializing_if = "HashMap::is_empty")]
     pub styles: HashMap<String, String>,
     pub children: Vec<ChildNode>,
+    #[serde(skip)]
+    // This is meant to store attributes that can only be processed after all of this Element's children has been accounted for,
+    // so this should not be part of the JSON
+    pub attributes: HashMap<String, String>,
 }
 
 impl ElementCommon {
@@ -100,6 +104,7 @@ impl ElementCommon {
             class,
             styles: HashMap::new(),
             children: Vec::new(),
+            attributes: HashMap::new(),
         }
     }
 }
