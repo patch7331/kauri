@@ -2,14 +2,6 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Clone)]
-#[serde(tag = "type")]
-#[cfg_attr(debug_assertions, derive(Debug))]
-pub enum Node {
-    Text(Text),
-    Element(Element),
-}
-
-#[derive(Serialize, Deserialize, Clone)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct Text {
     content: String,
@@ -26,48 +18,23 @@ impl Text {
 
 #[derive(Serialize, Deserialize, Clone)]
 #[cfg_attr(debug_assertions, derive(Debug))]
-pub struct Element {
-    tag: String,
-    pub attributes: HashMap<String, String>,
-    pub styles: HashMap<String, String>,
-    pub children: Vec<Node>,
-}
-
-impl Element {
-    /// Constructs a new element
-    ///
-    /// - `tag`: Tag name.
-    pub fn new(tag: String) -> Element {
-        Element {
-            tag,
-            attributes: HashMap::new(),
-            styles: HashMap::new(),
-            children: Vec::new(),
-        }
-    }
-}
-
-// KDF from here (also uses the old Text node)
-
-#[derive(Serialize, Deserialize, Clone)]
-#[cfg_attr(debug_assertions, derive(Debug))]
 #[serde(untagged)]
 pub enum ChildNode {
-    Node(KDFNode),
-    Element(KDFElement),
+    Node(Node),
+    Element(Element),
 }
 
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(tag = "type")]
 #[cfg_attr(debug_assertions, derive(Debug))]
-pub enum KDFNode {
+pub enum Node {
     Text(Text),
 }
 
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(tag = "type")]
 #[cfg_attr(debug_assertions, derive(Debug))]
-pub enum KDFElement {
+pub enum Element {
     Heading(Heading),
     Paragraph(ElementCommon),
     Span(ElementCommon),
