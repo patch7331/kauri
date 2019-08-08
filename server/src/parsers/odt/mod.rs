@@ -7,9 +7,9 @@ extern crate zip;
 
 use self::table::*;
 use self::text::*;
-use crate::document::node::{Element, Node, Text};
-use crate::document::units::DistanceUnit;
-use crate::document::{Document, PaperSize};
+use crate::document::node::{ChildNode, Element, Node, Text};
+use crate::document::styles::Styles;
+use crate::document::Document;
 use quick_xml::events::attributes::Attributes;
 use quick_xml::events::Event;
 use quick_xml::Reader;
@@ -25,6 +25,7 @@ pub struct ODTParser {
     set_children_underline: Vec<bool>,
     ensure_children_no_underline: Vec<bool>,
     document_root: Document,
+    // document_hierarchy has Elements instead of ChildNodes, since Nodes can never have children
     document_hierarchy: Vec<Element>,
     table_column_default_style_names: Vec<Vec<String>>,
     table_row_default_style_names: Vec<Vec<String>>,
@@ -33,10 +34,11 @@ pub struct ODTParser {
 impl ODTParser {
     /// Initialises a new ODTParser instance
     pub fn new() -> ODTParser {
-        let document_root = Document::new(
-            "Kauri (Working Title)".to_string(),
-            PaperSize::new(297, 210, DistanceUnit::Millimetres),
-        );
+        let document_root = Document {
+            content: Vec::new(),
+            styles: Styles::new(),
+            meta: None,
+        };
         ODTParser {
             body_begin: false,
             styles_begin: false,
@@ -219,8 +221,9 @@ impl ODTParser {
         self.document_hierarchy
             .last_mut()
             .unwrap()
+            .get_common()
             .children
-            .push(Node::Text(text));
+            .push(ChildNode::Node(Node::Text(text)));
     }
 
     /// Handles an EndElement event from the XML parser by taking its contents (the name of the element),
@@ -254,7 +257,7 @@ impl ODTParser {
                 let mut child = self.document_hierarchy.pop().unwrap();
                 if local_name == "span" {
                     handle_underline(
-                        &mut child.styles,
+                        &mut child.get_common().styles,
                         !self.set_children_underline.is_empty()
                             && *self.set_children_underline.last().unwrap(),
                         !self.ensure_children_no_underline.is_empty()
@@ -262,13 +265,14 @@ impl ODTParser {
                     );
                 }
                 if self.document_hierarchy.is_empty() {
-                    self.document_root.children.push(Node::Element(child));
+                    self.document_root.content.push(ChildNode::Element(child));
                 } else {
                     self.document_hierarchy
                         .last_mut()
                         .unwrap()
+                        .get_common()
                         .children
-                        .push(Node::Element(child));
+                        .push(ChildNode::Element(child));
                 }
             } else if prefix == "table" {
                 self.handle_element_end_table(local_name);

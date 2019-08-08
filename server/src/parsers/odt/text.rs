@@ -1,4 +1,5 @@
 use super::*;
+use crate::document::node::{ElementCommon, Heading, Hyperlink};
 
 impl ODTParser {
     /// Helper for handle_element_start() to respond to tags with "text" prefix
@@ -120,13 +121,14 @@ impl ODTParser {
         }
         if let Some(element) = child {
             if self.document_hierarchy.is_empty() {
-                self.document_root.children.push(Node::Element(element));
+                self.document_root.content.push(ChildNode::Element(element));
             } else {
                 self.document_hierarchy
                     .last_mut()
                     .unwrap()
+                    .get_common()
                     .children
-                    .push(Node::Element(element));
+                    .push(ChildNode::Element(element));
             }
         }
     }
@@ -163,7 +165,7 @@ fn check_underline(
             _ => (),
         }
     }
-    element.styles = style;
+    element.get_common().styles = style;
     (
         element,
         set_children_underline,
@@ -204,8 +206,7 @@ pub fn handle_underline(
 /// and returns a heading element based on the attributes,
 /// together with the value of the text:style-name attribute of the tag
 fn heading_begin(attributes: Attributes) -> (Element, String) {
-    // Because JS numbers are always floats apparently
-    let mut level = 0.0;
+    let mut level = 0;
     let mut style_name = String::new();
     for i in attributes {
         if let Ok(i) = i {
@@ -217,8 +218,8 @@ fn heading_begin(attributes: Attributes) -> (Element, String) {
                             .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
                     )
                     .unwrap_or("1")
-                    .parse::<f64>()
-                    .unwrap_or(1.0)
+                    .parse::<u32>()
+                    .unwrap_or(1);
                 }
                 "text:style-name" => {
                     style_name = std::str::from_utf8(
@@ -232,11 +233,8 @@ fn heading_begin(attributes: Attributes) -> (Element, String) {
             }
         }
     }
-    let mut element = Element::new("heading".to_string());
-    element
-        .attributes
-        .insert("level".to_string(), level.to_string());
-    (element, style_name)
+    let element = Heading::new(None, level);
+    (Element::Heading(element), style_name)
 }
 
 /// Takes the set of attributes of a text:p tag in the ODT's content.xml,
@@ -256,7 +254,7 @@ fn paragraph_begin(attributes: Attributes) -> (Element, String) {
             }
         }
     }
-    (Element::new("paragraph".to_string()), style_name)
+    (Element::Paragraph(ElementCommon::new(None)), style_name)
 }
 
 /// Takes the set of attributes of a text:span tag in the ODT's content.xml
@@ -276,13 +274,13 @@ fn span_begin(attributes: Attributes) -> (Element, String) {
             }
         }
     }
-    (Element::new("span".to_string()), style_name)
+    (Element::Span(ElementCommon::new(None)), style_name)
 }
 
 /// Takes the set of attributes of a text:a tag in the ODT's content.xml
 /// and returns an anchor element together with the value of the text:style-name attribute of the tag
 fn a_begin(attributes: Attributes) -> (Element, String) {
-    let mut element = Element::new("a".to_string());
+    let mut href = String::new();
     let mut style_name = String::new();
     for i in attributes {
         if let Ok(i) = i {
@@ -297,67 +295,18 @@ fn a_begin(attributes: Attributes) -> (Element, String) {
                     .to_string();
                 }
                 "xlink:href" => {
-                    element.attributes.insert(
-                        "href".to_string(),
-                        std::str::from_utf8(
-                            &i.unescaped_value()
-                                .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
-                        )
-                        .unwrap_or("")
-                        .to_string(),
-                    );
-                }
-                "office:title" => {
-                    element.attributes.insert(
-                        "title".to_string(),
-                        std::str::from_utf8(
-                            &i.unescaped_value()
-                                .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
-                        )
-                        .unwrap_or("")
-                        .to_string(),
-                    );
-                }
-                "xlink:show" => {
-                    a_begin_xlink_show(
-                        std::str::from_utf8(
-                            &i.unescaped_value()
-                                .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
-                        )
-                        .unwrap_or(""),
-                        &mut element,
-                    );
-                }
-                "office:target-frame-name" => {
-                    element.attributes.insert(
-                        "target".to_string(),
-                        std::str::from_utf8(
-                            &i.unescaped_value()
-                                .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
-                        )
-                        .unwrap_or("")
-                        .to_string(),
-                    );
+                    href = std::str::from_utf8(
+                        &i.unescaped_value()
+                            .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                    )
+                    .unwrap_or("")
+                    .to_string();
                 }
                 _ => (),
             }
         }
     }
-    (element, style_name)
-}
-
-/// Helper for a_begin() to handle the xlink:show attribute
-/// Converts it into the equivalent value as the target HTML attribute accroding to https://www.w3.org/TR/2001/REC-xlink-20010627/#show-att
-fn a_begin_xlink_show(value: &str, element: &mut Element) {
-    let mut target: Option<String> = None;
-    match value {
-        "new" => target = Some("_blank".to_string()),
-        "replace" => target = Some("_self".to_string()),
-        _ => (),
-    };
-    if let Some(target) = target {
-        element.attributes.insert("target".to_string(), target);
-    }
+    (Element::Hyperlink(Hyperlink::new(None, href)), style_name)
 }
 
 /// Takes the set of attributes of a style:text-properties tag in the ODT's content.xml,

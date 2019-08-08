@@ -1,4 +1,5 @@
 use super::*;
+use crate::document::node::{ElementCommon, TableCell, TableColumn};
 
 enum TableAlign {
     Center,
@@ -78,13 +79,14 @@ impl ODTParser {
             "table" => {
                 let child = self.document_hierarchy.pop().unwrap();
                 if self.document_hierarchy.is_empty() {
-                    self.document_root.children.push(Node::Element(child));
+                    self.document_root.content.push(ChildNode::Element(child));
                 } else {
                     self.document_hierarchy
                         .last_mut()
                         .unwrap()
+                        .get_common()
                         .children
-                        .push(Node::Element(child));
+                        .push(ChildNode::Element(child));
                 }
                 self.table_column_default_style_names.pop();
                 self.table_column_number.pop();
@@ -94,6 +96,7 @@ impl ODTParser {
             "table-row" => {
                 let mut child = self.document_hierarchy.pop().unwrap();
                 let mut repeat = child
+                    .get_common()
                     .attributes
                     .remove("_repeat")
                     .unwrap_or_else(|| "1".to_string())
@@ -104,14 +107,15 @@ impl ODTParser {
                 while repeat != 0 {
                     if self.document_hierarchy.is_empty() {
                         self.document_root
-                            .children
-                            .push(Node::Element(child.clone()));
+                            .content
+                            .push(ChildNode::Element(child.clone()));
                     } else {
                         self.document_hierarchy
                             .last_mut()
                             .unwrap()
+                            .get_common()
                             .children
-                            .push(Node::Element(child.clone()));
+                            .push(ChildNode::Element(child.clone()));
                     }
                     repeat -= 1;
                 }
@@ -119,6 +123,7 @@ impl ODTParser {
             "table-cell" => {
                 let mut child = self.document_hierarchy.pop().unwrap();
                 let mut repeat = child
+                    .get_common()
                     .attributes
                     .remove("_repeat")
                     .unwrap_or_else(|| "1".to_string())
@@ -129,14 +134,15 @@ impl ODTParser {
                 while repeat != 0 {
                     if self.document_hierarchy.is_empty() {
                         self.document_root
-                            .children
-                            .push(Node::Element(child.clone()));
+                            .content
+                            .push(ChildNode::Element(child.clone()));
                     } else {
                         self.document_hierarchy
                             .last_mut()
                             .unwrap()
+                            .get_common()
                             .children
-                            .push(Node::Element(child.clone()));
+                            .push(ChildNode::Element(child.clone()));
                     }
                     repeat -= 1;
                 }
@@ -153,12 +159,19 @@ impl ODTParser {
         if self.document_hierarchy.is_empty() || self.table_column_default_style_names.is_empty() {
             return;
         }
-        if let Node::Element(ref mut element) =
-            &mut self.document_hierarchy.last_mut().unwrap().children[1]
+        if let ChildNode::Element(ref mut element) = &mut self
+            .document_hierarchy
+            .last_mut()
+            .unwrap()
+            .get_common()
+            .children[1]
         {
             let (table, default_cell_style_name, mut repeat) =
                 table_column_begin(attributes, &self.auto_styles);
-            element.children.push(Node::Element(table));
+            element
+                .get_common()
+                .children
+                .push(ChildNode::Element(table));
             let table_column_default_style_names =
                 self.table_column_default_style_names.last_mut().unwrap();
             if let Some(default_cell_style_name) = default_cell_style_name {
@@ -556,7 +569,7 @@ fn table_begin(
             }
         }
     }
-    let mut element = Element::new("table".to_string());
+    let mut element = ElementCommon::new(None);
     element.styles = auto_styles
         .get(&style_name)
         .unwrap_or(&HashMap::new())
@@ -565,11 +578,15 @@ fn table_begin(
     // so we add it in in order to have a definitive position as to where the colgroup will come
     element
         .children
-        .push(Node::Element(Element::new("caption".to_string())));
+        .push(ChildNode::Element(Element::Caption(ElementCommon::new(
+            None,
+        ))));
     element
         .children
-        .push(Node::Element(Element::new("colgroup".to_string())));
-    element
+        .push(ChildNode::Element(Element::TableColumnGroup(
+            ElementCommon::new(None),
+        )));
+    Element::Table(element)
 }
 
 /// Takes the set of attributes of a table:table-column tag in the ODT's content.xml
@@ -581,8 +598,7 @@ pub fn table_column_begin(
     auto_styles: &HashMap<String, HashMap<String, String>>,
 ) -> (Element, Option<String>, u32) {
     let mut style_name = String::new();
-    let mut element = Element::new("col".to_string());
-    let mut repeat = "1".to_string();
+    let mut repeat = 1;
     let mut default_cell_style_name: Option<String> = None;
     for i in attributes {
         if let Ok(i) = i {
@@ -602,10 +618,8 @@ pub fn table_column_begin(
                             .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
                     )
                     .unwrap_or("1")
-                    .to_string();
-                    element
-                        .attributes
-                        .insert("span".to_string(), repeat.clone());
+                    .parse::<u32>()
+                    .unwrap_or(1);
                 }
                 "table:default-cell-style-name" => {
                     default_cell_style_name = Some(
@@ -621,11 +635,12 @@ pub fn table_column_begin(
             }
         }
     }
-    element.styles = auto_styles
+    let mut element = TableColumn::new(None, Some(repeat));
+    element.common.styles = auto_styles
         .get(&style_name)
         .unwrap_or(&HashMap::new())
         .clone();
-    let repeat = repeat.parse::<u32>().unwrap_or(1);
+    let element = Element::TableColumn(element);
     if let Some(default_cell_style_name) = default_cell_style_name {
         return (element, Some(default_cell_style_name), repeat);
     }
@@ -641,7 +656,6 @@ fn table_row_begin(
     auto_styles: &HashMap<String, HashMap<String, String>>,
 ) -> (Element, Option<String>) {
     let mut style_name = String::new();
-    let mut element = Element::new("tr".to_string());
     let mut default_cell_style_name: Option<String> = None;
     for i in attributes {
         if let Ok(i) = i {
@@ -654,17 +668,6 @@ fn table_row_begin(
                     )
                     .unwrap_or("")
                     .to_string()
-                }
-                "table:number-rows-repeated" => {
-                    element.attributes.insert(
-                        "span".to_string(),
-                        std::str::from_utf8(
-                            &i.unescaped_value()
-                                .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
-                        )
-                        .unwrap_or("1")
-                        .to_string(),
-                    );
                 }
                 "table:default-cell-style-name" => {
                     default_cell_style_name = Some(
@@ -680,10 +683,12 @@ fn table_row_begin(
             }
         }
     }
+    let mut element = ElementCommon::new(None);
     element.styles = auto_styles
         .get(&style_name)
         .unwrap_or(&HashMap::new())
         .clone();
+    let element = Element::TableRow(element);
     if let Some(default_cell_style_name) = default_cell_style_name {
         return (element, Some(default_cell_style_name));
     }
@@ -701,7 +706,9 @@ fn table_cell_begin(
     default_style_name: String,
 ) -> Element {
     let mut style_name = String::new();
-    let mut element = Element::new("td".to_string());
+    let mut repeat = String::new();
+    let mut col_span: Option<u32> = None;
+    let mut row_span: Option<u32> = None;
     for i in attributes {
         if let Ok(i) = i {
             let name = std::str::from_utf8(i.key).unwrap_or(":");
@@ -715,52 +722,54 @@ fn table_cell_begin(
                     .to_string()
                 }
                 "table:number-columns-repeated" => {
-                    element.attributes.insert(
-                        "_repeat".to_string(),
-                        std::str::from_utf8(
-                            &i.unescaped_value()
-                                .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
-                        )
-                        .unwrap_or("1")
-                        .to_string(),
-                    );
+                    repeat = std::str::from_utf8(
+                        &i.unescaped_value()
+                            .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                    )
+                    .unwrap_or("1")
+                    .to_string();
                 }
                 "table:number-columns-spanned" => {
-                    element.attributes.insert(
-                        "colspan".to_string(),
+                    col_span = Some(
                         std::str::from_utf8(
                             &i.unescaped_value()
                                 .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
                         )
                         .unwrap_or("1")
-                        .to_string(),
+                        .parse::<u32>()
+                        .unwrap_or(1),
                     );
                 }
                 "table:number-rows-spanned" => {
-                    element.attributes.insert(
-                        "rowspan".to_string(),
+                    row_span = Some(
                         std::str::from_utf8(
                             &i.unescaped_value()
                                 .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
                         )
                         .unwrap_or("1")
-                        .to_string(),
+                        .parse::<u32>()
+                        .unwrap_or(1),
                     );
                 }
                 _ => (),
             }
         }
     }
+    let mut element = TableCell::new(None, row_span, col_span);
+    element
+        .common
+        .attributes
+        .insert("_repeat".to_string(), repeat);
     if style_name != "" {
-        element.styles = auto_styles
+        element.common.styles = auto_styles
             .get(&style_name)
             .unwrap_or(&HashMap::new())
             .clone();
     } else {
-        element.styles = auto_styles
+        element.common.styles = auto_styles
             .get(&default_style_name)
             .unwrap_or(&HashMap::new())
             .clone();
     }
-    element
+    Element::TableCell(element)
 }

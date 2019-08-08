@@ -68,7 +68,7 @@ impl Element {
             | Element::TableFooter(common)
             | Element::TableRow(common)
             | Element::TableColumnGroup(common)
-            | Element::Code(common) => &mut common,
+            | Element::Code(common) => common,
             Element::Heading(heading) => &mut heading.common,
             Element::List(list) => &mut list.common,
             Element::ListItem(list_item) => &mut list_item.common,
