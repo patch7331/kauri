@@ -55,6 +55,32 @@ pub enum Element {
     Hint(Hint),
 }
 
+impl Element {
+    /// Returns the ElementCommon struct contained in the given Element enum
+    pub fn get_common(&mut self) -> &mut ElementCommon {
+        match self {
+            Element::Paragraph(common)
+            | Element::Span(common)
+            | Element::Caption(common)
+            | Element::Table(common)
+            | Element::TableHead(common)
+            | Element::TableBody(common)
+            | Element::TableFooter(common)
+            | Element::TableRow(common)
+            | Element::TableColumnGroup(common)
+            | Element::Code(common) => &mut common,
+            Element::Heading(heading) => &mut heading.common,
+            Element::List(list) => &mut list.common,
+            Element::ListItem(list_item) => &mut list_item.common,
+            Element::Hyperlink(hyperlink) => &mut hyperlink.common,
+            Element::TableColumn(table_column) => &mut table_column.common,
+            Element::TableCell(table_cell) => &mut table_cell.common,
+            Element::CodeBlock(code_block) => &mut code_block.common,
+            Element::Hint(hint) => &mut hint.common,
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct ElementCommon {
