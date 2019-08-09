@@ -57,18 +57,23 @@ impl ODTParser {
     /// Parse the ODT file referenced by the file path
     pub fn parse(&mut self, filepath: &str) -> Result<String, String> {
         let archive = super::util::get_archive(filepath);
+        // need to destructure and recreate the Err enum because the Result type is different
         if let Err(e) = archive {
-            return Err(e.to_string());
+            return Err(e);
         }
-        let archive = archive.unwrap();
-        self.parse_private(archive)
+        let mut archive = archive.unwrap();
+        if let Err(e) = self.parse_content(&mut archive) {
+            return Err(format!("{}: {}", "Content parsing error", e));
+        } else {
+            return Ok(self.document_root.to_json().unwrap());
+        }
     }
 
-    /// Actually parse the file, this is a separate function so we actually own the archive here
-    fn parse_private(
+    /// Parse content.xml inside the ODT
+    fn parse_content(
         &mut self,
-        mut archive: zip::ZipArchive<std::fs::File>,
-    ) -> Result<String, String> {
+        archive: &mut zip::ZipArchive<std::fs::File>,
+    ) -> Result<(), String> {
         // returns a ZipFile struct which implements Read if the file is in the archive
         let content_xml = archive.by_name("content.xml");
         if let Err(e) = content_xml {
@@ -142,7 +147,7 @@ impl ODTParser {
             }
         }
 
-        Ok(self.document_root.to_json().unwrap())
+        Ok(())
     }
 
     /// Handles a StartElement event from the XML parser by taking its contents (only name and attributes needed)
