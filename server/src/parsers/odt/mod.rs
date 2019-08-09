@@ -8,6 +8,7 @@ extern crate zip;
 use self::table::*;
 use self::text::*;
 use crate::document::node::{ChildNode, Element, Node, Text};
+use crate::document::styles::Style;
 use crate::document::styles::Styles;
 use crate::document::Document;
 use quick_xml::events::attributes::Attributes;
@@ -64,6 +65,8 @@ impl ODTParser {
         let mut archive = archive.unwrap();
         if let Err(e) = self.parse_content(&mut archive) {
             return Err(format!("{}: {}", "Content parsing error", e));
+        } else if let Err(e) = self.parse_styles(&mut archive) {
+            return Err(format!("{}: {}", "Styles parsing error", e));
         } else {
             return Ok(self.document_root.to_json().unwrap());
         }
@@ -107,7 +110,7 @@ impl ODTParser {
                 Ok(Event::Text(contents)) => {
                     let contents = contents.unescape_and_decode(&parser);
                     if let Err(e) = contents {
-                        println!("Error: {}", e);
+                        println!("Content parsing error: {}", e);
                     } else {
                         self.handle_characters(contents.unwrap());
                     }
@@ -140,7 +143,7 @@ impl ODTParser {
                 }
                 Ok(Event::Eof) => break,
                 Err(e) => {
-                    println!("Error: {}", e);
+                    println!("Content parsing error: {}", e);
                     return Err(e.to_string());
                 }
                 _ => {}
@@ -148,6 +151,115 @@ impl ODTParser {
         }
 
         Ok(())
+    }
+
+    fn parse_styles(&mut self, archive: &mut zip::ZipArchive<std::fs::File>) -> Result<(), String> {
+        // returns a ZipFile struct which implements Read if the file is in the archive
+        let styles_xml = archive.by_name("styles.xml");
+        if let Err(e) = styles_xml {
+            // Handle case where there is no content.xml (so probably not actually an ODT file)
+            return Err(e.to_string());
+        }
+        let content_xml = BufReader::new(styles_xml.unwrap()); //add buffering because quick-xml's reader requires it
+        let mut parser = Reader::from_reader(content_xml);
+        let mut buffer = Vec::new();
+
+        // These are here instead of the struct because we may need to move the contents of these somewhere else
+        let mut current_style_name = String::new();
+        let mut current_style_value: Option<Style> = None;
+        loop {
+            // Iterate through the XML
+            match parser.read_event(&mut buffer) {
+                Ok(Event::Start(contents)) => {
+                    if let Some(mut style) = current_style_value.as_mut() {
+                        if let Some((current_style_name_new, current_style_value_new)) = self
+                            .styles_handle_element_start(
+                                std::str::from_utf8(contents.name()).unwrap_or(":"),
+                                contents.attributes(),
+                                Some(&mut style),
+                            )
+                        {
+                            current_style_name = current_style_name_new;
+                            current_style_value = Some(current_style_value_new);
+                        }
+                    } else if let Some((current_style_name_new, current_style_value_new)) = self
+                        .styles_handle_element_start(
+                            std::str::from_utf8(contents.name()).unwrap_or(":"),
+                            contents.attributes(),
+                            None,
+                        )
+                    {
+                        current_style_name = current_style_name_new;
+                        current_style_value = Some(current_style_value_new);
+                    }
+                }
+                Ok(Event::End(contents)) => {
+                    if let Some((current_style_name_new, current_style_value_new)) = self
+                        .styles_handle_element_end(
+                            std::str::from_utf8(contents.name()).unwrap_or(":"),
+                            current_style_name,
+                            current_style_value,
+                        )
+                    {
+                        current_style_name = current_style_name_new;
+                        current_style_value = current_style_value_new;
+                    } else {
+                        current_style_name = String::new();
+                        current_style_value = None;
+                    }
+                }
+                Ok(Event::Empty(contents)) => {}
+                Ok(Event::Eof) => break,
+                Err(e) => {
+                    println!("Styles parsing error: {}", e);
+                    return Err(e.to_string());
+                }
+                _ => {}
+            }
+        }
+        Ok(())
+    }
+
+    /// Returns the style name and Style object
+    fn styles_handle_element_start(
+        &mut self,
+        name: &str,
+        attributes: Attributes,
+        style: Option<&mut Style>,
+    ) -> Option<(String, Style)> {
+        let style_name: Option<String> = None;
+        let display_name = String::new();
+        let parent_style_name: Option<String> = None;
+        match name {
+            "style:default-style" => {
+                let (style_name, style) = default_style_begin(attributes);
+                return Some((style_name, style));
+            }
+            "style:style" => {
+                let (style_name, style) = style_style_begin(attributes);
+                return Some((style_name, style));
+            }
+            _ => (),
+        }
+        None
+    }
+
+    fn styles_handle_element_end(
+        &mut self,
+        name: &str,
+        style_name: String,
+        style: Option<Style>,
+    ) -> Option<(String, Option<Style>)> {
+        match name {
+            "style:default-style" | "style:style" => {
+                if let Some(style) = style {
+                    self.document_root.styles.classes.insert(style_name, style);
+                    return None;
+                }
+            }
+            _ => (),
+        }
+        Some((style_name, style))
     }
 
     /// Handles a StartElement event from the XML parser by taking its contents (only name and attributes needed)
@@ -348,4 +460,77 @@ fn handle_element_start_style(
         _ => (),
     }
     (current_style_name, current_style_value)
+}
+
+fn default_style_begin(attributes: Attributes) -> (String, Style) {
+    let mut style_name = String::new();
+    for i in attributes {
+        if let Ok(i) = i {
+            let name = std::str::from_utf8(i.key).unwrap_or(":");
+            if name == "style:family" {
+                style_name = std::str::from_utf8(
+                    &i.unescaped_value()
+                        .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                )
+                .unwrap_or("")
+                .to_string();
+            }
+        }
+    }
+    // use an empty string as the displayed string for default styles for now
+    (style_name, Style::new("".to_string(), None))
+}
+
+fn style_style_begin(attributes: Attributes) -> (String, Style) {
+    let mut style_name = String::new();
+    let mut display_name = String::new();
+    let mut parent_style_name: Option<String> = None;
+    let mut family = String::new();
+    for i in attributes {
+        if let Ok(i) = i {
+            let name = std::str::from_utf8(i.key).unwrap_or(":");
+            match name {
+                "style:name" => {
+                    style_name = std::str::from_utf8(
+                        &i.unescaped_value()
+                            .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                    )
+                    .unwrap_or("")
+                    .to_string();
+                }
+                "style:display-name" => {
+                    display_name = std::str::from_utf8(
+                        &i.unescaped_value()
+                            .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                    )
+                    .unwrap_or("")
+                    .to_string();
+                }
+                "style:family" => {
+                    family = std::str::from_utf8(
+                        &i.unescaped_value()
+                            .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                    )
+                    .unwrap_or("")
+                    .to_string();
+                }
+                "style:parent-style-name" => {
+                    parent_style_name = Some(
+                        std::str::from_utf8(
+                            &i.unescaped_value()
+                                .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                        )
+                        .unwrap_or("")
+                        .to_string(),
+                    );
+                }
+                _ => (),
+            }
+        }
+    }
+    if parent_style_name.is_some() {
+        (style_name, Style::new(display_name, parent_style_name))
+    } else {
+        (style_name, Style::new(display_name, Some(family)))
+    }
 }
