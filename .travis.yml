@@ -12,6 +12,7 @@ before_install:
 sudo: required
 before_script:
   - rustup component add rustfmt
+  - rustup component add clippy
 script:
   - ./server/build.sh
   - ./client/build.sh
