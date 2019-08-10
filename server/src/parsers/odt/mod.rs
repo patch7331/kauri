@@ -171,17 +171,19 @@ impl ODTParser {
             // Iterate through the XML
             match parser.read_event(&mut buffer) {
                 Ok(Event::Start(contents)) => {
-                    if let Some(mut style) = current_style_value.as_mut() {
+                    // If there is already an initialised Style object
+                    if let Some(style) = current_style_value.as_mut() {
                         if let Some((current_style_name_new, current_style_value_new)) = self
                             .styles_handle_element_start(
                                 std::str::from_utf8(contents.name()).unwrap_or(":"),
                                 contents.attributes(),
-                                Some(&mut style),
+                                Some(style),
                             )
                         {
                             current_style_name = current_style_name_new;
                             current_style_value = Some(current_style_value_new);
                         }
+                    // Else if there is none yet
                     } else if let Some((current_style_name_new, current_style_value_new)) = self
                         .styles_handle_element_start(
                             std::str::from_utf8(contents.name()).unwrap_or(":"),
@@ -208,7 +210,15 @@ impl ODTParser {
                         current_style_value = None;
                     }
                 }
-                Ok(Event::Empty(contents)) => {}
+                Ok(Event::Empty(contents)) => {
+                    if let Some(style) = current_style_value.as_mut() {
+                        self.styles_handle_element_empty(
+                            std::str::from_utf8(contents.name()).unwrap_or(":"),
+                            contents.attributes(),
+                            style,
+                        );
+                    }
+                }
                 Ok(Event::Eof) => break,
                 Err(e) => {
                     println!("Styles parsing error: {}", e);
@@ -227,9 +237,6 @@ impl ODTParser {
         attributes: Attributes,
         style: Option<&mut Style>,
     ) -> Option<(String, Style)> {
-        let style_name: Option<String> = None;
-        let display_name = String::new();
-        let parent_style_name: Option<String> = None;
         match name {
             "style:default-style" => {
                 let (style_name, style) = default_style_begin(attributes);
@@ -239,11 +246,22 @@ impl ODTParser {
                 let (style_name, style) = style_style_begin(attributes);
                 return Some((style_name, style));
             }
+            "table:table-row-properties" if style.is_some() => {
+                table_row_properties_begin(attributes, &mut style.unwrap().styles)
+            }
+            "table:table-properties" if style.is_some() => {
+                table_properties_begin(attributes, &mut style.unwrap().styles)
+            }
+            "table:table-cell-properties" if style.is_some() => {
+                table_cell_properties_begin(attributes, &mut style.unwrap().styles)
+            }
             _ => (),
         }
         None
     }
 
+    /// This function may or may not actually utilise the style_name and style attributes depending on the tag name,
+    /// if they are not used then they are returned
     fn styles_handle_element_end(
         &mut self,
         name: &str,
@@ -260,6 +278,26 @@ impl ODTParser {
             _ => (),
         }
         Some((style_name, style))
+    }
+
+    /// Takes the given tag information and inserts them in the proper format to the given Style struct
+    fn styles_handle_element_empty(
+        &mut self,
+        name: &str,
+        attributes: Attributes,
+        style: &mut Style,
+    ) {
+        match name {
+            "style:text-properties" => text_properties_begin(attributes, &mut style.styles),
+            "style:table-column-properties" => {
+                table_column_properties_begin(attributes, &mut style.styles)
+            }
+            "style:table-cell-properties" => {
+                table_cell_properties_begin(attributes, &mut style.styles)
+            }
+            "style:table-properties" => table_properties_begin(attributes, &mut style.styles),
+            _ => (),
+        }
     }
 
     /// Handles a StartElement event from the XML parser by taking its contents (only name and attributes needed)
@@ -438,6 +476,7 @@ fn handle_element_empty_style(
         "text-properties" => text_properties_begin(attributes, &mut map),
         "table-column-properties" => table_column_properties_begin(attributes, &mut map),
         "table-cell-properties" => table_cell_properties_begin(attributes, &mut map),
+        "table-properties" => table_properties_begin(attributes, &mut map),
         _ => is_valid = false,
     }
     if is_valid {
