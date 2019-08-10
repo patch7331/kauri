@@ -432,11 +432,18 @@ fn handle_element_empty_style(
     local_name: &str,
     attributes: Attributes,
 ) -> Option<HashMap<String, String>> {
+    let mut map: HashMap<String, String> = HashMap::new();
+    let mut is_valid = true;
     match local_name {
-        "text-properties" => Some(text_properties_begin(attributes)),
-        "table-column-properties" => Some(table_column_properties_begin(attributes)),
-        "table-cell-properties" => Some(table_cell_properties_begin(attributes)),
-        _ => None,
+        "text-properties" => text_properties_begin(attributes, &mut map),
+        "table-column-properties" => table_column_properties_begin(attributes, &mut map),
+        "table-cell-properties" => table_cell_properties_begin(attributes, &mut map),
+        _ => is_valid = false,
+    }
+    if is_valid {
+        Some(map)
+    } else {
+        None
     }
 }
 
@@ -447,19 +454,22 @@ fn handle_element_start_style(
     attributes: Attributes,
 ) -> (Option<String>, Option<HashMap<String, String>>) {
     let mut current_style_name: Option<String> = None;
-    let mut current_style_value: Option<HashMap<String, String>> = None;
+    let mut current_style_value: HashMap<String, String> = HashMap::new();
+    let mut is_valid = true;
     match local_name {
         "style" => current_style_name = Some(style_begin(attributes)),
-        "table-row-properties" => {
-            current_style_value = Some(table_row_properties_begin(attributes))
-        }
-        "table-properties" => current_style_value = Some(table_properties_begin(attributes)),
+        "table-row-properties" => table_row_properties_begin(attributes, &mut current_style_value),
+        "table-properties" => table_properties_begin(attributes, &mut current_style_value),
         "table-cell-properties" => {
-            current_style_value = Some(table_cell_properties_begin(attributes))
+            table_cell_properties_begin(attributes, &mut current_style_value)
         }
-        _ => (),
+        _ => is_valid = false,
     }
-    (current_style_name, current_style_value)
+    if is_valid {
+        (current_style_name, Some(current_style_value))
+    } else {
+        (current_style_name, None)
+    }
 }
 
 fn default_style_begin(attributes: Attributes) -> (String, Style) {

@@ -310,9 +310,8 @@ fn a_begin(attributes: Attributes) -> (Element, String) {
 }
 
 /// Takes the set of attributes of a style:text-properties tag in the ODT's content.xml,
-/// and creates a map of CSS properties based on the attributes
-pub fn text_properties_begin(attributes: Attributes) -> HashMap<String, String> {
-    let mut map: HashMap<String, String> = HashMap::new();
+/// and inserts the CSS properties and values into the referenced HashMap
+pub fn text_properties_begin(attributes: Attributes, map: &mut HashMap<String, String>) {
     let mut is_double_underline = false;
     for i in attributes {
         if let Ok(i) = i {
@@ -326,9 +325,8 @@ pub fn text_properties_begin(attributes: Attributes) -> HashMap<String, String> 
             .unwrap_or("what")
             .to_string();
             if prefix == "fo" {
-                text_properties_begin_fo(local_name, value, &mut map);
-            } else if prefix == "style" && text_properties_begin_style(local_name, value, &mut map)
-            {
+                text_properties_begin_fo(local_name, value, map);
+            } else if prefix == "style" && text_properties_begin_style(local_name, value, map) {
                 is_double_underline = true;
             }
         }
@@ -338,7 +336,6 @@ pub fn text_properties_begin(attributes: Attributes) -> HashMap<String, String> 
         // only supports double solid underlines, so prioritize the double over the line style?
         map.insert("textDecorationStyle".to_string(), "double".to_string());
     }
-    map
 }
 
 /// Helper for text_properties_begin() to respond to attributes with "fo" prefix
