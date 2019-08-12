@@ -3,54 +3,33 @@
 import "./styles.scss";
 
 import { h, Component, createRef } from "preact";
-import { renderDocumentNodes } from "dom/render";
-import ToolBar from "components/Editor/ToolBar";
+import { renderNodeList } from "dom/render";
+import { connect } from "react-redux";
 
-const POST_URI = "http://127.0.0.1:3000/key";
+import ToolBar from "components/Editor/ToolBar";
 
 /**
  * A document editing component.
  * @extends Component
  */
-export default class Editor extends Component {
-  /**
-   * Constructs a new editor component.
-   * @param {Object} props Component properties.
-   * @param {DOM} props.dom A DOM to render in the editor.
-   */
-  constructor(props) {
-    super(props);
-    this.contentEditableDiv = createRef();
-    this.clearContentEditable = this.clearContentEditable.bind(this);
-  }
-
-  /**
-   * @private
-   */
+class Editor extends Component {
   componentDidMount() {
     document.execCommand("defaultParagraphSeparator", false, "p");
+    document.execCommand("styleWithCSS", false, true);
   }
 
-  /**
-   * Clears the contents of the contenteditable div, designed for use before loading a new file.
-   */
-  clearContentEditable() {
-    this.contentEditableDiv.current.innerHTML = "";
-  }
+  render = props => (
+    <div>
+      <ToolBar />
 
-  render(props) {
-    return (
-      <div>
-        <ToolBar />
-
-        <div
-          ref={this.contentEditableDiv}
-          class="editor"
-          contenteditable="true"
-        >
-          {renderDocumentNodes(props.dom.children)}
-        </div>
+      <div class="editor" contenteditable="true">
+        {renderNodeList(props.document)}
       </div>
-    );
-  }
+    </div>
+  );
 }
+
+export default connect(
+  state => ({ document: state.document }),
+  null
+)(Editor);
