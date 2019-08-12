@@ -3,25 +3,11 @@ import { combineReducers } from "redux";
 import { ADD_COMMAND } from "../actionTypes";
 
 const initialState = {
-  commands: {
-    allIds: [],
-    byId: {},
-  },
+  allIds: [],
+  byId: {},
 };
 
-export default function rootReducer(state = initialState, action) {
-  switch (action.type) {
-    case ADD_COMMAND:
-      return {
-        ...state,
-        commands: commandsReducer(state.commands, action),
-      };
-    default:
-      return state;
-  }
-}
-
-const commandsReducer = combineReducers({
+export default combineReducers({
   allIds: allCommands,
   byId: commandsById,
 });
@@ -29,7 +15,7 @@ const commandsReducer = combineReducers({
 function allCommands(state = [], action) {
   switch (action.type) {
     case ADD_COMMAND:
-      return [...state.allIds, action.payload.id];
+      return [...state, action.payload.id];
     default:
       return state;
   }
