@@ -1,6 +1,6 @@
 /** @format */
 
 import { combineReducers } from "redux";
-import command from "./command";
+import commands from "./commands";
 
-export default combineReducers({ command });
+export default combineReducers({ commands });
