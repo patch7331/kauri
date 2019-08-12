@@ -2,11 +2,6 @@
 import { combineReducers } from "redux";
 import { ADD_COMMAND } from "../actionTypes";
 
-const initialState = {
-  allIds: [],
-  byId: {},
-};
-
 export default combineReducers({
   allIds: allCommands,
   byId: commandsById,
