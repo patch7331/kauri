@@ -4,10 +4,7 @@ import { app, BrowserWindow, ipcMain } from "electron";
 import SystemFonts from "system-font-families";
 import { format as formatUrl } from "url";
 import * as path from "path";
-import installExtension, {
-  REACT_DEVELOPER_TOOLS,
-  REDUX_DEVTOOLS,
-} from "electron-devtools-installer";
+import installExtension, { REDUX_DEVTOOLS } from "electron-devtools-installer";
 
 const isDevelopment = process.env.NODE_ENV !== "production";
 const systemFonts = new SystemFonts();
@@ -52,7 +49,7 @@ function createWindow() {
  * Installs custom dev tools.
  */
 function installDevTools() {
-  [REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS].forEach(extension => {
+  [REDUX_DEVTOOLS].forEach(extension => {
     installExtension(extension)
       .then(name => console.log(`Added Extension: ${name}`))
       .catch(err => console.log("An error occurred: ", err));
