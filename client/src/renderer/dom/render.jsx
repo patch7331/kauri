@@ -54,3 +54,12 @@ export function renderNode(node) {
   const Node = NODE_MAP[node.type];
   return <Node {...node} />;
 }
+
+/**
+ * Turns a KCSS styles object into a CSS styles object.
+ * @param {Object} styles KCSS styles to render.
+ * @return {Object} CSS styles.
+ */
+export function renderStyles(styles) {
+  return styles;
+}

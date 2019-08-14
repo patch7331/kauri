@@ -1,7 +1,7 @@
 /** @format */
 
 import { h } from "preact";
-import { renderNodeList } from "dom/render";
+import { renderNodeList, renderStyles } from "dom/render";
 
 export function Heading(props) {
   // Ensure level is valid
@@ -13,7 +13,7 @@ export function Heading(props) {
 
   // Render heading
   return (
-    <Heading class={props.class && `__editor__${props.class}`}>
+    <Heading style={renderStyles(props.styles)}>
       {renderNodeList(props.children)}
     </Heading>
   );

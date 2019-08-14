@@ -35,6 +35,14 @@
   },
   {
     "type": "paragraph",
-    "children": []
+    "children": [
+      "This word is ",
+      {
+        "type": "span",
+        "styles": { "color": "red" },
+        "children": ["red"]
+      },
+      "."
+    ]
   }
 ]

@@ -1,10 +1,8 @@
 /** @format */
 
 import { h } from "preact";
-import { renderNodeList } from "dom/render";
+import { renderNodeList, renderStyles } from "dom/render";
 
 export const Paragraph = props => (
-  <p class={props.class && `__editor__${props.class}`}>
-    {renderNodeList(props.children)}
-  </p>
+  <p styles={renderStyles(props.styles)}>{renderNodeList(props.children)}</p>
 );
