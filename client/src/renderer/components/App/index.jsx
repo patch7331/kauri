@@ -8,6 +8,7 @@ import Header from "components/Header";
 import { remote } from "electron";
 import setApplicationMenu from "util/MenuConfigurator.js";
 import Clipboard from "components/Clipboard";
+import KeyboardShortcuts from "components";
 
 const POST_URI_OPEN_FILE = "http://127.0.0.1:3000/load";
 
@@ -47,6 +48,7 @@ export default class App extends Component {
         <Header title={state.document.title} />
         <div class="app__wrapper">
           <Editor ref={this.editor} dom={state.document} />
+          <KeyboardShortcuts />
           <Clipboard />
         </div>
       </div>
