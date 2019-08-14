@@ -42,9 +42,9 @@ export default class Editor extends Component {
   }
 
   //returns absolute values of caret's start/end positions
-  getCaretPos() { 
-    const editor = document.getElementById('editor');
-    var positions = {pos1: 0, pos2: 0};
+  getCaretPos() {
+    const editor = document.getElementById("editor");
+    var positions = { pos1: 0, pos2: 0 };
 
     var range = document.getSelection().getRangeAt(0);
     var preSelectionRange = range.cloneRange();
@@ -52,7 +52,7 @@ export default class Editor extends Component {
     preSelectionRange.setEnd(range.startContainer, range.startOffset);
     positions.pos1 = preSelectionRange.toString().length;
     positions.pos2 = positions.pos1 + range.toString().length;
-    console.log("Editor: ",positions.pos1, positions.pos2);
+    console.log("Editor: ", positions.pos1, positions.pos2);
     return positions;
   }
 

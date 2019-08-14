@@ -12,9 +12,9 @@ export const addCommand = (id, name, keys, behaviour) => ({
 });
 
 export const updateCaretPos = ({ pos1, pos2 }) => ({
-	type: UPDATE,
-	payload: {
-		pos1,
-		pos2,
-	},
+  type: UPDATE,
+  payload: {
+    pos1,
+    pos2,
+  },
 });

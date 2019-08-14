@@ -10,4 +10,3 @@ export default createStore(
   allReducers,
   composeEnhancers(applyMiddleware(thunkMiddleware))
 );
-
