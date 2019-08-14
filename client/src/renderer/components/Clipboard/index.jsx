@@ -28,7 +28,7 @@ class Clipboard extends Component {
     this.props.addCommand(
       "Clipboard:copy",
       "copy",
-      "CmdOrCtrl+C",
+      "CmdOrCtrl+C",  //new KeyShortcut({key: "A", ctrl: true})
       this.doClipboardCopy
     );
     clipboard.startWatching();
