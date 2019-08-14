@@ -18,8 +18,10 @@ import * as Elements from "components/Editor/Elements";
  */
 const NODE_MAP = Object.freeze({
   heading: Elements.Heading,
-  lineBreak: Nodes.LineBreak,
-  pageBreak: Nodes.PageBreak,
+  linebreak: Nodes.LineBreak,
+  list: Elements.List,
+  listitem: Elements.ListItem,
+  pagebreak: Nodes.PageBreak,
   paragraph: Elements.Paragraph,
   span: Elements.Span,
   text: Nodes.Text,
@@ -45,13 +47,15 @@ export function renderNode(node) {
     return node;
   }
 
+  const type = node.type.toLowerCase();
+
   // Handle unknown node type
-  if (!(node.type in NODE_MAP)) {
+  if (!(type in NODE_MAP)) {
     throw new RenderError(`Unknown element type '${node.type}'.`);
   }
 
   // Create and return tag
-  const Node = NODE_MAP[node.type];
+  const Node = NODE_MAP[type];
   return <Node {...node} />;
 }
 

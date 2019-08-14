@@ -39,10 +39,39 @@
       "This word is ",
       {
         "type": "span",
-        "styles": { "color": "red" },
+        "styles": { "color": "red", "fontWeight": "500" },
         "children": ["red"]
       },
-      "."
+      ", and ",
+      {
+        "type": "span",
+        "styles": { "textDecoration": "underline" },
+        "children": ["this line is underlined"]
+      },
+      " through the power of the Span element."
+    ]
+  },
+  {
+    "type": "list",
+    "ordered": true,
+    "variant": "lowerRoman",
+    "children": [
+      {
+        "type": "listItem",
+        "children": ["One fish"]
+      },
+      {
+        "type": "listItem",
+        "children": ["Two fish"]
+      },
+      {
+        "type": "listItem",
+        "children": ["Red fish"]
+      },
+      {
+        "type": "listItem",
+        "children": ["Blue fish"]
+      }
     ]
   }
 ]
