@@ -3,8 +3,8 @@
 import { UPDATE_CARET_POSITION } from "../actionTypes";
 
 const initialState = {
-  pos1: 0,
-  pos2: 0,
+  positionStart: 0,
+  positionEnd: 0,
 };
 
 const caretReducer = (state = initialState, action) => {

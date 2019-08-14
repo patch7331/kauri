@@ -49,13 +49,12 @@ class Editor extends Component {
     const preSelectionRange = range.cloneRange();
     preSelectionRange.selectNodeContents(this.contentEditableDiv.current);
     preSelectionRange.setEnd(range.startContainer, range.startOffset);
-    const startPosition = preSelectionRange.toString().length;
-    const endPosition = startPosition + range.toString().length;
-    return { startPosition, endPosition };
+    const positionStart = preSelectionRange.toString().length;
+    const positionEnd = positionStart + range.toString().length;
+    return { positionStart, positionEnd };
   }
 
-  handleDocumentClick()
-  {
+  handleDocumentClick() {
     return this.props.updateCaretPos(this.getCaretPos());
   }
 

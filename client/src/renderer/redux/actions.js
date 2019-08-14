@@ -11,10 +11,10 @@ export const addCommand = (id, name, keys, behaviour) => ({
   },
 });
 
-export const updateCaretPos = ({ startPosition, endPosition }) => ({
+export const updateCaretPos = ({ positionStart, positionEnd }) => ({
   type: UPDATE_CARET_POSITION,
   payload: {
-    startPosition,
-    endPosition,
+    positionStart,
+    positionEnd,
   },
 });
