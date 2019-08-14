@@ -1,6 +1,6 @@
 /** @format */
 
-import { UPDATE } from "../actionTypes";
+import { UPDATE_CARET_POSITION } from "../actionTypes";
 
 const initialState = {
   pos1: 0,
@@ -10,11 +10,10 @@ const initialState = {
 const caretReducer = (state = initialState, action) => {
   console.log(action);
   switch (action.type) {
-    case UPDATE:
+    case UPDATE_CARET_POSITION:
       return {
         ...state,
-        pos1: action.payload.pos1,
-        pos2: action.payload.pos2,
+        ...action.payload,
       };
     default:
       return state;

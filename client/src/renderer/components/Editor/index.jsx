@@ -14,7 +14,7 @@ const POST_URI = "http://127.0.0.1:3000/key";
  * A document editing component.
  * @extends Component
  */
-export default class Editor extends Component {
+class Editor extends Component {
   /**
    * Constructs a new editor component.
    * @param {Object} props Component properties.
@@ -24,7 +24,7 @@ export default class Editor extends Component {
     super(props);
     this.contentEditableDiv = createRef();
     this.clearContentEditable = this.clearContentEditable.bind(this);
-    this.state = { positions: [] };
+    this.handleDocumentClick = this.handleDocumentClick.bind(this);
   }
 
   /**
@@ -41,25 +41,25 @@ export default class Editor extends Component {
     this.contentEditableDiv.current.innerHTML = "";
   }
 
-  //returns absolute values of caret's start/end positions
+  /**
+   * Returns absolute values of caret's start/end positions
+   */
   getCaretPos() {
-    const editor = document.getElementById("editor");
-    var positions = { pos1: 0, pos2: 0 };
-
-    var range = document.getSelection().getRangeAt(0);
-    var preSelectionRange = range.cloneRange();
-    preSelectionRange.selectNodeContents(editor);
+    const range = document.getSelection().getRangeAt(0);
+    const preSelectionRange = range.cloneRange();
+    preSelectionRange.selectNodeContents(this.contentEditableDiv.current);
     preSelectionRange.setEnd(range.startContainer, range.startOffset);
-    positions.pos1 = preSelectionRange.toString().length;
-    positions.pos2 = positions.pos1 + range.toString().length;
-    console.log("Editor: ", positions.pos1, positions.pos2);
-    return positions;
+    const startPosition = preSelectionRange.toString().length;
+    const endPosition = startPosition + range.toString().length;
+    return { startPosition, endPosition };
+  }
+
+  handleDocumentClick()
+  {
+    return this.props.updateCaretPos(this.getCaretPos());
   }
 
   render(props) {
-    const dispatch = useDispatch();
-    const caretPos = useSelector(state => state.caret);
-
     return (
       <div>
         <ToolBar />
@@ -69,7 +69,7 @@ export default class Editor extends Component {
           class="editor"
           id="editor"
           contenteditable="true"
-          onclick={() => dispatch(updateCaretPos(this.getCaretPos()))}
+          onClick={this.handleDocumentClick}
         >
           {renderDocumentNodes(props.dom.children)}
         </div>
@@ -77,3 +77,8 @@ export default class Editor extends Component {
     );
   }
 }
+
+export default connect(
+  null,
+  { updateCaretPos }
+)(Editor);
