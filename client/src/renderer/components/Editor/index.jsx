@@ -4,8 +4,8 @@ import "./styles.scss";
 
 import { h, Component, createRef } from "preact";
 import { renderDocumentNodes } from "dom/render";
-import { connect, useDispatch, useSelector } from "react-redux";
-import { addCommand, updateCaretPos } from "redux/actions";
+import { connect } from "react-redux";
+import { updateCaretPos } from "redux/actions";
 import ToolBar from "components/Editor/ToolBar";
 
 const POST_URI = "http://127.0.0.1:3000/key";
