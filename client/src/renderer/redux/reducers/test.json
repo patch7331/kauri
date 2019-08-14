@@ -1,0 +1,40 @@
+[
+  {
+    "type": "heading",
+    "level": 1,
+    "class": "h1",
+    "children": [
+      {
+        "type": "text",
+        "content": "KDF Rendering Pipeline"
+      }
+    ]
+  },
+  {
+    "type": "heading",
+    "level": 2,
+    "class": "h2",
+    "children": ["Nodes"]
+  },
+  {
+    "type": "paragraph",
+    "children": [
+      "These paragraphs are built with text nodes. This sentence is followed by a line break.",
+      { "type": "lineBreak" },
+      "And this paragraph is immediately followed by a page break. See you on the next page!"
+    ]
+  },
+  {
+    "type": "pageBreak"
+  },
+  {
+    "type": "heading",
+    "level": 2,
+    "class": "h2",
+    "children": ["Elements"]
+  },
+  {
+    "type": "paragraph",
+    "children": []
+  }
+]

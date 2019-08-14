@@ -1,18 +1,5 @@
 /** @format */
 
-const initialState = [
-  {
-    type: "heading",
-    level: 1,
-    class: "h1",
-    children: ["Kauri (Working Title)"],
-  },
-  {
-    type: "paragraph",
-    children: ["Testing testing..."]
-  }
-];
+import test from "./test.json";
 
-export default function documentReducer(state = initialState, action) {
-  return state;
-}
+export default (state = test, action) => state;

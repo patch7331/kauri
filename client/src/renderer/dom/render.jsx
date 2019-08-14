@@ -3,8 +3,8 @@
 import { h } from "preact";
 import RenderError from "dom/RenderError";
 
-import Heading from "components/Heading";
-import Paragraph from "components/Paragraph";
+import * as Nodes from "components/Editor/Nodes";
+import * as Elements from "components/Editor/Elements";
 
 /**
  * A map of node types to components.
@@ -17,14 +17,28 @@ import Paragraph from "components/Paragraph";
  * @type {Object}
  */
 const NODE_MAP = Object.freeze({
-  heading: Heading,
-  paragraph: Paragraph
+  heading: Elements.Heading,
+  lineBreak: Nodes.LineBreak,
+  pageBreak: Nodes.PageBreak,
+  paragraph: Elements.Paragraph,
+  span: Elements.Span,
+  text: Nodes.Text,
 });
 
+/**
+ * Renders a list of KDF nodes.
+ * @param {Object[]} nodes An array of KDF nodes.
+ * @return {Component[]} An array of Preact components.
+ */
 export function renderNodeList(nodes = []) {
   return nodes.map(renderNode);
 }
 
+/**
+ * Renders a KDF node.
+ * @param {Object} node KDF node to render.
+ * @return {Component} A rendered Preact component.
+ */
 export function renderNode(node) {
   // Handle text node shorthand
   if (typeof node === "string") {
