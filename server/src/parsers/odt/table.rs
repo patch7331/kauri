@@ -627,11 +627,13 @@ pub fn table_column_begin(
             }
         }
     }
-    let mut element = TableColumn::new(None, Some(repeat));
-    element.common.styles = auto_styles
+    let mut style = auto_styles
         .get(&style_name)
         .unwrap_or(&HashMap::new())
         .clone();
+    let parent_style = style.remove("_parent");
+    let mut element = TableColumn::new(parent_style, Some(repeat));
+    element.common.styles = style;
     let element = Element::TableColumn(element);
     if let Some(default_cell_style_name) = default_cell_style_name {
         return (element, Some(default_cell_style_name), repeat);
@@ -675,11 +677,13 @@ fn table_row_begin(
             }
         }
     }
-    let mut element = ElementCommon::new(None);
-    element.styles = auto_styles
+    let mut style = auto_styles
         .get(&style_name)
         .unwrap_or(&HashMap::new())
         .clone();
+    let parent_style = style.remove("_parent");
+    let mut element = ElementCommon::new(parent_style);
+    element.styles = style;
     let element = Element::TableRow(element);
     if let Some(default_cell_style_name) = default_cell_style_name {
         return (element, Some(default_cell_style_name));
@@ -747,21 +751,20 @@ fn table_cell_begin(
             }
         }
     }
-    let mut element = TableCell::new(None, row_span, col_span);
+    let mut final_style_name = &style_name;
+    if final_style_name == "" {
+        final_style_name = &default_style_name;
+    }
+    let mut style = auto_styles
+        .get(final_style_name)
+        .unwrap_or(&HashMap::new())
+        .clone();
+    let parent_style = style.remove("_parent");
+    let mut element = TableCell::new(parent_style, row_span, col_span);
     element
         .common
         .attributes
         .insert("_repeat".to_string(), repeat);
-    if style_name != "" {
-        element.common.styles = auto_styles
-            .get(&style_name)
-            .unwrap_or(&HashMap::new())
-            .clone();
-    } else {
-        element.common.styles = auto_styles
-            .get(&default_style_name)
-            .unwrap_or(&HashMap::new())
-            .clone();
-    }
+    element.common.styles = style;
     Element::TableCell(element)
 }

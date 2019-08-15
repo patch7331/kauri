@@ -133,13 +133,11 @@ impl ODTParser {
                     }
                 }
                 Ok(Event::Empty(contents)) => {
-                    let current_style_value_new = self.handle_element_empty(
+                    self.handle_element_empty(
                         std::str::from_utf8(contents.name()).unwrap_or(":"),
                         contents.attributes(),
+                        &mut current_style_value,
                     );
-                    if let Some(x) = current_style_value_new {
-                        current_style_value = x;
-                    }
                 }
                 Ok(Event::Eof) => break,
                 Err(e) => {
@@ -346,20 +344,15 @@ impl ODTParser {
         &mut self,
         name: &str,
         attributes: Attributes,
-    ) -> Option<HashMap<String, String>> {
+        style: &mut HashMap<String, String>,
+    ) {
         let (prefix, local_name) = name.split_at(name.find(':').unwrap_or(0));
         let local_name = &local_name[1..];
         match prefix {
-            "style" => handle_element_empty_style(local_name, attributes),
-            "text" => {
-                self.handle_element_empty_text(local_name, attributes);
-                None
-            }
-            "table" => {
-                self.handle_element_empty_table(local_name, attributes);
-                None
-            }
-            _ => None,
+            "style" => handle_element_empty_style(local_name, attributes, style),
+            "text" => self.handle_element_empty_text(local_name, attributes),
+            "table" => self.handle_element_empty_table(local_name, attributes),
+            _ => (),
         }
     }
 
@@ -447,21 +440,49 @@ impl ODTParser {
 
 /// Takes the set of attributes of a style:style tag in the ODT's content.xml,
 /// and returns the name of the style
-fn style_begin(attributes: Attributes) -> String {
+fn style_begin(attributes: Attributes) -> (String, String) {
+    let mut style_name = String::new();
+    let mut family = String::new();
+    let mut parent_style_name: Option<String> = None;
     for i in attributes {
         if let Ok(i) = i {
             let name = std::str::from_utf8(i.key).unwrap_or(":");
-            if name == "style:name" {
-                return std::str::from_utf8(
-                    &i.unescaped_value()
-                        .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
-                )
-                .unwrap_or("")
-                .to_string();
+            match name {
+                "style:name" => {
+                    style_name = std::str::from_utf8(
+                        &i.unescaped_value()
+                            .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                    )
+                    .unwrap_or("")
+                    .to_string();
+                }
+                "style:family" => {
+                    family = std::str::from_utf8(
+                        &i.unescaped_value()
+                            .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                    )
+                    .unwrap_or("")
+                    .to_string();
+                }
+                "style:parent-style-name" => {
+                    parent_style_name = Some(
+                        std::str::from_utf8(
+                            &i.unescaped_value()
+                                .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                        )
+                        .unwrap_or("")
+                        .to_string(),
+                    );
+                }
+                _ => (),
             }
         }
     }
-    String::new()
+    if let Some(parent_style_name) = parent_style_name {
+        (style_name, parent_style_name)
+    } else {
+        (style_name, family)
+    }
 }
 
 /// Helper for handle_element_empty() to respond to tags with "style" prefix
@@ -469,20 +490,14 @@ fn style_begin(attributes: Attributes) -> String {
 fn handle_element_empty_style(
     local_name: &str,
     attributes: Attributes,
-) -> Option<HashMap<String, String>> {
-    let mut map: HashMap<String, String> = HashMap::new();
-    let mut is_valid = true;
+    style: &mut HashMap<String, String>,
+) {
     match local_name {
-        "text-properties" => text_properties_begin(attributes, &mut map),
-        "table-column-properties" => table_column_properties_begin(attributes, &mut map),
-        "table-cell-properties" => table_cell_properties_begin(attributes, &mut map),
-        "table-properties" => table_properties_begin(attributes, &mut map),
-        _ => is_valid = false,
-    }
-    if is_valid {
-        Some(map)
-    } else {
-        None
+        "text-properties" => text_properties_begin(attributes, style),
+        "table-column-properties" => table_column_properties_begin(attributes, style),
+        "table-cell-properties" => table_cell_properties_begin(attributes, style),
+        "table-properties" => table_properties_begin(attributes, style),
+        _ => (),
     }
 }
 
@@ -496,7 +511,11 @@ fn handle_element_start_style(
     let mut current_style_value: HashMap<String, String> = HashMap::new();
     let mut is_valid = true;
     match local_name {
-        "style" => current_style_name = Some(style_begin(attributes)),
+        "style" => {
+            let (new_style_name, style_parent) = style_begin(attributes);
+            current_style_name = Some(new_style_name);
+            current_style_value.insert("_parent".to_string(), style_parent);
+        }
         "table-row-properties" => table_row_properties_begin(attributes, &mut current_style_value),
         "table-properties" => table_properties_begin(attributes, &mut current_style_value),
         "table-cell-properties" => {
