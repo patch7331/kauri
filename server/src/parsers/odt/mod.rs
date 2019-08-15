@@ -438,9 +438,10 @@ impl ODTParser {
     }
 }
 
-/// Takes the set of attributes of a style:style tag in the ODT's content.xml,
-/// and returns the name of the style
-fn style_begin(attributes: Attributes) -> (String, String) {
+/// Takes the set of attributes of a style:style tag,
+/// and returns the name of the style, the displayed name of the style and the parent style name
+fn style_begin_helper(attributes: Attributes) -> (String, String, String) {
+    let mut display_name = String::new();
     let mut style_name = String::new();
     let mut family = String::new();
     let mut parent_style_name: Option<String> = None;
@@ -474,15 +475,42 @@ fn style_begin(attributes: Attributes) -> (String, String) {
                         .to_string(),
                     );
                 }
+                "style:display-name" => {
+                    display_name = std::str::from_utf8(
+                        &i.unescaped_value()
+                            .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                    )
+                    .unwrap_or("")
+                    .to_string();
+                }
                 _ => (),
             }
         }
     }
     if let Some(parent_style_name) = parent_style_name {
-        (style_name, parent_style_name)
+        (style_name, display_name, parent_style_name)
     } else {
-        (style_name, family)
+        (style_name, display_name, family)
     }
+}
+
+/// Takes the set of attributes of a style:style tag,
+/// and returns the name of the style and the parent style name
+/// Note: for use when parsing content.xml
+fn style_begin(attributes: Attributes) -> (String, String) {
+    let (style_name, _, parent_style_name) = style_begin_helper(attributes);
+    (style_name, parent_style_name)
+}
+
+/// Takes the set of attributes of a style:style tag,
+/// and returns the name of the style and the associated style object
+/// Note: for use when parsing styles.xml
+fn style_style_begin(attributes: Attributes) -> (String, Style) {
+    let (style_name, display_name, parent_style_name) = style_begin_helper(attributes);
+    (
+        style_name,
+        Style::new(display_name, Some(parent_style_name)),
+    )
 }
 
 /// Helper for handle_element_empty() to respond to tags with "style" prefix
@@ -530,6 +558,8 @@ fn handle_element_start_style(
     }
 }
 
+/// Takes the set of attributes of a style:default-style tag,
+/// and returns the name of the style and the associated style object
 fn default_style_begin(attributes: Attributes) -> (String, Style) {
     let mut style_name = String::new();
     for i in attributes {
@@ -547,58 +577,4 @@ fn default_style_begin(attributes: Attributes) -> (String, Style) {
     }
     // use an empty string as the displayed string for default styles for now
     (style_name, Style::new("".to_string(), None))
-}
-
-fn style_style_begin(attributes: Attributes) -> (String, Style) {
-    let mut style_name = String::new();
-    let mut display_name = String::new();
-    let mut parent_style_name: Option<String> = None;
-    let mut family = String::new();
-    for i in attributes {
-        if let Ok(i) = i {
-            let name = std::str::from_utf8(i.key).unwrap_or(":");
-            match name {
-                "style:name" => {
-                    style_name = std::str::from_utf8(
-                        &i.unescaped_value()
-                            .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
-                    )
-                    .unwrap_or("")
-                    .to_string();
-                }
-                "style:display-name" => {
-                    display_name = std::str::from_utf8(
-                        &i.unescaped_value()
-                            .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
-                    )
-                    .unwrap_or("")
-                    .to_string();
-                }
-                "style:family" => {
-                    family = std::str::from_utf8(
-                        &i.unescaped_value()
-                            .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
-                    )
-                    .unwrap_or("")
-                    .to_string();
-                }
-                "style:parent-style-name" => {
-                    parent_style_name = Some(
-                        std::str::from_utf8(
-                            &i.unescaped_value()
-                                .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
-                        )
-                        .unwrap_or("")
-                        .to_string(),
-                    );
-                }
-                _ => (),
-            }
-        }
-    }
-    if parent_style_name.is_some() {
-        (style_name, Style::new(display_name, parent_style_name))
-    } else {
-        (style_name, Style::new(display_name, Some(family)))
-    }
 }
