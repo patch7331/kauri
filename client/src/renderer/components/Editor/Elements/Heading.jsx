@@ -1,7 +1,8 @@
 /** @format */
 
 import { h } from "preact";
-import { renderNodeList, renderStyles } from "dom/render";
+import { Element } from "./index";
+import RenderError from "dom/RenderError";
 
 export function Heading(props) {
   // Ensure level is valid
@@ -9,12 +10,5 @@ export function Heading(props) {
     throw new RenderError(`Invalid heading level '${props.level}'`);
   }
 
-  const Heading = `h${Math.min(props.level, 6)}`;
-
-  // Render heading
-  return (
-    <Heading style={renderStyles(props.styles)}>
-      {renderNodeList(props.children)}
-    </Heading>
-  );
+  return <Element tag={`h${Math.min(props.level, 6)}`} {...props} />;
 }

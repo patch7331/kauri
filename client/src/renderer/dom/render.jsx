@@ -17,13 +17,21 @@ import * as Elements from "components/Editor/Elements";
  * @type {Object}
  */
 const NODE_MAP = Object.freeze({
+  caption: Elements.Caption,
+  code: Elements.InlineCode,
+  codeblock: Elements.CodeBlock,
   heading: Elements.Heading,
+  hint: Elements.Hint,
+  hyperlink: Elements.Hyperlink,
   linebreak: Nodes.LineBreak,
   list: Elements.List,
   listitem: Elements.ListItem,
   pagebreak: Nodes.PageBreak,
   paragraph: Elements.Paragraph,
   span: Elements.Span,
+  table: Elements.Table,
+  tablecell: Elements.TableCell,
+  tablerow: Elements.TableRow,
   text: Nodes.Text,
 });
 

@@ -1,5 +1,6 @@
 /** @format */
 
+import "./modern-normalize.css";
 import "./styles.scss";
 import { h } from "preact";
 

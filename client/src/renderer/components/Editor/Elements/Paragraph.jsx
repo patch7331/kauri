@@ -1,8 +1,6 @@
 /** @format */
 
 import { h } from "preact";
-import { renderNodeList, renderStyles } from "dom/render";
+import { Element } from "./index";
 
-export const Paragraph = props => (
-  <p styles={renderStyles(props.styles)}>{renderNodeList(props.children)}</p>
-);
+export const Paragraph = props => <Element tag="p" {...props} />;

@@ -3,4 +3,4 @@
 import { h } from "preact";
 import { Element } from "./index";
 
-export const Span = props => <Element tag="span" {...props} />;
+export const Hint = props => <Element tag="p" {...props} />;
