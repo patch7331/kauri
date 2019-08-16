@@ -1,7 +1,7 @@
 /** @format */
 
 import commandReducer from "../src/renderer/redux/reducers/commands";
-import * as type from "../src/renderer/redux/actionTypes";
+import * as types from "../src/renderer/redux/actionTypes";
 
 describe("command reducer", () => {
   it("should handle ADD_COMMAND", () => {
@@ -9,9 +9,9 @@ describe("command reducer", () => {
       commandReducer(
         { allIds: [], byId: {} },
         {
-          type: type.ADD_COMMAND,
+          type: types.ADD_COMMAND,
           payload: {
-            id: "Clipboard:copy",
+            id: "clipboard:copy",
             name: "copy",
             keys: "CmdOrCtrl+C",
             behaviour: "this.doClipboardCopy",
@@ -19,10 +19,10 @@ describe("command reducer", () => {
         }
       )
     ).toEqual({
-      allIds: ["Clipboard:copy"],
+      allIds: ["clipboard:copy"],
       byId: {
-        "Clipboard:copy": {
-          id: "Clipboard:copy",
+        "clipboard:copy": {
+          id: "clipboard:copy",
           name: "copy",
           keys: "CmdOrCtrl+C",
           behaviour: "this.doClipboardCopy",
