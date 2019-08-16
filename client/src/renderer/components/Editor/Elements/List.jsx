@@ -7,7 +7,7 @@ import { kebabize } from "helpers/inflections";
 export function List(props) {
   // Determine list type
   const List = props.ordered ? "ol" : "ul";
-  const { styles } = props;
+  const { styles = {} } = props;
 
   // Calculate list style
   switch (props.variant) {
@@ -16,6 +16,7 @@ export function List(props) {
       styles.listStyleType = kebabize(props.variant);
       break;
   }
+  console.log(styles);
 
   return (
     <List style={renderStyles(styles)}>

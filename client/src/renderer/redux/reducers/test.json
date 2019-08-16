@@ -54,7 +54,7 @@
   {
     "type": "list",
     "ordered": true,
-    "variant": "lowerRoman",
+    "variant": "decimalLeadingZero",
     "children": [
       {
         "type": "listItem",
