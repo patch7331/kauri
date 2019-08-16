@@ -1,4 +1,5 @@
 use super::*;
+use crate::document::node::Heading;
 
 impl ODTParser {
     pub fn parse_styles(
@@ -154,11 +155,12 @@ impl ODTParser {
 
 /// Takes the set of attributes of a style:style tag,
 /// and returns the name of the style, the displayed name of the style and the parent style name
-fn style_begin_helper(attributes: Attributes) -> (String, String, String) {
+fn style_begin_helper(attributes: Attributes) -> (String, String, String, Option<u32>) {
     let mut display_name = String::new();
     let mut style_name = String::new();
     let mut family = String::new();
     let mut parent_style_name: Option<String> = None;
+    let mut default_outline_level: Option<u32> = None;
     for i in attributes {
         if let Ok(i) = i {
             let name = std::str::from_utf8(i.key).unwrap_or(":");
@@ -197,14 +199,28 @@ fn style_begin_helper(attributes: Attributes) -> (String, String, String) {
                     .unwrap_or("")
                     .to_string();
                 }
+                "style:default-outline-level" => {
+                    let outline_level_raw = &i
+                        .unescaped_value()
+                        .unwrap_or_else(|_| std::borrow::Cow::from(vec![]));
+                    let outline_level_str = std::str::from_utf8(outline_level_raw).unwrap_or("");
+                    if outline_level_str != "" {
+                        default_outline_level = Some(outline_level_str.parse::<u32>().unwrap_or(1));
+                    }
+                }
                 _ => (),
             }
         }
     }
     if let Some(parent_style_name) = parent_style_name {
-        (style_name, display_name, parent_style_name)
+        (
+            style_name,
+            display_name,
+            parent_style_name,
+            default_outline_level,
+        )
     } else {
-        (style_name, display_name, family)
+        (style_name, display_name, family, default_outline_level)
     }
 }
 
@@ -212,7 +228,7 @@ fn style_begin_helper(attributes: Attributes) -> (String, String, String) {
 /// and returns the name of the style and the parent style name
 /// Note: for use when parsing content.xml
 fn style_begin(attributes: Attributes) -> (String, String) {
-    let (style_name, _, parent_style_name) = style_begin_helper(attributes);
+    let (style_name, _, parent_style_name, _) = style_begin_helper(attributes);
     (style_name, parent_style_name)
 }
 
@@ -220,10 +236,16 @@ fn style_begin(attributes: Attributes) -> (String, String) {
 /// and returns the name of the style and the associated style object
 /// Note: for use when parsing styles.xml
 fn style_style_begin(attributes: Attributes) -> (String, Style) {
-    let (style_name, display_name, parent_style_name) = style_begin_helper(attributes);
+    let (style_name, display_name, parent_style_name, default_outline_level) =
+        style_begin_helper(attributes);
+    let mut element: Option<Element> = None;
+    if let Some(default_outline_level) = default_outline_level {
+        let heading = Heading::new_template(default_outline_level);
+        element = Some(Element::Heading(heading));
+    }
     (
         style_name,
-        Style::new(display_name, Some(parent_style_name)),
+        Style::new(display_name, Some(parent_style_name), element),
     )
 }
 
@@ -290,5 +312,5 @@ fn default_style_begin(attributes: Attributes) -> (String, Style) {
         }
     }
     // use an empty string as the displayed string for default styles for now
-    (style_name, Style::new("".to_string(), None))
+    (style_name, Style::new("".to_string(), None, None))
 }
