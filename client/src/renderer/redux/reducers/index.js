@@ -1,6 +1,10 @@
 /** @format */
 
 import { combineReducers } from "redux";
-import command from "./command";
+import commands from "./commands";
+import caretPosition from "./caretPosition";
 
-export default combineReducers({ command });
+export default combineReducers({
+  commands,
+  caretPosition,
+});
