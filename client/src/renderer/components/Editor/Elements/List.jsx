@@ -45,9 +45,7 @@ export function List(props) {
   styles.listStyleType = determineListStyleType(props.variant);
 
   return (
-    <List style={renderStyles(styles)}>
-      {renderNodeList(props.children)}
-    </List>
+    <List style={renderStyles(styles)}>{renderNodeList(props.children)}</List>
   );
 }
 

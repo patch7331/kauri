@@ -8,5 +8,8 @@ const KEBAB_REGEX = /[A-Z]{2,}(?=[A-Z][a-z]+|\b)|[A-Z]?[a-z]+|[A-Z]/g;
  * @return {String} Kebab-case string.
  */
 export function kebabize(str) {
-  return str.match(KEBAB_REGEX).map(group => group.toLowerCase()).join("-");
+  return str
+    .match(KEBAB_REGEX)
+    .map(group => group.toLowerCase())
+    .join("-");
 }
