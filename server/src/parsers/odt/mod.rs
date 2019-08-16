@@ -226,6 +226,8 @@ impl ODTParser {
             .unwrap()
             .get_common()
             .children
+            .as_mut()
+            .unwrap()
             .push(ChildNode::Node(Node::Text(text)));
     }
 
@@ -275,6 +277,8 @@ impl ODTParser {
                         .unwrap()
                         .get_common()
                         .children
+                        .as_mut()
+                        .unwrap()
                         .push(ChildNode::Element(child));
                 }
             } else if prefix == "table" {

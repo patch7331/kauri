@@ -86,6 +86,8 @@ impl ODTParser {
                         .unwrap()
                         .get_common()
                         .children
+                        .as_mut()
+                        .unwrap()
                         .push(ChildNode::Element(child));
                 }
                 self.table_column_default_style_names.pop();
@@ -115,6 +117,8 @@ impl ODTParser {
                             .unwrap()
                             .get_common()
                             .children
+                            .as_mut()
+                            .unwrap()
                             .push(ChildNode::Element(child.clone()));
                     }
                     repeat -= 1;
@@ -142,6 +146,8 @@ impl ODTParser {
                             .unwrap()
                             .get_common()
                             .children
+                            .as_mut()
+                            .unwrap()
                             .push(ChildNode::Element(child.clone()));
                     }
                     repeat -= 1;
@@ -164,13 +170,17 @@ impl ODTParser {
             .last_mut()
             .unwrap()
             .get_common()
-            .children[1]
+            .children
+            .as_mut()
+            .unwrap()[1]
         {
             let (table, default_cell_style_name, mut repeat) =
                 table_column_begin(attributes, &self.auto_styles);
             element
                 .get_common()
                 .children
+                .as_mut()
+                .unwrap()
                 .push(ChildNode::Element(table));
             let table_column_default_style_names =
                 self.table_column_default_style_names.last_mut().unwrap();
@@ -570,11 +580,15 @@ fn table_begin(
     // so we add it in in order to have a definitive position as to where the colgroup will come
     element
         .children
+        .as_mut()
+        .unwrap()
         .push(ChildNode::Element(Element::Caption(ElementCommon::new(
             None,
         ))));
     element
         .children
+        .as_mut()
+        .unwrap()
         .push(ChildNode::Element(Element::TableColumnGroup(
             ElementCommon::new(None),
         )));
