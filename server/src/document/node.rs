@@ -88,7 +88,9 @@ pub struct ElementCommon {
     class: Option<String>,
     #[serde(skip_serializing_if = "HashMap::is_empty")]
     pub styles: HashMap<String, String>,
-    pub children: Vec<ChildNode>,
+    // Children is optional here because this may be used as a template in a style class, which would not have it
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub children: Option<Vec<ChildNode>>,
     #[serde(skip)]
     // This is meant to store attributes that can only be processed after all of this Element's children has been accounted for,
     // so this should not be part of the JSON
@@ -103,7 +105,17 @@ impl ElementCommon {
         ElementCommon {
             class,
             styles: HashMap::new(),
-            children: Vec::new(),
+            children: Some(Vec::new()),
+            attributes: HashMap::new(),
+        }
+    }
+
+    /// Constructs a new ElementCommon struct meant to be used as a template for a style class
+    pub fn new_template() -> ElementCommon {
+        ElementCommon {
+            class: None,
+            styles: HashMap::new(),
+            children: None,
             attributes: HashMap::new(),
         }
     }
@@ -125,6 +137,16 @@ impl Heading {
     pub fn new(class: Option<String>, level: u32) -> Heading {
         Heading {
             common: ElementCommon::new(class),
+            level,
+        }
+    }
+
+    /// Constructs a new Heading element for use as a template for a style class
+    ///
+    /// - `level` Level of the heading
+    pub fn new_template(level: u32) -> Heading {
+        Heading {
+            common: ElementCommon::new_template(),
             level,
         }
     }

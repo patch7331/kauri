@@ -1,5 +1,5 @@
 /** @format */
-import { ADD_COMMAND } from "./actionTypes";
+import { ADD_COMMAND, UPDATE_CARET_POSITION } from "./actionTypes";
 
 export const addCommand = (id, name, keys, behaviour) => ({
   type: ADD_COMMAND,
@@ -8,5 +8,13 @@ export const addCommand = (id, name, keys, behaviour) => ({
     name,
     keys,
     behaviour,
+  },
+});
+
+export const updateCaretPos = ({ positionStart, positionEnd }) => ({
+  type: UPDATE_CARET_POSITION,
+  payload: {
+    positionStart,
+    positionEnd,
   },
 });
