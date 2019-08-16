@@ -140,6 +140,16 @@ impl Heading {
             level,
         }
     }
+
+    /// Constructs a new Heading element for use as a template for a style class
+    ///
+    /// - `level` Level of the heading
+    pub fn new_template(level: u32) -> Heading {
+        Heading {
+            common: ElementCommon::new_template(),
+            level,
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone)]
