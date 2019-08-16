@@ -13,8 +13,8 @@
     "test": "jest",
     "dist": "yarn build && electron-builder",
     "pack": "yarn build --dir && electron-builder",
-    "clean": "yarn prettier --write \"src/**/*.js?(x)\" \"test/*.js?(x)\" *.js ",
-    "clean-check": "yarn prettier --check \"src/**/*.js?(x)\" \"test/*.js?(x)\" *.js"
+    "clean": "yarn prettier --write \"@(src|test)/**/*.js?(x)\" *.js ",
+    "clean-check": "yarn prettier --write \"@(src|test)/**/*.js?(x)\" *.js "
   },
   "build": {
     "appId": "io.seanbailey.kauri",

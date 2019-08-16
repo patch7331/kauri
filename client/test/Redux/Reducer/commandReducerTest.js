@@ -1,7 +1,7 @@
 /** @format */
 
-import commandReducer from "../src/renderer/redux/reducers/commands";
-import * as types from "../src/renderer/redux/actionTypes";
+import commandReducer from "../../../src/renderer/redux/reducers/commands";
+import * as types from "../../../src/renderer/redux/actionTypes";
 
 describe("command reducer", () => {
   it("should handle ADD_COMMAND", () => {
