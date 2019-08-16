@@ -7,8 +7,6 @@ import { renderNodeList } from "dom/render";
 import { connect } from "react-redux";
 import { updateCaretPos } from "redux/actions";
 
-import ToolBar from "components/Editor/ToolBar";
-
 /**
  * A document editing component.
  * @extends Component
@@ -51,17 +49,13 @@ class Editor extends Component {
   }
 
   render = props => (
-    <div>
-      <ToolBar />
-
-      <div
-        ref={this.contentEditableDiv}
-        class="editor"
-        contenteditable="true"
-        onClick={this.handleDocumentClick}
-      >
-        {renderNodeList(props.document)}
-      </div>
+    <div
+      ref={this.contentEditableDiv}
+      class="editor"
+      contenteditable="true"
+      onClick={this.handleDocumentClick}
+    >
+      {renderNodeList(props.document)}
     </div>
   );
 }
