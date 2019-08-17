@@ -11,15 +11,7 @@ describe("kebabize", () => {
     expect(kebabize("PascalCase")).toEqual("pascal-case");
   });
   
-  it("should handle abbreviations at start", () => {
+  it("should handle abbreviations", () => {
     expect(kebabize("IDGenerator")).toEqual("id-generator");
-  });
-
-  it("should handle abbreviations at end", () => {
-    expect(kebabize("uniqueID")).toEqual("unique-id");
-  });
-
-  it("should handle kebab-case", () => {
-    expect(kebabize("kebab-case")).toEqual("kebab-case");
   });
 });
