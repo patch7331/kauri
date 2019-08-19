@@ -62,5 +62,5 @@ class Editor extends Component {
 
 export default connect(
   state => ({ document: state.document }),
-  { updateCaretPos }
+  { updateCaretPos },
 )(Editor);

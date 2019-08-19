@@ -6,11 +6,11 @@ describe("kebabize", () => {
   it("should convert camelCase to kebab-case", () => {
     expect(kebabize("camelCase")).toEqual("camel-case");
   });
-  
+
   it("should convert PascalCase to kebab-case", () => {
     expect(kebabize("PascalCase")).toEqual("pascal-case");
   });
-  
+
   it("should handle abbreviations at start", () => {
     expect(kebabize("IDGenerator")).toEqual("id-generator");
   });

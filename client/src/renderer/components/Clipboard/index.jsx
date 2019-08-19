@@ -29,7 +29,7 @@ class Clipboard extends Component {
       "Clipboard:copy",
       "copy",
       "CmdOrCtrl+C", //new KeyShortcut({key: "A", ctrl: true})
-      this.doClipboardCopy
+      this.doClipboardCopy,
     );
     clipboard.startWatching();
     clipboard.on("text-changed", this.handleTextChanged);
@@ -142,5 +142,5 @@ class ClipboardItem {
 
 export default connect(
   null,
-  { addCommand }
+  { addCommand },
 )(Clipboard);
