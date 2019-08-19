@@ -1,6 +1,6 @@
 /** @format */
 
-import { kebabize } from "../../src/renderer/helpers/inflections";
+import { kebabize } from "./inflections";
 
 describe("kebabize", () => {
   it("should convert camelCase to kebab-case", () => {
