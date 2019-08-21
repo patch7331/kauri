@@ -55,7 +55,7 @@ class Editor extends Component {
       contenteditable="true"
       onClick={this.handleDocumentClick}
     >
-      {renderNodeList(props.document)}
+      <div class="page">{renderNodeList(props.document)}</div>
     </div>
   );
 }
