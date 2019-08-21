@@ -16,8 +16,8 @@ describe("command reducer", () => {
             keys: "CmdOrCtrl+C",
             behaviour: "this.doClipboardCopy",
           },
-        }
-      )
+        },
+      ),
     ).toEqual({
       allIds: ["clipboard:copy"],
       byId: {

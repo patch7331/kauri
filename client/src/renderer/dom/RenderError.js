@@ -8,10 +8,9 @@ import ExtendableError from "util/ExtendableError";
 export default class RenderError extends ExtendableError {
   /**
    * Constructs a new render error.
-   * @param {Object} node Node that failed to render for any reason.
    * @param {string} message Error message.
    */
-  constructor(node, message) {
-    super(`Failed to render node: ${message}\n${node}.`);
+  constructor(message) {
+    super(`Failed to render node: ${message}.`);
   }
 }

@@ -20,7 +20,7 @@ describe("actions", () => {
       },
     };
     expect(actions.addCommand(id, name, keys, behaviour)).toEqual(
-      expectedAction
+      expectedAction,
     );
   });
 });

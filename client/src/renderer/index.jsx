@@ -12,5 +12,5 @@ render(
   <Provider store={store}>
     <Application />
   </Provider>,
-  document.body
+  document.body,
 );
