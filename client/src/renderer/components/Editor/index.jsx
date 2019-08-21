@@ -3,12 +3,9 @@
 import "./styles.scss";
 
 import { h, Component, createRef } from "preact";
-import { renderDocumentNodes } from "dom/render";
+import { renderNodeList } from "dom/render";
 import { connect } from "react-redux";
 import { updateCaretPos } from "redux/actions";
-import ToolBar from "components/Editor/ToolBar";
-
-const POST_URI = "http://127.0.0.1:3000/key";
 
 /**
  * A document editing component.
@@ -17,28 +14,18 @@ const POST_URI = "http://127.0.0.1:3000/key";
 class Editor extends Component {
   /**
    * Constructs a new editor component.
-   * @param {Object} props Component properties.
-   * @param {DOM} props.dom A DOM to render in the editor.
    */
   constructor(props) {
     super(props);
     this.contentEditableDiv = createRef();
-    this.clearContentEditable = this.clearContentEditable.bind(this);
+
+    // Binds
     this.handleDocumentClick = this.handleDocumentClick.bind(this);
   }
 
-  /**
-   * @private
-   */
   componentDidMount() {
     document.execCommand("defaultParagraphSeparator", false, "p");
-  }
-
-  /**
-   * Clears the contents of the contenteditable div, designed for use before loading a new file.
-   */
-  clearContentEditable() {
-    this.contentEditableDiv.current.innerHTML = "";
+    document.execCommand("styleWithCSS", false, true);
   }
 
   /**
@@ -54,30 +41,26 @@ class Editor extends Component {
     return { positionStart, positionEnd };
   }
 
+  /**
+   * Handles clicks to the document element.
+   */
   handleDocumentClick() {
-    return this.props.updateCaretPos(this.getCaretPos());
+    this.props.updateCaretPos(this.getCaretPos());
   }
 
-  render(props) {
-    return (
-      <div>
-        <ToolBar />
-
-        <div
-          ref={this.contentEditableDiv}
-          class="editor"
-          id="editor"
-          contenteditable="true"
-          onClick={this.handleDocumentClick}
-        >
-          {renderDocumentNodes(props.dom.children)}
-        </div>
-      </div>
-    );
-  }
+  render = props => (
+    <div
+      ref={this.contentEditableDiv}
+      class="editor"
+      contenteditable="true"
+      onClick={this.handleDocumentClick}
+    >
+      {renderNodeList(props.document)}
+    </div>
+  );
 }
 
 export default connect(
-  null,
-  { updateCaretPos }
+  state => ({ document: state.document }),
+  { updateCaretPos },
 )(Editor);

@@ -14,7 +14,7 @@ export default class ExtendableError extends Error {
     // Ensure constructor is not called directly
     if (new.target === ExtendableError) {
       throw new TypeError(
-        "Cannot construct abstract instance (ExtendableError) directly."
+        "Cannot construct abstract instance (ExtendableError) directly.",
       );
     }
 

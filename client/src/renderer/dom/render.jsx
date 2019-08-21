@@ -1,87 +1,77 @@
 /** @format */
 
 import { h } from "preact";
-
-import Heading from "components/Editor/Heading";
-import Paragraph from "components/Editor/Paragraph";
-import Span from "components/Editor/Span";
-import Table from "components/Editor/Table";
-import TableCaption from "components/Editor/TableCaption";
-import TableColumnGroup from "components/Editor/TableColumnGroup";
-import TableColumn from "components/Editor/TableColumn";
-import TableRow from "components/Editor/TableRow";
-import TableCell from "components/Editor/TableCell";
-import Anchor from "components/Editor/Anchor";
 import RenderError from "dom/RenderError";
 
+import * as Nodes from "components/Editor/Nodes";
+import * as Elements from "components/Editor/Elements";
+
 /**
- * Renders an array of DOM nodes.
- * @param {Object[]} nodes DOM nodes to render.
- * @return {PreactElement[]} An array of rendered preact elements.
+ * A map of node types to components.
+ *
+ * It's faster to perform a lookup in an object when you know the key, than
+ * create a giant switch case statement with each possible Node type. Having a
+ * lookup object also allows us to create additional nodes at runtime. This
+ * could prove valuable once we begin supporting third-party extensions.
+ *
+ * @type {Object}
  */
-export function renderDocumentNodes(nodes) {
-  return nodes.map(x => renderDocumentNode(x));
+const NODE_MAP = Object.freeze({
+  caption: Elements.Caption,
+  code: Elements.InlineCode,
+  codeblock: Elements.CodeBlock,
+  heading: Elements.Heading,
+  hint: Elements.Hint,
+  hyperlink: Elements.Hyperlink,
+  linebreak: Nodes.LineBreak,
+  list: Elements.List,
+  listitem: Elements.ListItem,
+  pagebreak: Nodes.PageBreak,
+  paragraph: Elements.Paragraph,
+  span: Elements.Span,
+  table: Elements.Table,
+  tablecell: Elements.TableCell,
+  tablerow: Elements.TableRow,
+  text: Nodes.Text,
+});
+
+/**
+ * Renders a list of KDF nodes.
+ * @param {Object[]} nodes An array of KDF nodes.
+ * @return {Component[]} An array of Preact components.
+ */
+export function renderNodeList(nodes = []) {
+  return nodes.map(renderNode);
 }
 
 /**
- * Renders a document tree recursively, depth first, one node at a time.
- *
- * @example
- * renderDocumentNode({
- *   "type": "Element",
- *   "tag": "heading",
- *   "attributes" {
- *     "level": "1"
- *   },
- *   "styles": {},
- *   "children": [ ... ]
- * });
- *
- * @param {Object} node Node to render.
- * @param {string} node.type Type of node to render.
- * @return {PreactElement} A rendered preact element.
+ * Renders a KDF node.
+ * @param {Object} node KDF node to render.
+ * @return {Component} A rendered Preact component.
  */
-export function renderDocumentNode(node) {
-  switch (node.type) {
-    case "Element":
-      return renderTag(node);
-    case "Text":
-      return node.content;
-    default:
-      throw new RenderError(node, `Unknown type '${node.type}'.`);
+export function renderNode(node) {
+  // Handle text node shorthand
+  if (typeof node === "string") {
+    return node;
   }
+
+  const type = node.type.toLowerCase();
+
+  // Handle unknown node type
+  if (!(type in NODE_MAP)) {
+    throw new RenderError(`Unknown element type '${node.type}'.`);
+  }
+
+  // Create and return tag
+  const Node = NODE_MAP[type];
+  return <Node {...node} />;
 }
 
 /**
- * Returns a component that matches the tag property of the node.
- *
- * @param {Object} node Node to match.
- * @param {string} node.tag Tag of node to render.
- * @return {PreactElement} A rendered preact element.
+ * Turns a KCSS styles object into a CSS styles object.
+ * @param {Object} styles KCSS styles to render.
+ * @return {Object} CSS styles.
  */
-function renderTag(node) {
-  switch (node.tag) {
-    case "heading":
-      return <Heading node={node} />;
-    case "paragraph":
-      return <Paragraph node={node} />;
-    case "span":
-      return <Span node={node} />;
-    case "table":
-      return <Table node={node} />;
-    case "caption":
-      return <TableCaption node={node} />;
-    case "colgroup":
-      return <TableColumnGroup node={node} />;
-    case "col":
-      return <TableColumn node={node} />;
-    case "tr":
-      return <TableRow node={node} />;
-    case "td":
-      return <TableCell node={node} />;
-    case "a":
-      return <Anchor node={node} />;
-    default:
-      throw new RenderError(node, `Unknown tag '${node.tag}'.`);
-  }
+export function renderStyles(styles) {
+  return styles;
 }

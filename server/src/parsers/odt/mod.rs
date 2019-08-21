@@ -1,3 +1,5 @@
+mod meta;
+mod styles;
 mod table;
 mod text;
 
@@ -5,16 +7,28 @@ extern crate quick_xml;
 extern crate serde_json;
 extern crate zip;
 
+use self::styles::*;
 use self::table::*;
 use self::text::*;
+use crate::document::meta::Meta;
 use crate::document::node::{ChildNode, Element, Node, Text};
-use crate::document::styles::Styles;
+use crate::document::styles::{Style, Styles};
 use crate::document::Document;
 use quick_xml::events::attributes::Attributes;
 use quick_xml::events::Event;
 use quick_xml::Reader;
 use std::collections::HashMap;
 use std::io::BufReader;
+
+enum MetaType {
+    Title,
+    Author,
+    CreatedAt,
+    UpdatedAt,
+    EditDuration,
+    Custom(String),
+    Unknown,
+}
 
 pub struct ODTParser {
     body_begin: bool,
@@ -57,18 +71,27 @@ impl ODTParser {
     /// Parse the ODT file referenced by the file path
     pub fn parse(&mut self, filepath: &str) -> Result<String, String> {
         let archive = super::util::get_archive(filepath);
+        // need to destructure and recreate the Err enum because the Result type is different
         if let Err(e) = archive {
-            return Err(e.to_string());
+            return Err(e);
         }
-        let archive = archive.unwrap();
-        self.parse_private(archive)
+        let mut archive = archive.unwrap();
+        if let Err(e) = self.parse_content(&mut archive) {
+            return Err(format!("{}: {}", "Content parsing error", e));
+        } else if let Err(e) = self.parse_styles(&mut archive) {
+            return Err(format!("{}: {}", "Styles parsing error", e));
+        } else if let Err(e) = self.parse_meta(&mut archive) {
+            return Err(format!("{}: {}", "Meta parsing error", e));
+        } else {
+            return Ok(self.document_root.to_json().unwrap());
+        }
     }
 
-    /// Actually parse the file, this is a separate function so we actually own the archive here
-    fn parse_private(
+    /// Parse content.xml inside the ODT
+    fn parse_content(
         &mut self,
-        mut archive: zip::ZipArchive<std::fs::File>,
-    ) -> Result<String, String> {
+        archive: &mut zip::ZipArchive<std::fs::File>,
+    ) -> Result<(), String> {
         // returns a ZipFile struct which implements Read if the file is in the archive
         let content_xml = archive.by_name("content.xml");
         if let Err(e) = content_xml {
@@ -102,7 +125,7 @@ impl ODTParser {
                 Ok(Event::Text(contents)) => {
                     let contents = contents.unescape_and_decode(&parser);
                     if let Err(e) = contents {
-                        println!("Error: {}", e);
+                        println!("Content parsing error: {}", e);
                     } else {
                         self.handle_characters(contents.unwrap());
                     }
@@ -125,29 +148,28 @@ impl ODTParser {
                     }
                 }
                 Ok(Event::Empty(contents)) => {
-                    let current_style_value_new = self.handle_element_empty(
+                    self.handle_element_empty(
                         std::str::from_utf8(contents.name()).unwrap_or(":"),
                         contents.attributes(),
+                        &mut current_style_value,
                     );
-                    if let Some(x) = current_style_value_new {
-                        current_style_value = x;
-                    }
                 }
                 Ok(Event::Eof) => break,
                 Err(e) => {
-                    println!("Error: {}", e);
+                    println!("Content parsing error: {}", e);
                     return Err(e.to_string());
                 }
                 _ => {}
             }
         }
 
-        Ok(self.document_root.to_json().unwrap())
+        Ok(())
     }
 
     /// Handles a StartElement event from the XML parser by taking its contents (only name and attributes needed)
     /// and returns the new values of current_style_name and current_style_value if either was set as a result
     /// as well as mutating internal state accordingly
+    /// Note: this is specifically for parsing content.xml
     fn handle_element_start(
         &mut self,
         name: &str,
@@ -187,29 +209,26 @@ impl ODTParser {
     /// Handles an EmptyElement event from the XML parser by taking its contents (only name and attributes needed)
     /// and returns the new value of current_style_value if it was set as a result
     /// as well as mutating internal state accordingly
+    /// Note: this is specifically for parsing content.xml
     fn handle_element_empty(
         &mut self,
         name: &str,
         attributes: Attributes,
-    ) -> Option<HashMap<String, String>> {
+        style: &mut HashMap<String, String>,
+    ) {
         let (prefix, local_name) = name.split_at(name.find(':').unwrap_or(0));
         let local_name = &local_name[1..];
         match prefix {
-            "style" => handle_element_empty_style(local_name, attributes),
-            "text" => {
-                self.handle_element_empty_text(local_name, attributes);
-                None
-            }
-            "table" => {
-                self.handle_element_empty_table(local_name, attributes);
-                None
-            }
-            _ => None,
+            "style" => handle_element_empty_style(local_name, attributes, style),
+            "text" => self.handle_element_empty_text(local_name, attributes),
+            "table" => self.handle_element_empty_table(local_name, attributes),
+            _ => (),
         }
     }
 
     /// Handles a Characters event from the XML parser by taking its contents
     /// and mutating internal state accordingly
+    /// Note: this is specifically for parsing content.xml
     fn handle_characters(&mut self, contents: String) {
         // Apparently in between tags this will be called with an empty string, so ignore that
         if self.document_hierarchy.is_empty() || contents == "" {
@@ -223,12 +242,15 @@ impl ODTParser {
             .unwrap()
             .get_common()
             .children
+            .as_mut()
+            .unwrap()
             .push(ChildNode::Node(Node::Text(text)));
     }
 
     /// Handles an EndElement event from the XML parser by taking its contents (the name of the element),
     /// the style name and value of the current element and mutating internal state accordingly,
     /// then it will return the current_style_name and current_style_value back if they were not used
+    /// Note: this is specifically for parsing content.xml
     fn handle_element_end(
         &mut self,
         name: &str,
@@ -272,6 +294,8 @@ impl ODTParser {
                         .unwrap()
                         .get_common()
                         .children
+                        .as_mut()
+                        .unwrap()
                         .push(ChildNode::Element(child));
                 }
             } else if prefix == "table" {
@@ -288,59 +312,4 @@ impl ODTParser {
         }
         Some((current_style_name, current_style_value))
     }
-}
-
-/// Takes the set of attributes of a style:style tag in the ODT's content.xml,
-/// and returns the name of the style
-fn style_begin(attributes: Attributes) -> String {
-    for i in attributes {
-        if let Ok(i) = i {
-            let name = std::str::from_utf8(i.key).unwrap_or(":");
-            if name == "style:name" {
-                return std::str::from_utf8(
-                    &i.unescaped_value()
-                        .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
-                )
-                .unwrap_or("")
-                .to_string();
-            }
-        }
-    }
-    String::new()
-}
-
-/// Helper for handle_element_empty() to respond to tags with "style" prefix
-/// local_name here is the name of the tag without the prefix
-fn handle_element_empty_style(
-    local_name: &str,
-    attributes: Attributes,
-) -> Option<HashMap<String, String>> {
-    match local_name {
-        "text-properties" => Some(text_properties_begin(attributes)),
-        "table-column-properties" => Some(table_column_properties_begin(attributes)),
-        "table-cell-properties" => Some(table_cell_properties_begin(attributes)),
-        _ => None,
-    }
-}
-
-/// Helper for handle_element_start() to respond to tags with "style" prefix
-/// local_name here is the name of the tag without the prefix
-fn handle_element_start_style(
-    local_name: &str,
-    attributes: Attributes,
-) -> (Option<String>, Option<HashMap<String, String>>) {
-    let mut current_style_name: Option<String> = None;
-    let mut current_style_value: Option<HashMap<String, String>> = None;
-    match local_name {
-        "style" => current_style_name = Some(style_begin(attributes)),
-        "table-row-properties" => {
-            current_style_value = Some(table_row_properties_begin(attributes))
-        }
-        "table-properties" => current_style_value = Some(table_properties_begin(attributes)),
-        "table-cell-properties" => {
-            current_style_value = Some(table_cell_properties_begin(attributes))
-        }
-        _ => (),
-    }
-    (current_style_name, current_style_value)
 }
