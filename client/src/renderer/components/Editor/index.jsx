@@ -3,7 +3,7 @@
 import "./styles.scss";
 
 import { h, Component, createRef } from "preact";
-import { renderNodeList } from "dom/render";
+import { renderPaginatedDocument } from "dom/render";
 import { connect } from "react-redux";
 import { updateCaretPos } from "redux/actions";
 
@@ -55,7 +55,7 @@ class Editor extends Component {
       contenteditable="true"
       onClick={this.handleDocumentClick}
     >
-      <div class="page">{renderNodeList(props.document)}</div>
+      {renderPaginatedDocument(props.document)}
     </div>
   );
 }

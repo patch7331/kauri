@@ -1,10 +1,12 @@
 /** @format */
 
 import { h } from "preact";
+import { convertToPixels } from "helpers/units";
 import RenderError from "dom/RenderError";
 
 import * as Nodes from "components/Editor/Nodes";
 import * as Elements from "components/Editor/Elements";
+import Page from "components/Editor/Page";
 
 /**
  * A map of node types to components.
@@ -34,6 +36,38 @@ const NODE_MAP = Object.freeze({
   tablerow: Elements.TableRow,
   text: Nodes.Text,
 });
+
+/**
+ * Renders nodes and wraps them across pages as needed.
+ * @param {Object[]} nodes An array of document nodes.
+ * @return {Component[]} An array of page components.
+ */
+export function renderPaginatedDocument(nodes) {
+  const pages = [];
+  const workingHeight = convertToPixels(150);
+  let currentHeight = 0;
+  let currentPage = [];
+  console.log("Working height", workingHeight, "px");
+
+  nodes.forEach(node => {
+    const rendered = renderNode(node);
+    currentPage.push(rendered);
+
+    pages.push(currentPage);
+    console.log(rendered);
+    currentPage = [];
+  });
+
+  const element = document.createElement("p");
+  element.appendChild(document.createTextNode("Hello world"));
+  console.log("document.createElement", element);
+  console.log("Bounding client rect", element.getBoundingClientRect());
+
+  const x = h("x");
+  console.log("X", x);
+
+  return pages.map(page => <Page children={page} />);
+}
 
 /**
  * Renders a list of KDF nodes.
