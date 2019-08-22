@@ -46,9 +46,6 @@ pub enum Element {
     Caption(ElementCommon),
     Hyperlink(Hyperlink),
     Table(ElementCommon),
-    TableHead(ElementCommon),
-    TableBody(ElementCommon),
-    TableFooter(ElementCommon),
     TableRow(ElementCommon),
     TableColumnGroup(ElementCommon),
     TableColumn(TableColumn),
@@ -66,9 +63,6 @@ impl Element {
             | Element::Span(common)
             | Element::Caption(common)
             | Element::Table(common)
-            | Element::TableHead(common)
-            | Element::TableBody(common)
-            | Element::TableFooter(common)
             | Element::TableRow(common)
             | Element::TableColumnGroup(common)
             | Element::Code(common) => common,
