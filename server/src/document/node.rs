@@ -21,6 +21,7 @@ impl Text {
 #[serde(untagged)]
 pub enum ChildNode {
     Node(Node),
+    ShortHandText(String),
     Element(Element),
 }
 
