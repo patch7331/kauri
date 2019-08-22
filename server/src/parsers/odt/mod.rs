@@ -11,7 +11,7 @@ use self::styles::*;
 use self::table::*;
 use self::text::*;
 use crate::document::meta::Meta;
-use crate::document::node::{ChildNode, Element, Node, Text};
+use crate::document::node::{ChildNode, Element};
 use crate::document::styles::{Style, Styles};
 use crate::document::Document;
 use quick_xml::events::attributes::Attributes;
