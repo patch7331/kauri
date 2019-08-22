@@ -21,6 +21,7 @@ impl Text {
 #[serde(untagged)]
 pub enum ChildNode {
     Node(Node),
+    ShortHandText(String),
     Element(Element),
 }
 
@@ -29,6 +30,8 @@ pub enum ChildNode {
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub enum Node {
     Text(Text),
+    LineBreak,
+    PageBreak,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -43,9 +46,6 @@ pub enum Element {
     Caption(ElementCommon),
     Hyperlink(Hyperlink),
     Table(ElementCommon),
-    TableHead(ElementCommon),
-    TableBody(ElementCommon),
-    TableFooter(ElementCommon),
     TableRow(ElementCommon),
     TableColumnGroup(ElementCommon),
     TableColumn(TableColumn),
@@ -63,9 +63,6 @@ impl Element {
             | Element::Span(common)
             | Element::Caption(common)
             | Element::Table(common)
-            | Element::TableHead(common)
-            | Element::TableBody(common)
-            | Element::TableFooter(common)
             | Element::TableRow(common)
             | Element::TableColumnGroup(common)
             | Element::Code(common) => common,
@@ -157,35 +154,26 @@ impl Heading {
 pub struct List {
     #[serde(flatten)]
     pub common: ElementCommon,
-    ordered: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
-    prefix: Option<String>,
+    bullet_cycle: Option<Vec<ListBullet>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    suffix: Option<String>,
-    #[serde(flatten)]
-    bullet: ListBullet,
+    bullet: Option<ListBullet>,
 }
 
 impl List {
     /// Constructs a new List element
     ///
     /// - `class` Style class of the element.
-    /// - `ordered` Indicates if this is an ordered list.
-    /// - `prefix` Prefix for the list bullet.
-    /// - `suffix` Suffix for the list bullet.
+    /// - `bullet_cycle` Cycle of the bullets.
     /// - `bullet` Type of the list bullet.
     pub fn new(
         class: Option<String>,
-        ordered: bool,
-        prefix: Option<String>,
-        suffix: Option<String>,
-        bullet: ListBullet,
+        bullet_cycle: Option<Vec<ListBullet>>,
+        bullet: Option<ListBullet>,
     ) -> List {
         List {
             common: ElementCommon::new(class),
-            ordered,
-            prefix,
-            suffix,
+            bullet_cycle,
             bullet,
         }
     }
@@ -193,10 +181,100 @@ impl List {
 
 #[derive(Serialize, Deserialize, Clone)]
 #[cfg_attr(debug_assertions, derive(Debug))]
+struct ListBulletCommon {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    prefix: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    suffix: Option<String>,
+}
+
+impl ListBulletCommon {
+    /// Constructs a new ListBulletCommon struct
+    ///
+    /// - `prefix` Prefix of the bullet.
+    /// - `suffix` Suffix of the bullet.
+    fn new(prefix: Option<String>, suffix: Option<String>) -> ListBulletCommon {
+        ListBulletCommon { prefix, suffix }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+pub struct ListBulletVariant {
+    #[serde(flatten)]
+    common: ListBulletCommon,
+    variant: String,
+}
+
+impl ListBulletVariant {
+    /// Constructs a new ListBulletVariant struct
+    ///
+    /// - `prefix` Prefix of the bullet.
+    /// - `suffix` Suffix of the bullet.
+    /// - `variant` Variant of the bullet.
+    pub fn new(
+        prefix: Option<String>,
+        suffix: Option<String>,
+        variant: String,
+    ) -> ListBulletVariant {
+        ListBulletVariant {
+            common: ListBulletCommon::new(prefix, suffix),
+            variant,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+pub struct ListBulletString {
+    #[serde(flatten)]
+    common: ListBulletCommon,
+    string: String,
+}
+
+impl ListBulletString {
+    /// Constructs a new ListBulletString struct
+    ///
+    /// - `prefix` Prefix of the bullet.
+    /// - `suffix` Suffix of the bullet.
+    /// - `string` String content of the bullet.
+    pub fn new(prefix: Option<String>, suffix: Option<String>, string: String) -> ListBulletString {
+        ListBulletString {
+            common: ListBulletCommon::new(prefix, suffix),
+            string,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+pub struct ListBulletImage {
+    #[serde(flatten)]
+    common: ListBulletCommon,
+    image: String,
+}
+
+impl ListBulletImage {
+    /// Constructs a new ListBulletImage struct
+    ///
+    /// - `prefix` Prefix of the bullet.
+    /// - `suffix` Suffix of the bullet.
+    /// - `image` Image resource URL of the bullet.
+    pub fn new(prefix: Option<String>, suffix: Option<String>, image: String) -> ListBulletImage {
+        ListBulletImage {
+            common: ListBulletCommon::new(prefix, suffix),
+            image,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+#[serde(untagged)]
 pub enum ListBullet {
-    Variant(String),
-    String(String),
-    Image(String),
+    Variant(ListBulletVariant),
+    String(ListBulletString),
+    Image(ListBulletImage),
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -204,8 +282,8 @@ pub enum ListBullet {
 pub struct ListItem {
     #[serde(flatten)]
     pub common: ElementCommon,
-    #[serde(flatten)]
-    bullet: ListBullet,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    bullet: Option<ListBullet>,
 }
 
 impl ListItem {
@@ -213,7 +291,7 @@ impl ListItem {
     ///
     /// - `class` Style class of the element.
     /// - `bullet` Type of the list bullet.
-    pub fn new(class: Option<String>, bullet: ListBullet) -> ListItem {
+    pub fn new(class: Option<String>, bullet: Option<ListBullet>) -> ListItem {
         ListItem {
             common: ElementCommon::new(class),
             bullet,
