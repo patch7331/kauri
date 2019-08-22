@@ -1,5 +1,19 @@
 /** @format */
 
-import test from "./metadata.json";
+import { SET_METADATA } from "../actionTypes";
 
-export default (state = test, action) => state;
+const initialState = {};
+
+const metadataReducer = (state = initialState, action) => {
+  switch (action.type) {
+    case SET_METADATA:
+      return {
+        ...state,
+        [action.key]: action.data,
+      };
+    default:
+      return state;
+  }
+};
+
+export default metadataReducer;
