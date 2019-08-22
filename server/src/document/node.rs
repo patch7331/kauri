@@ -29,6 +29,8 @@ pub enum ChildNode {
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub enum Node {
     Text(Text),
+    LineBreak,
+    PageBreak,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
