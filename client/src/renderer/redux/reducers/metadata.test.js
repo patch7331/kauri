@@ -1,7 +1,7 @@
 /** @format */
 
-import metadataReducer from "../../../src/renderer/redux/reducers/metadata";
-import * as types from "../../../src/renderer/redux/actionTypes";
+import metadataReducer from "./metadata";
+import * as types from "../actionTypes";
 
 describe("metadata reducer", () => {
   it("should handle SET_METADATA", () => {
