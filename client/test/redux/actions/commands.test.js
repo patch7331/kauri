@@ -1,7 +1,7 @@
 /** @format */
 
 import * as actions from "../../../src/renderer/redux/actions";
-import * as types from "../../../src/renderer/redux/actionTypes";
+import * as types from "../../../src/renderer/redux/actions/types";
 
 describe("actions", () => {
   it("should create an action to add a command", () => {
