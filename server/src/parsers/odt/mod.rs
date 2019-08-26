@@ -11,7 +11,7 @@ use self::styles::*;
 use self::table::*;
 use self::text::*;
 use crate::document::meta::Meta;
-use crate::document::node::{ChildNode, Element, Node, Text};
+use crate::document::node::{ChildNode, Element};
 use crate::document::styles::{Style, Styles};
 use crate::document::Document;
 use quick_xml::events::attributes::Attributes;
@@ -236,7 +236,6 @@ impl ODTParser {
         }
         // Currently the only type of tag expected to emit this event is the ones in the body,
         // in which case they will contain the document text
-        let text = Text::new(contents);
         self.document_hierarchy
             .last_mut()
             .unwrap()
@@ -244,7 +243,7 @@ impl ODTParser {
             .children
             .as_mut()
             .unwrap()
-            .push(ChildNode::Node(Node::Text(text)));
+            .push(ChildNode::ShortHandText(contents));
     }
 
     /// Handles an EndElement event from the XML parser by taking its contents (the name of the element),
