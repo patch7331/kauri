@@ -1,14 +1,14 @@
 /** @format */
-import { ADD_COMMAND, UPDATE_CARET_POSITION } from "./actionTypes";
+import { ADD_COMMAND, UPDATE_CARET_POSITION, ADD_SHORTCUT } from "./actionTypes";
 
-export const addCommand = (id, name, keys, behaviour) => ({
+export const addCommand = (command) => ({
   type: ADD_COMMAND,
-  payload: {
-    id,
-    name,
-    keys,
-    behaviour,
-  },
+  payload: command.toObj()
+});
+
+export const addShortcut = (command) => ({
+  type: ADD_SHORTCUT,
+  payload: command.toObj()
 });
 
 export const updateCaretPos = ({ positionStart, positionEnd }) => ({

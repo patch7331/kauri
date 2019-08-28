@@ -2,6 +2,9 @@
 import { combineReducers } from "redux";
 import { ADD_COMMAND } from "../actionTypes";
 
+export default addCommand() {
+}
+
 export default combineReducers({
   allIds: allCommands,
   byId: commandsById,
