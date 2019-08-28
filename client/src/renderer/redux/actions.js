@@ -1,5 +1,10 @@
 /** @format */
-import { ADD_COMMAND, UPDATE_CARET_POSITION, ADD_SHORTCUT } from "./actionTypes";
+import {
+  ADD_COMMAND,
+  UPDATE_CARET_POSITION,
+  SET_METADATA,
+  ADD_SHORTCUT,
+} from "./actionTypes";
 
 export const addCommand = (command) => ({
   type: ADD_COMMAND,
@@ -17,4 +22,10 @@ export const updateCaretPos = ({ positionStart, positionEnd }) => ({
     positionStart,
     positionEnd,
   },
+});
+
+export const setMetadata = (key, data) => ({
+  type: SET_METADATA,
+  key,
+  data,
 });

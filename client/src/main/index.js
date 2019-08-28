@@ -26,7 +26,7 @@ function createWindow() {
   if (isDevelopment) {
     mainWindow.webContents.openDevTools();
     mainWindow.loadURL(
-      `http://localhost:${process.env.ELECTRON_WEBPACK_WDS_PORT}`
+      `http://localhost:${process.env.ELECTRON_WEBPACK_WDS_PORT}`,
     );
   } else {
     mainWindow.loadURL(
@@ -34,7 +34,7 @@ function createWindow() {
         pathname: path.join(__dirname, "index.html"),
         protocol: "file",
         slashes: true,
-      })
+      }),
     );
   }
 
@@ -81,6 +81,6 @@ ipcMain.on("getFontList", (event, args) => {
         .sort();
       event.sender.send("fontList", fontArray);
     },
-    err => console.log(err)
+    err => console.log(err),
   );
 });

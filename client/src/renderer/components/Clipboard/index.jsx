@@ -32,7 +32,6 @@ class Clipboard extends Component {
             name: "Copy",
             callback: this.doClipboardCopy
           ).createShortcut("control+c").registerCommand();
-
     clipboard.startWatching();
     clipboard.on("text-changed", this.handleTextChanged);
     clipboard.on("image-changed", this.handleImageChanged);
@@ -141,5 +140,5 @@ class ClipboardItem {
 
 export default connect(
   null,
-  { addCommand }
+  { addCommand },
 )(Clipboard);

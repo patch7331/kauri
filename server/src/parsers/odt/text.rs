@@ -8,7 +8,7 @@ impl ODTParser {
             "h" => {
                 let (element, set_children_underline_new, ensure_children_no_underline_new) =
                     check_underline(
-                        heading_begin(attributes),
+                        heading_begin(attributes, &mut self.auto_styles),
                         &self.auto_styles,
                         !self.set_children_underline.is_empty()
                             && *self.set_children_underline.last().unwrap(),
@@ -23,7 +23,7 @@ impl ODTParser {
             "p" => {
                 let (element, set_children_underline_new, ensure_children_no_underline_new) =
                     check_underline(
-                        paragraph_begin(attributes),
+                        paragraph_begin(attributes, &mut self.auto_styles),
                         &self.auto_styles,
                         !self.set_children_underline.is_empty()
                             && *self.set_children_underline.last().unwrap(),
@@ -38,7 +38,7 @@ impl ODTParser {
             "span" => {
                 let (element, set_children_underline_new, ensure_children_no_underline_new) =
                     check_underline(
-                        span_begin(attributes),
+                        span_begin(attributes, &mut self.auto_styles),
                         &self.auto_styles,
                         !self.set_children_underline.is_empty()
                             && *self.set_children_underline.last().unwrap(),
@@ -53,7 +53,7 @@ impl ODTParser {
             "a" => {
                 let (element, set_children_underline_new, ensure_children_no_underline_new) =
                     check_underline(
-                        a_begin(attributes),
+                        a_begin(attributes, &mut self.auto_styles),
                         &self.auto_styles,
                         !self.set_children_underline.is_empty()
                             && *self.set_children_underline.last().unwrap(),
@@ -75,7 +75,7 @@ impl ODTParser {
         match local_name {
             "h" => {
                 let (element, ..) = check_underline(
-                    heading_begin(attributes),
+                    heading_begin(attributes, &mut self.auto_styles),
                     &self.auto_styles,
                     !self.set_children_underline.is_empty()
                         && *self.set_children_underline.last().unwrap(),
@@ -86,7 +86,7 @@ impl ODTParser {
             }
             "p" => {
                 let (element, ..) = check_underline(
-                    paragraph_begin(attributes),
+                    paragraph_begin(attributes, &mut self.auto_styles),
                     &self.auto_styles,
                     !self.set_children_underline.is_empty()
                         && *self.set_children_underline.last().unwrap(),
@@ -97,7 +97,7 @@ impl ODTParser {
             }
             "span" => {
                 let (element, ..) = check_underline(
-                    span_begin(attributes),
+                    span_begin(attributes, &mut self.auto_styles),
                     &self.auto_styles,
                     !self.set_children_underline.is_empty()
                         && *self.set_children_underline.last().unwrap(),
@@ -108,7 +108,7 @@ impl ODTParser {
             }
             "a" => {
                 let (element, ..) = check_underline(
-                    a_begin(attributes),
+                    a_begin(attributes, &mut self.auto_styles),
                     &self.auto_styles,
                     !self.set_children_underline.is_empty()
                         && *self.set_children_underline.last().unwrap(),
@@ -128,6 +128,8 @@ impl ODTParser {
                     .unwrap()
                     .get_common()
                     .children
+                    .as_mut()
+                    .unwrap()
                     .push(ChildNode::Element(element));
             }
         }
@@ -147,10 +149,11 @@ fn check_underline(
     let mut ensure_children_no_underline = ensure_children_no_underline_old;
     let mut set_children_underline = set_children_underline_old;
     let (mut element, style_name) = params;
-    let style = auto_styles
+    let mut style = auto_styles
         .get(&style_name)
         .unwrap_or(&HashMap::new())
         .clone();
+    style.remove("_parent");
     let underline = style.get("textDecorationLine");
     let underline_color = style.get("textDecorationColor");
     if let Some(x) = underline {
@@ -205,7 +208,10 @@ pub fn handle_underline(
 /// Takes the set of attributes of a text:h tag in the ODT's content.xml,
 /// and returns a heading element based on the attributes,
 /// together with the value of the text:style-name attribute of the tag
-fn heading_begin(attributes: Attributes) -> (Element, String) {
+fn heading_begin(
+    attributes: Attributes,
+    auto_styles: &mut HashMap<String, HashMap<String, String>>,
+) -> (Element, String) {
     let mut level = 0;
     let mut style_name = String::new();
     for i in attributes {
@@ -233,13 +239,21 @@ fn heading_begin(attributes: Attributes) -> (Element, String) {
             }
         }
     }
-    let element = Heading::new(None, level);
+    let mut parent_style: Option<String> = None;
+    let parent = auto_styles.get_mut(&style_name);
+    if let Some(parent) = parent {
+        parent_style = Some(parent.get("_parent").unwrap_or(&String::new()).to_string());
+    }
+    let element = Heading::new(parent_style, level);
     (Element::Heading(element), style_name)
 }
 
 /// Takes the set of attributes of a text:p tag in the ODT's content.xml,
 /// and returns a paragraph element together with the value of the text:style-name attribute of the tag
-fn paragraph_begin(attributes: Attributes) -> (Element, String) {
+fn paragraph_begin(
+    attributes: Attributes,
+    auto_styles: &mut HashMap<String, HashMap<String, String>>,
+) -> (Element, String) {
     let mut style_name = String::new();
     for i in attributes {
         if let Ok(i) = i {
@@ -254,12 +268,23 @@ fn paragraph_begin(attributes: Attributes) -> (Element, String) {
             }
         }
     }
-    (Element::Paragraph(ElementCommon::new(None)), style_name)
+    let mut parent_style: Option<String> = None;
+    let parent = auto_styles.get_mut(&style_name);
+    if let Some(parent) = parent {
+        parent_style = Some(parent.get("_parent").unwrap_or(&String::new()).to_string());
+    }
+    (
+        Element::Paragraph(ElementCommon::new(parent_style)),
+        style_name,
+    )
 }
 
 /// Takes the set of attributes of a text:span tag in the ODT's content.xml
 /// and returns a span element together with the value of the text:style-name attribute of the tag
-fn span_begin(attributes: Attributes) -> (Element, String) {
+fn span_begin(
+    attributes: Attributes,
+    auto_styles: &mut HashMap<String, HashMap<String, String>>,
+) -> (Element, String) {
     let mut style_name = String::new();
     for i in attributes {
         if let Ok(i) = i {
@@ -274,12 +299,20 @@ fn span_begin(attributes: Attributes) -> (Element, String) {
             }
         }
     }
-    (Element::Span(ElementCommon::new(None)), style_name)
+    let mut parent_style: Option<String> = None;
+    let parent = auto_styles.get_mut(&style_name);
+    if let Some(parent) = parent {
+        parent_style = Some(parent.get("_parent").unwrap_or(&String::new()).to_string());
+    }
+    (Element::Span(ElementCommon::new(parent_style)), style_name)
 }
 
 /// Takes the set of attributes of a text:a tag in the ODT's content.xml
 /// and returns an anchor element together with the value of the text:style-name attribute of the tag
-fn a_begin(attributes: Attributes) -> (Element, String) {
+fn a_begin(
+    attributes: Attributes,
+    auto_styles: &mut HashMap<String, HashMap<String, String>>,
+) -> (Element, String) {
     let mut href = String::new();
     let mut style_name = String::new();
     for i in attributes {
@@ -306,13 +339,20 @@ fn a_begin(attributes: Attributes) -> (Element, String) {
             }
         }
     }
-    (Element::Hyperlink(Hyperlink::new(None, href)), style_name)
+    let mut parent_style: Option<String> = None;
+    let parent = auto_styles.get_mut(&style_name);
+    if let Some(parent) = parent {
+        parent_style = Some(parent.get("_parent").unwrap_or(&String::new()).to_string());
+    }
+    (
+        Element::Hyperlink(Hyperlink::new(parent_style, href)),
+        style_name,
+    )
 }
 
 /// Takes the set of attributes of a style:text-properties tag in the ODT's content.xml,
-/// and creates a map of CSS properties based on the attributes
-pub fn text_properties_begin(attributes: Attributes) -> HashMap<String, String> {
-    let mut map: HashMap<String, String> = HashMap::new();
+/// and inserts the CSS properties and values into the referenced HashMap
+pub fn text_properties_begin(attributes: Attributes, map: &mut HashMap<String, String>) {
     let mut is_double_underline = false;
     for i in attributes {
         if let Ok(i) = i {
@@ -326,9 +366,8 @@ pub fn text_properties_begin(attributes: Attributes) -> HashMap<String, String> 
             .unwrap_or("what")
             .to_string();
             if prefix == "fo" {
-                text_properties_begin_fo(local_name, value, &mut map);
-            } else if prefix == "style" && text_properties_begin_style(local_name, value, &mut map)
-            {
+                text_properties_begin_fo(local_name, value, map);
+            } else if prefix == "style" && text_properties_begin_style(local_name, value, map) {
                 is_double_underline = true;
             }
         }
@@ -338,7 +377,6 @@ pub fn text_properties_begin(attributes: Attributes) -> HashMap<String, String> 
         // only supports double solid underlines, so prioritize the double over the line style?
         map.insert("textDecorationStyle".to_string(), "double".to_string());
     }
-    map
 }
 
 /// Helper for text_properties_begin() to respond to attributes with "fo" prefix
