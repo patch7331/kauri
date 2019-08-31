@@ -1,7 +1,7 @@
 /** @format */
 
 import metadataReducer from "./metadata";
-import * as types from "../actionTypes";
+import * as types from "../actions/types";
 
 describe("metadata reducer", () => {
   it("should handle SET_METADATA", () => {
