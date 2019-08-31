@@ -1,7 +1,7 @@
 /** @format */
 
 import { h } from "preact";
-import { Element } from "./index" 
+import { Element } from "./index";
 import { kebabize } from "helpers/inflections";
 
 /**
@@ -47,4 +47,4 @@ export function List(props) {
   );
 }
 
-export const ListItem = (props) => <Element tag="li" {...props} />;
+export const ListItem = props => <Element tag="li" {...props} />;

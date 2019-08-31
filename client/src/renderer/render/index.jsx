@@ -1,7 +1,8 @@
 /** @format */
 
-import { h } from "preact";
+import { h, render } from "preact";
 import { convertToPixels } from "helpers/units";
+import store from "redux/store";
 
 import * as Nodes from "components/Editor/Nodes";
 import * as Elements from "components/Editor/Elements";
@@ -36,45 +37,90 @@ const NODE_MAP = Object.freeze({
   text: Nodes.Text,
 });
 
+export function scratchRender(component) {
+  let scratchArea = document.querySelector(".__scratch");
+
+  // Create scratch area if it doesn't exist yet
+  if (!scratchArea) {
+    scratchArea = document.createElement("div");
+    scratchArea.classList.add("__scratch");
+    scratchArea.style.visibility = "hidden";
+    document.body.appendChild(scratchArea);
+  }
+
+  render(component, scratchArea);
+}
+
 /**
  * Renders nodes and wraps them across pages as needed.
+ *
+ * There are still a few additions that are needed however:
+ * - Handle margin collapsing
+ * - Cache element size, and invalidate cache when an element is mutated. This
+ *   way we only need to render modified elements when rendering in the scratch
+ *   area.
+ * - Handle dynamic page heights.
+ * - Handle page breaks a little more gracefully.
+ * - Break nodes at a particular position.
+ * - Handle wrapping edge cases, such as preventing wrapping immediately after a
+ *   heading, or causing a single word to be orphaned on another page.
+ *
  * @param {Object[]} nodes An array of document nodes.
  * @return {Component[]} An array of page components.
  */
 export function renderPaginatedDocument(nodes) {
+  const rendered = [];
   const pages = [];
   const workingHeight = convertToPixels(150);
-  let currentHeight = 0;
-  let currentPage = [];
-  console.log("Working height", workingHeight, "px");
 
-  nodes.forEach(node => {
-    const rendered = renderNode(node);
-    currentPage.push(rendered);
-
-    pages.push(currentPage);
-    console.log(rendered);
-    currentPage = [];
+  // Render each node
+  nodes.allIds.forEach(id => {
+    const node = nodes.byId[id];
+    rendered.push(renderNode(node));
   });
 
-  const element = document.createElement("p");
-  element.appendChild(document.createTextNode("Hello world"));
-  console.log("document.createElement", element);
-  console.log("Bounding client rect", element.getBoundingClientRect());
+  // Render each element in scratch area to get height
+  scratchRender(rendered);
+  rendered.forEach(x =>
+    console.log("Height", x.__e.getBoundingClientRect().height, x),
+  );
 
-  const x = h("x");
-  console.log("X", x);
+  // Add to pages
+  let remainingHeight = workingHeight;
+  let currentPage = [];
+  rendered.forEach(node => {
+    // Determine how much to reduce remaining height by
+    // TODO handle margin collapsing
+    const computedStyles = window.getComputedStyle(node.__e);
+    remainingHeight -= node.__e.getBoundingClientRect().height;
+    remainingHeight -= parseInt(computedStyles.marginTop);
+    remainingHeight -= parseInt(computedStyles.marginBottom);
+    console.log(remainingHeight);
 
+    // Wrap to a new page
+    if (remainingHeight < 0 || node.props.type.toLowerCase() === "pagebreak") {
+      pages.push(currentPage);
+      currentPage = [];
+      remainingHeight = workingHeight;
+    }
+
+    currentPage.push(node);
+  });
+  pages.push(currentPage);
+
+  // Render pages to document
   return pages.map(page => <Page children={page} />);
 }
 
 /**
  * Renders a list of KDF nodes.
- * @param {Object[]} nodes An array of KDF nodes.
+ * @param {number[]} ids An array of node ids.
  * @return {Component[]} An array of Preact components.
  */
-export function renderNodeList(nodes = []) {
-  return nodes.map(renderNode);
+export function renderNodeList(ids = []) {
+  return ids.map(id => {
+    return renderNode(store.getState().document.nodes.byId[id]);
+  });
 }
 
 /**

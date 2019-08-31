@@ -31,7 +31,7 @@ function translate(nodes) {
  * Translate a KDF node into a Redux ready object
  * Flattens nodes and assigns them IDs, recursively travels to
  * child nodes
- * @param {Object} node 
+ * @param {Object} node
  * @param {function(): number} nextId A callback to generate a new id.
  * @param {function(node: Object)} addToById Adds nodes to byID map
  */

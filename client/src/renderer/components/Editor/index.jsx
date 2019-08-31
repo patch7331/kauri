@@ -61,6 +61,6 @@ class Editor extends Component {
 }
 
 export default connect(
-  state => ({ document: state.document }),
+  state => ({ document: state.document.nodes }),
   { updateCaretPos },
 )(Editor);
