@@ -11,7 +11,7 @@ export * from "./Span";
 export * from "./Table";
 
 import { h } from "preact";
-import { renderNodeList, renderStyles } from "dom/render";
+import { renderNodeList, renderStyles } from "render";
 
 /**
  * A generic editor element.

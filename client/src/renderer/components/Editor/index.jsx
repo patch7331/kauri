@@ -3,7 +3,7 @@
 import "./styles.scss";
 
 import { h, Component, createRef } from "preact";
-import { renderPaginatedDocument } from "dom/render";
+import { renderPaginatedDocument } from "render";
 import { connect } from "react-redux";
 import { updateCaretPos } from "redux/actions";
 

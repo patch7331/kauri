@@ -2,7 +2,6 @@
 
 import { h } from "preact";
 import { convertToPixels } from "helpers/units";
-import RenderError from "dom/RenderError";
 
 import * as Nodes from "components/Editor/Nodes";
 import * as Elements from "components/Editor/Elements";
@@ -93,7 +92,7 @@ export function renderNode(node) {
 
   // Handle unknown node type
   if (!(type in NODE_MAP)) {
-    throw new RenderError(`Unknown element type '${node.type}'.`);
+    throw new `Unknown element type '${node.type}'.`();
   }
 
   // Create and return tag
