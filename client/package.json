@@ -13,8 +13,8 @@
     "test": "jest",
     "dist": "yarn build && electron-builder",
     "pack": "yarn build --dir && electron-builder",
-    "clean": "yarn prettier --write \"@(src|test)/**/*.@(js?(x)|scss)\" *.js ",
-    "clean-check": "yarn prettier --check \"@(src|test)/**/*.@(js?(x)|scss)\" *.js "
+    "clean": "yarn prettier --write \"src/**/*.@(js?(x)|scss)\" *.js ",
+    "clean-check": "yarn prettier --check \"src/**/*.@(js?(x)|scss)\" *.js "
   },
   "build": {
     "appId": "io.seanbailey.kauri",
@@ -43,7 +43,7 @@
   "dependencies": {
     "babel-jest": "^24.8.0",
     "electron-clipboard-extended": "^1.1.1",
-    "preact": "10.0.0-rc.0",
+    "preact": "^10.0.0-rc.1",
     "react-redux": "^7.1.0",
     "redux": "^4.0.4",
     "redux-thunk": "^2.3.0",

@@ -1,9 +1,9 @@
 /** @format */
 
-import * as actions from "../../../src/renderer/redux/actions";
-import * as types from "../../../src/renderer/redux/actionTypes";
+import * as actions from "./commands";
+import * as types from "./types";
 
-describe("actions", () => {
+describe("command actions", () => {
   it("should create an action to add a command", () => {
     const id = "clipboard:copy";
     const name = "copy";
