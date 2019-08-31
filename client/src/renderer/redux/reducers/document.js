@@ -11,9 +11,10 @@ const intialState = {
 };
 
 /**
- * Recursively traveses json tree, storing them in an array after
- * they have been assinged an ID
- * @param {array} nodes
+ * Translate KDF nodes into Redux ready objects
+ * Recursively traverses json tree, storing them in an array after
+ * they have been assigned an ID
+ * @param {Object[]} nodes An array of KDF nodes.
  */
 function translate(nodes) {
   let id = 0;
@@ -27,11 +28,12 @@ function translate(nodes) {
 }
 
 /**
+ * Translate a KDF node into a Redux ready object
  * Flattens nodes and assigns them IDs, recursively travels to
  * child nodes
- * @param {array} node 
- * @param {number} nextId 
- * @param {array} addToById 
+ * @param {Object} node 
+ * @param {function(): number} nextId A callback to generate a new id.
+ * @param {function(node: Object)} addToById Adds nodes to byID map
  */
 function translateNode(node, nextId, addToById) {
   //Handles text shorthand
