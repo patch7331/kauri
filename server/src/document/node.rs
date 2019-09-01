@@ -190,8 +190,6 @@ struct ListBulletCommon {
     prefix: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     suffix: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    start_index: Option<u32>,
 }
 
 impl ListBulletCommon {
@@ -200,16 +198,8 @@ impl ListBulletCommon {
     /// - `prefix` Prefix of the bullet.
     /// - `suffix` Suffix of the bullet.
     /// - `start_index` Where numbering for an ordered list should begin.
-    fn new(
-        prefix: Option<String>,
-        suffix: Option<String>,
-        start_index: Option<u32>,
-    ) -> ListBulletCommon {
-        ListBulletCommon {
-            prefix,
-            suffix,
-            start_index,
-        }
+    fn new(prefix: Option<String>, suffix: Option<String>) -> ListBulletCommon {
+        ListBulletCommon { prefix, suffix }
     }
 }
 
@@ -218,6 +208,8 @@ impl ListBulletCommon {
 pub struct ListBulletVariant {
     #[serde(flatten)]
     common: ListBulletCommon,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    start_index: Option<u32>,
     variant: String,
 }
 
@@ -235,7 +227,8 @@ impl ListBulletVariant {
         variant: String,
     ) -> ListBulletVariant {
         ListBulletVariant {
-            common: ListBulletCommon::new(prefix, suffix, start_index),
+            common: ListBulletCommon::new(prefix, suffix),
+            start_index,
             variant,
         }
     }
@@ -262,7 +255,7 @@ impl ListBulletCharacter {
         character: String,
     ) -> ListBulletCharacter {
         ListBulletCharacter {
-            common: ListBulletCommon::new(prefix, suffix, None),
+            common: ListBulletCommon::new(prefix, suffix),
             character,
         }
     }
@@ -284,7 +277,7 @@ impl ListBulletImage {
     /// - `image` Image resource URL of the bullet.
     pub fn new(prefix: Option<String>, suffix: Option<String>, image: String) -> ListBulletImage {
         ListBulletImage {
-            common: ListBulletCommon::new(prefix, suffix, None),
+            common: ListBulletCommon::new(prefix, suffix),
             image,
         }
     }
