@@ -315,6 +315,7 @@ fn a_begin(
 ) -> (Element, String) {
     let mut href = String::new();
     let mut style_name = String::new();
+    let mut title: Option<String> = None;
     for i in attributes {
         if let Ok(i) = i {
             let name = std::str::from_utf8(i.key).unwrap_or(":");
@@ -335,6 +336,16 @@ fn a_begin(
                     .unwrap_or("")
                     .to_string();
                 }
+                "office:title" => {
+                    title = Some(
+                        std::str::from_utf8(
+                            &i.unescaped_value()
+                                .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                        )
+                        .unwrap_or("")
+                        .to_string(),
+                    );
+                }
                 _ => (),
             }
         }
@@ -345,7 +356,7 @@ fn a_begin(
         parent_style = Some(parent.get("_parent").unwrap_or(&String::new()).to_string());
     }
     (
-        Element::Hyperlink(Hyperlink::new(parent_style, href)),
+        Element::Hyperlink(Hyperlink::new(parent_style, title, href)),
         style_name,
     )
 }
