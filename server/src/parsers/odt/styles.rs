@@ -243,10 +243,9 @@ fn style_style_begin(attributes: Attributes) -> (String, Style) {
         let heading = Heading::new_template(default_outline_level);
         element = Some(Element::Heading(heading));
     }
-    (
-        style_name,
-        Style::new(display_name, Some(parent_style_name), element),
-    )
+    let mut style = Style::new(display_name, Some(parent_style_name));
+    style.element = element;
+    (style_name, style)
 }
 
 /// Helper for handle_element_empty() to respond to tags with "style" prefix
@@ -346,7 +345,7 @@ fn default_style_begin(attributes: Attributes) -> (String, Style) {
         }
     }
     // use an empty string as the displayed string for default styles for now
-    (style_name, Style::new("".to_string(), None, None))
+    (style_name, Style::new("".to_string(), None))
 }
 
 /// Helper for handle_element_start() to handle style tags which aren't prefixed by "style"
