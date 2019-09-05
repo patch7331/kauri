@@ -181,6 +181,18 @@ impl List {
             bullet,
         }
     }
+
+    /// Constructs a new List element for use as a template in a style class
+    ///
+    /// - `bullet_cycle` Cycle of the bullets.
+    /// - `bullet` Type of the list bullet.
+    pub fn new_template(bullet_cycle: Option<Vec<ListBullet>>, bullet: Option<ListBullet>) -> List {
+        List {
+            common: ElementCommon::new_template(),
+            bullet_cycle,
+            bullet,
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone)]
