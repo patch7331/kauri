@@ -1,5 +1,5 @@
 use super::*;
-use crate::document::node::Heading;
+use crate::document::node::{Heading, ListBulletCharacter, ListBulletImage, ListBulletVariant};
 
 impl ODTParser {
     pub fn parse_styles(
@@ -265,12 +265,46 @@ pub fn handle_element_empty_style(
     }
 }
 
+/// Helper for handle_element_empty() to handle style tags which aren't prefixed by "style"
+/// (currently only list bullets)
+pub fn handle_element_empty_style_special(
+    name: &str,
+    attributes: Attributes,
+    bullet_list: &mut Vec<ListBullet>,
+) {
+    let mut level_and_bullet: (u32, ListBullet) = (
+        1,
+        ListBullet::Variant(ListBulletVariant::new(
+            None,
+            None,
+            None,
+            "filledBullet".to_string(),
+        )),
+    );
+    match name {
+        "text:list-level-style-bullet" => level_and_bullet = list_style_bullet_begin(attributes),
+        "text:list-level-style-number" => level_and_bullet = list_style_number_begin(attributes),
+        "text:list-level-style-image" => level_and_bullet = list_style_image_begin(attributes),
+        _ => (),
+    }
+    let (level, bullet) = level_and_bullet;
+    if (1..11).contains(&level) {
+        // 1-10 inclusive, probably won't be more than this
+        bullet_list[(level - 1) as usize] = bullet;
+    }
+}
+
 /// Helper for handle_element_start() to respond to tags with "style" prefix
 /// local_name here is the name of the tag without the prefix
+/// Returns style name, style contents, tuple of list bullet and level info (always None here)
 pub fn handle_element_start_style(
     local_name: &str,
     attributes: Attributes,
-) -> (Option<String>, Option<HashMap<String, String>>) {
+) -> (
+    Option<String>,
+    Option<HashMap<String, String>>,
+    Option<(u32, ListBullet)>,
+) {
     let mut current_style_name: Option<String> = None;
     let mut current_style_value: HashMap<String, String> = HashMap::new();
     let mut is_valid = true;
@@ -288,9 +322,9 @@ pub fn handle_element_start_style(
         _ => is_valid = false,
     }
     if is_valid {
-        (current_style_name, Some(current_style_value))
+        (current_style_name, Some(current_style_value), None)
     } else {
-        (current_style_name, None)
+        (current_style_name, None, None)
     }
 }
 
@@ -313,4 +347,248 @@ fn default_style_begin(attributes: Attributes) -> (String, Style) {
     }
     // use an empty string as the displayed string for default styles for now
     (style_name, Style::new("".to_string(), None, None))
+}
+
+/// Helper for handle_element_start() to handle style tags which aren't prefixed by "style"
+/// Returns style name, style contents (will always be None here) and tuple of list bullet and level info
+pub fn handle_element_start_style_special(
+    name: &str,
+    attributes: Attributes,
+) -> (
+    Option<String>,
+    Option<HashMap<String, String>>,
+    Option<(u32, ListBullet)>,
+) {
+    match name {
+        "text:list-style" => {
+            let (style_name, _) = list_style_begin(attributes); //discard the display name because this is in the context of an automatic style
+            (Some(style_name), None, None)
+        }
+        "text:list-level-style-bullet" => (None, None, Some(list_style_bullet_begin(attributes))),
+        "text:list-level-style-number" => (None, None, Some(list_style_number_begin(attributes))),
+        "text:list-level-style-image" => (None, None, Some(list_style_image_begin(attributes))),
+        _ => (None, None, None),
+    }
+}
+
+/// Returns the style name and the display name (if any)
+fn list_style_begin(attributes: Attributes) -> (String, Option<String>) {
+    let mut style_name = String::new();
+    let mut display_name: Option<String> = None;
+    for i in attributes {
+        if let Ok(i) = i {
+            let name = std::str::from_utf8(i.key).unwrap_or(":");
+            match name {
+                "style:name" => {
+                    style_name = std::str::from_utf8(
+                        &i.unescaped_value()
+                            .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                    )
+                    .unwrap_or("")
+                    .to_string();
+                }
+                "style:display-name" => {
+                    display_name = Some(
+                        std::str::from_utf8(
+                            &i.unescaped_value()
+                                .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                        )
+                        .unwrap_or("")
+                        .to_string(),
+                    );
+                }
+                _ => (),
+            }
+        }
+    }
+    (style_name, display_name)
+}
+
+/// Handles text:list-level-style-bullet tags, returns the level and bullet
+fn list_style_bullet_begin(attributes: Attributes) -> (u32, ListBullet) {
+    let mut prefix: Option<String> = None;
+    let mut suffix: Option<String> = None;
+    let mut level: u32 = 1;
+    let mut bullet_char = String::new();
+
+    for i in attributes {
+        if let Ok(i) = i {
+            let name = std::str::from_utf8(i.key).unwrap_or(":");
+            match name {
+                "style:num-prefix" => {
+                    prefix = Some(
+                        std::str::from_utf8(
+                            &i.unescaped_value()
+                                .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                        )
+                        .unwrap_or("")
+                        .to_string(),
+                    );
+                }
+                "style:num-suffix" => {
+                    suffix = Some(
+                        std::str::from_utf8(
+                            &i.unescaped_value()
+                                .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                        )
+                        .unwrap_or("")
+                        .to_string(),
+                    );
+                }
+                "text:level" => {
+                    level = std::str::from_utf8(
+                        &i.unescaped_value()
+                            .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                    )
+                    .unwrap_or("1")
+                    .parse::<u32>()
+                    .unwrap_or(1);
+                }
+                "text:bullet-char" => {
+                    bullet_char = std::str::from_utf8(
+                        &i.unescaped_value()
+                            .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                    )
+                    .unwrap_or("")
+                    .to_string();
+                }
+                _ => (),
+            }
+        }
+    }
+
+    let bullet = ListBulletCharacter::new(prefix, suffix, bullet_char);
+    (level, ListBullet::Character(bullet))
+}
+
+/// Handles text:list-level-style-number tags, returns the level and bullet
+fn list_style_number_begin(attributes: Attributes) -> (u32, ListBullet) {
+    let mut prefix: Option<String> = None;
+    let mut suffix: Option<String> = None;
+    let mut level: u32 = 1;
+    let mut start_value: Option<u32> = None;
+    let mut variant = String::new();
+    let mut is_number = false;
+
+    for i in attributes {
+        if let Ok(i) = i {
+            let name = std::str::from_utf8(i.key).unwrap_or(":");
+            match name {
+                "style:num-prefix" => {
+                    prefix = Some(
+                        std::str::from_utf8(
+                            &i.unescaped_value()
+                                .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                        )
+                        .unwrap_or("")
+                        .to_string(),
+                    );
+                }
+                "style:num-suffix" => {
+                    suffix = Some(
+                        std::str::from_utf8(
+                            &i.unescaped_value()
+                                .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                        )
+                        .unwrap_or("")
+                        .to_string(),
+                    );
+                }
+                "text:level" => {
+                    level = std::str::from_utf8(
+                        &i.unescaped_value()
+                            .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                    )
+                    .unwrap_or("1")
+                    .parse::<u32>()
+                    .unwrap_or(1);
+                }
+                "style:num-format" => {
+                    let format = std::str::from_utf8(
+                        &i.unescaped_value()
+                            .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                    )
+                    .unwrap_or("")
+                    .to_string();
+                    let (variant_new, is_number_new) =
+                        list_style_number_begin_helper(format.as_str());
+                    variant = variant_new;
+                    is_number = is_number_new;
+                }
+                "text:start-value" => {
+                    start_value = Some(
+                        std::str::from_utf8(
+                            &i.unescaped_value()
+                                .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                        )
+                        .unwrap_or("1")
+                        .parse::<u32>()
+                        .unwrap_or(1),
+                    );
+                }
+                _ => (),
+            }
+        }
+    }
+
+    if is_number {
+        let bullet = ListBulletVariant::new(prefix, suffix, start_value, variant);
+        (level, ListBullet::Variant(bullet))
+    } else {
+        let bullet = ListBulletCharacter::new(prefix, suffix, variant);
+        (level, ListBullet::Character(bullet))
+    }
+}
+
+/// Converts ODT number format to KDF numbering variant
+fn list_style_number_begin_helper(format: &str) -> (String, bool) {
+    let mut is_number = true;
+    let mut variant;
+    match format {
+        "1" => variant = "decimal".to_string(),
+        "a" => variant = "lowerLatin".to_string(),
+        "A" => variant = "upperLatin".to_string(),
+        "i" => variant = "lowerRoman".to_string(),
+        "I" => variant = "upperRoman".to_string(),
+        _ => {
+            is_number = false;
+            variant = format.to_string(); // in case it's none of the above (ODT allows any string)
+        }
+    }
+    (variant, is_number)
+}
+
+/// Handles text:list-level-style-image tags, returns the level and bullet
+fn list_style_image_begin(attributes: Attributes) -> (u32, ListBullet) {
+    let mut href = String::new();
+    let mut level: u32 = 1;
+
+    for i in attributes {
+        if let Ok(i) = i {
+            let name = std::str::from_utf8(i.key).unwrap_or(":");
+            match name {
+                "text:level" => {
+                    level = std::str::from_utf8(
+                        &i.unescaped_value()
+                            .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                    )
+                    .unwrap_or("1")
+                    .parse::<u32>()
+                    .unwrap_or(1);
+                }
+                "xlink:href" => {
+                    href = std::str::from_utf8(
+                        &i.unescaped_value()
+                            .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                    )
+                    .unwrap_or("")
+                    .to_string();
+                }
+                _ => (),
+            }
+        }
+    }
+
+    let bullet = ListBulletImage::new(None, None, href);
+    (level, ListBullet::Image(bullet))
 }
