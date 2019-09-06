@@ -26,13 +26,10 @@ class Clipboard extends Component {
   }
 
   componentDidMount() {
-    this.props.addCommand(
-      new Command(
-        "Clipboard:Copy",
-        "Copy",
-        this.doClipboardCopy,
-      ).createShortcut("control+c"),
-    );
+    const cmd = new Command("Clipboard:Copy", "Copy", this.doClipboardCopy);
+    cmd.createShortcut("control+c");
+    this.props.addCommand(cmd);
+
     clipboard.startWatching();
     clipboard.on("text-changed", this.handleTextChanged);
     clipboard.on("image-changed", this.handleImageChanged);
