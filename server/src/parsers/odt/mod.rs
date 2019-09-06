@@ -359,6 +359,20 @@ impl ODTParser {
                 }
             } else if prefix == "table" {
                 self.handle_element_end_table(local_name);
+            } else if name == "text:list" || name == "text:list-item" {
+                let child = self.document_hierarchy.pop().unwrap();
+                if self.document_hierarchy.is_empty() {
+                    self.document_root.content.push(ChildNode::Element(child));
+                } else {
+                    self.document_hierarchy
+                        .last_mut()
+                        .unwrap()
+                        .get_common()
+                        .children
+                        .as_mut()
+                        .unwrap()
+                        .push(ChildNode::Element(child));
+                }
             }
         } else if self.styles_begin {
             if name == "office:automatic-styles" {

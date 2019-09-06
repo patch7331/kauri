@@ -1,5 +1,5 @@
 use super::*;
-use crate::document::node::{ElementCommon, Heading, Hyperlink};
+use crate::document::node::{ElementCommon, Heading, Hyperlink, List, ListItem};
 
 impl ODTParser {
     /// Helper for handle_element_start() to respond to tags with "text" prefix
@@ -64,6 +64,27 @@ impl ODTParser {
                     .push(ensure_children_no_underline_new);
                 self.set_children_underline.push(set_children_underline_new);
                 self.document_hierarchy.push(element);
+            }
+            "list" => {
+                let style_name = list_begin(attributes);
+                let mut element;
+                if let Some(x) = style_name {
+                    if let Some(x) = self.auto_list_styles.get(&x) {
+                        // if the referenced style is an automatic one just copy it into the list itself
+                        element = List::new(None, Some(x.clone()), None);
+                    } else {
+                        // else assume it is a named style
+                        element = List::new(Some(x), None, None);
+                    }
+                } else {
+                    element = List::new(None, None, None);
+                }
+
+                self.document_hierarchy.push(Element::List(element));
+            }
+            "list-item" => {
+                self.document_hierarchy
+                    .push(Element::ListItem(ListItem::new(None, None)));
             }
             _ => (),
         }
@@ -359,6 +380,31 @@ fn a_begin(
         Element::Hyperlink(Hyperlink::new(parent_style, title, href)),
         style_name,
     )
+}
+
+/// Returns the style name, id, id of the list to continue and whether to continue from the
+/// previous list (only style name for now since KDF doesn't support the rest yet)
+fn list_begin(attributes: Attributes) -> Option<String> {
+    let mut style_name: Option<String> = None;
+    for i in attributes {
+        if let Ok(i) = i {
+            let name = std::str::from_utf8(i.key).unwrap_or(":");
+            match name {
+                "text:style-name" => {
+                    style_name = Some(
+                        std::str::from_utf8(
+                            &i.unescaped_value()
+                                .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                        )
+                        .unwrap_or("")
+                        .to_string(),
+                    );
+                }
+                _ => (),
+            }
+        }
+    }
+    style_name
 }
 
 /// Takes the set of attributes of a style:text-properties tag in the ODT's content.xml,
