@@ -114,7 +114,10 @@ impl ODTParser {
         match name {
             "style:default-style" => return Some(default_style_begin(attributes)),
             "style:style" => return Some(style_style_begin(attributes)),
-            "text:list-style" => return Some(style_list_style_begin(attributes)),
+            "text:list-style" => {
+                self.in_list_style = true;
+                return Some(style_list_style_begin(attributes));
+            }
             "table:table-row-properties" if style.is_some() => {
                 table_row_properties_begin(attributes, &mut style.unwrap().styles)
             }
@@ -161,6 +164,7 @@ impl ODTParser {
                 }
             }
             "text:list-style" => {
+                self.in_list_style = false;
                 if let Some(mut style) = style {
                     let element = List::new_template(Some(bullet_cycle), None);
                     style.element = Some(Element::List(element));
@@ -183,7 +187,9 @@ impl ODTParser {
     ) {
         let mut level_and_bullet: Option<(u32, ListBullet)> = None;
         match name {
-            "style:text-properties" => text_properties_begin(attributes, &mut style.styles),
+            "style:text-properties" if !self.in_list_style => {
+                text_properties_begin(attributes, &mut style.styles)
+            }
             "style:table-column-properties" => {
                 table_column_properties_begin(attributes, &mut style.styles)
             }
@@ -312,9 +318,10 @@ pub fn handle_element_empty_style(
     local_name: &str,
     attributes: Attributes,
     style: &mut HashMap<String, String>,
+    in_list_style: bool,
 ) {
     match local_name {
-        "text-properties" => text_properties_begin(attributes, style),
+        "text-properties" if !in_list_style => text_properties_begin(attributes, style),
         "table-column-properties" => table_column_properties_begin(attributes, style),
         "table-cell-properties" => table_cell_properties_begin(attributes, style),
         "table-properties" => table_properties_begin(attributes, style),
@@ -415,16 +422,23 @@ pub fn handle_element_start_style_special(
     Option<String>,
     Option<HashMap<String, String>>,
     Option<(u32, ListBullet)>,
+    bool,
 ) {
     match name {
         "text:list-style" => {
             let (style_name, _) = list_style_begin(attributes); //discard the display name because this is in the context of an automatic style
-            (Some(style_name), None, None)
+            (Some(style_name), None, None, true)
         }
-        "text:list-level-style-bullet" => (None, None, Some(list_style_bullet_begin(attributes))),
-        "text:list-level-style-number" => (None, None, Some(list_style_number_begin(attributes))),
-        "text:list-level-style-image" => (None, None, Some(list_style_image_begin(attributes))),
-        _ => (None, None, None),
+        "text:list-level-style-bullet" => {
+            (None, None, Some(list_style_bullet_begin(attributes)), false)
+        }
+        "text:list-level-style-number" => {
+            (None, None, Some(list_style_number_begin(attributes)), false)
+        }
+        "text:list-level-style-image" => {
+            (None, None, Some(list_style_image_begin(attributes)), false)
+        }
+        _ => (None, None, None, false),
     }
 }
 

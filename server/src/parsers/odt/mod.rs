@@ -44,6 +44,7 @@ pub struct ODTParser {
     document_hierarchy: Vec<Element>,
     table_column_default_style_names: Vec<Vec<String>>,
     table_row_default_style_names: Vec<Vec<String>>,
+    in_list_style: bool,
 }
 
 impl ODTParser {
@@ -67,6 +68,7 @@ impl ODTParser {
             document_hierarchy: Vec::new(),
             table_column_default_style_names: Vec::new(),
             table_row_default_style_names: Vec::new(),
+            in_list_style: false,
         }
     }
 
@@ -217,11 +219,14 @@ impl ODTParser {
             }
             "office:automatic-styles" => self.styles_begin = true,
             _ if self.styles_begin && prefix == "style" => {
-                return handle_element_start_style(local_name, attributes)
+                return handle_element_start_style(local_name, attributes);
             }
             _ if self.styles_begin => {
                 // because list styles are special snowflakes (they're prefixed by "text")
-                return handle_element_start_style_special(name, attributes);
+                let (style_name, style, bullet_cycle, in_list_style) =
+                    handle_element_start_style_special(name, attributes);
+                self.in_list_style = in_list_style;
+                return (style_name, style, bullet_cycle);
             }
             _ => (),
         }
@@ -256,7 +261,9 @@ impl ODTParser {
         let (prefix, local_name) = name.split_at(name.find(':').unwrap_or(0));
         let local_name = &local_name[1..];
         match prefix {
-            "style" => handle_element_empty_style(local_name, attributes, style),
+            "style" => {
+                handle_element_empty_style(local_name, attributes, style, self.in_list_style)
+            }
             "text" => self.handle_element_empty_text(local_name, attributes),
             "table" => self.handle_element_empty_table(local_name, attributes),
             _ if self.styles_begin => {
@@ -361,6 +368,7 @@ impl ODTParser {
                     .insert(current_style_name, current_style_value);
                 return (None, None, Some(current_list_style_value));
             } else if name == "text:list-style" {
+                self.in_list_style = false;
                 self.auto_list_styles
                     .insert(current_style_name, current_list_style_value);
                 return (None, Some(current_style_value), None);
