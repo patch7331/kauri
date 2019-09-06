@@ -2,9 +2,6 @@
 import { combineReducers } from "redux";
 import { ADD_COMMAND } from "../actionTypes";
 
-export default addCommand() {
-}
-
 export default combineReducers({
   allIds: allCommands,
   byId: commandsById,
@@ -22,9 +19,10 @@ function allCommands(state = [], action) {
 function commandsById(state = {}, action) {
   switch (action.type) {
     case ADD_COMMAND:
+      const { id, name, callback } = action.payload;
       return {
         ...state,
-        [action.payload.id]: { ...action.payload },
+        [id]: { id, name, callback },
       };
     default:
       return state;

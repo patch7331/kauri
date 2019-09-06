@@ -5,7 +5,7 @@ import { Component, h } from "preact";
 import { connect } from "react-redux";
 import { addCommand } from "redux/actions";
 import clipboard from "electron-clipboard-extended";
-import Command from "Command.jsx";
+import Command from "../helpers/command";
 
 /**
  * Stores and lists contents of system clipboard
@@ -26,12 +26,13 @@ class Clipboard extends Component {
   }
 
   componentDidMount() {
-    this.props.addCommand(  
+    this.props.addCommand(
       new Command(
-            id: "Clipboard:Copy",
-            name: "Copy",
-            callback: this.doClipboardCopy
-          ).createShortcut("control+c").registerCommand();
+        "Clipboard:Copy",
+        "Copy",
+        this.doClipboardCopy,
+      ).createShortcut("control+c"),
+    );
     clipboard.startWatching();
     clipboard.on("text-changed", this.handleTextChanged);
     clipboard.on("image-changed", this.handleImageChanged);

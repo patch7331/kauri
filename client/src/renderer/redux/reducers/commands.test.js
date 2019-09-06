@@ -14,7 +14,7 @@ describe("command reducer", () => {
             id: "clipboard:copy",
             name: "copy",
             keys: "CmdOrCtrl+C",
-            behaviour: "this.doClipboardCopy",
+            callback: "this.doClipboardCopy",
           },
         },
       ),
@@ -25,7 +25,7 @@ describe("command reducer", () => {
           id: "clipboard:copy",
           name: "copy",
           keys: "CmdOrCtrl+C",
-          behaviour: "this.doClipboardCopy",
+          callback: "this.doClipboardCopy",
         },
       },
     });
