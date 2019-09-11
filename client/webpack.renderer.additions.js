@@ -12,6 +12,14 @@ module.exports = config => {
       exclude: /node_modules/,
     },
     {
+<<<<<<< HEAD
+=======
+      test: /\.tsx?$/,
+      loader: "ts-loader",
+      exclude: /node_modules/,
+    },
+    {
+>>>>>>> feature-typescript
       test: /\.s?css$/,
       use: [
         MiniCssExtractPlugin.loader,
@@ -42,5 +50,11 @@ module.exports = config => {
     path.resolve(__dirname, "node_modules"),
   ];
 
+<<<<<<< HEAD
+=======
+  // Set up source maps
+  config.devtool = "inline-source-map";
+
+>>>>>>> feature-typescript
   return config;
 };
