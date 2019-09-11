@@ -45,6 +45,7 @@ export function scratchRender(component) {
     scratchArea = document.createElement("div");
     scratchArea.classList.add("__scratch");
     scratchArea.style.visibility = "hidden";
+    scratchArea.style.width = `${convertToPixels(120)}px`;
     document.body.appendChild(scratchArea);
   }
 
