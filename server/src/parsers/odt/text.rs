@@ -1,5 +1,5 @@
 use super::*;
-use crate::document::node::{ElementCommon, Heading, Hyperlink};
+use crate::document::node::{ElementCommon, Heading, Hyperlink, Node};
 
 impl ODTParser {
     /// Helper for handle_element_start() to respond to tags with "text" prefix
@@ -116,6 +116,38 @@ impl ODTParser {
                         && *self.ensure_children_no_underline.last().unwrap(),
                 );
                 child = Some(element);
+            }
+            "soft-page-break" => {
+                if self.document_hierarchy.is_empty() {
+                    self.document_root
+                        .content
+                        .push(ChildNode::Node(Node::PageBreak));
+                } else {
+                    self.document_hierarchy
+                        .last_mut()
+                        .unwrap()
+                        .get_common()
+                        .children
+                        .as_mut()
+                        .unwrap()
+                        .push(ChildNode::Node(Node::PageBreak));
+                }
+            }
+            "line-break" => {
+                if self.document_hierarchy.is_empty() {
+                    self.document_root
+                        .content
+                        .push(ChildNode::Node(Node::LineBreak));
+                } else {
+                    self.document_hierarchy
+                        .last_mut()
+                        .unwrap()
+                        .get_common()
+                        .children
+                        .as_mut()
+                        .unwrap()
+                        .push(ChildNode::Node(Node::LineBreak));
+                }
             }
             _ => (),
         }
