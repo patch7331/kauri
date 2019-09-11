@@ -45,6 +45,7 @@ pub struct ODTParser {
     table_column_default_style_names: Vec<Vec<String>>,
     table_row_default_style_names: Vec<Vec<String>>,
     in_list_style: bool,
+    list_depth: u32,
 }
 
 impl ODTParser {
@@ -69,6 +70,7 @@ impl ODTParser {
             table_column_default_style_names: Vec::new(),
             table_row_default_style_names: Vec::new(),
             in_list_style: false,
+            list_depth: 0,
         }
     }
 
@@ -360,6 +362,9 @@ impl ODTParser {
             } else if prefix == "table" {
                 self.handle_element_end_table(local_name);
             } else if name == "text:list" || name == "text:list-item" {
+                if name == "text:list" {
+                    self.list_depth -= 1;
+                }
                 let child = self.document_hierarchy.pop().unwrap();
                 if self.document_hierarchy.is_empty() {
                     self.document_root.content.push(ChildNode::Element(child));

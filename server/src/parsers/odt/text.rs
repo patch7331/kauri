@@ -80,11 +80,12 @@ impl ODTParser {
                     element = List::new(None, None, None);
                 }
 
+                self.list_depth += 1;
                 self.document_hierarchy.push(Element::List(element));
             }
             "list-item" => {
-                self.document_hierarchy
-                    .push(Element::ListItem(ListItem::new(None, None)));
+                let element = self.handle_list_item_start(list_item_begin(attributes));
+                self.document_hierarchy.push(Element::ListItem(element));
             }
             _ => (),
         }
@@ -186,6 +187,33 @@ impl ODTParser {
                     .push(ChildNode::Element(element));
             }
         }
+    }
+
+    /// Takes the override style name of the list item and returns a ListItem with the appropriate
+    /// bullet set
+    fn handle_list_item_start(&mut self, override_style_name: Option<String>) -> ListItem {
+        let mut element = ListItem::new(None, None);
+        if let Some(x) = override_style_name {
+            // If the override style name is defined
+            if let Some(x) = self.auto_list_styles.get(&x) {
+                // If the referenced style is an automatic style
+                let bullet = x[(self.list_depth - 1) as usize].clone();
+                element = ListItem::new(None, Some(bullet));
+            } else if let Some(x) = self.document_root.styles.classes.get(&x) {
+                // If the referenced style is a named style
+                if let Some(Element::List(x)) = &x.element {
+                    // If the referenced named style is actually for a list
+                    if let Some(x) = x.get_bullet_cycle() {
+                        // If the referenced named style actually defines a bullet cycle
+                        // (ODT will always define a bullet cycle, so wen don't need to
+                        // look at the single bullet definition here)
+                        let bullet = x[(self.list_depth - 1) as usize].clone();
+                        element = ListItem::new(None, Some(bullet));
+                    }
+                }
+            }
+        }
+        element
     }
 }
 
@@ -421,22 +449,40 @@ fn list_begin(attributes: Attributes) -> Option<String> {
     for i in attributes {
         if let Ok(i) = i {
             let name = std::str::from_utf8(i.key).unwrap_or(":");
-            match name {
-                "text:style-name" => {
-                    style_name = Some(
-                        std::str::from_utf8(
-                            &i.unescaped_value()
-                                .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
-                        )
-                        .unwrap_or("")
-                        .to_string(),
-                    );
-                }
-                _ => (),
+            if name == "text:style-name" {
+                style_name = Some(
+                    std::str::from_utf8(
+                        &i.unescaped_value()
+                            .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                    )
+                    .unwrap_or("")
+                    .to_string(),
+                );
             }
         }
     }
     style_name
+}
+
+/// Returns the override style name of the list item
+fn list_item_begin(attributes: Attributes) -> Option<String> {
+    let mut override_style_name: Option<String> = None;
+    for i in attributes {
+        if let Ok(i) = i {
+            let name = std::str::from_utf8(i.key).unwrap_or(":");
+            if name == "text:style-override" {
+                override_style_name = Some(
+                    std::str::from_utf8(
+                        &i.unescaped_value()
+                            .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                    )
+                    .unwrap_or("")
+                    .to_string(),
+                );
+            }
+        }
+    }
+    override_style_name
 }
 
 /// Takes the set of attributes of a style:text-properties tag in the ODT's content.xml,

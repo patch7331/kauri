@@ -193,6 +193,11 @@ impl List {
             bullet,
         }
     }
+
+    /// Returns a reference to the bullet cycle (if any)
+    pub fn get_bullet_cycle(&self) -> &Option<Vec<ListBullet>> {
+        &self.bullet_cycle
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone)]
