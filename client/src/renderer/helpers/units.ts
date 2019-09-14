@@ -1,9 +1,32 @@
 /** @format */
 
-const dpi = 96;
-const re = /^(\d+)([a-zA-Z]+)$/;
+/**
+ * @TODO Calculate DPI dynamically
+ */
+const dpi: number = 96;
 
-const convert = (value: number, unit: string) => {
+/**
+ * A regular expression which can be used to split apart the numerical value and
+ * unit string from a CSS value.
+ *
+ * ^           assert start of string
+ * (\d+)       matches one or more numbers
+ * ([a-zA-Z]+) matches one or more latin letters
+ * $           assert end of string
+ */
+const UNIT_REGEX: RegExp = /^(\d+)([a-zA-Z]+)$/;
+
+/**
+ * Converts a CSS value+unit into a number of pixels.
+ * Note: this conversion relies heavily on the DPI of the user's screen.
+ *
+ * @param value Numerical value.
+ * @param unit CSS unit.
+ *
+ * @example
+ * convert(50, "mm")
+ */
+export const convert = (value: number, unit: string): number => {
   switch (unit) {
     case "mm":
       return ((value / 2.54) * dpi) / 10;
@@ -19,7 +42,7 @@ const convert = (value: number, unit: string) => {
  * @param length A CSS length.
  */
 export function convertToPixels(length: string): number {
-  const [_, valueStr, unit] = length.toLowerCase().match(re);
+  const [_, valueStr, unit] = length.toLowerCase().match(UNIT_REGEX);
   const value = parseFloat(valueStr);
   return convert(value, unit);
 }
