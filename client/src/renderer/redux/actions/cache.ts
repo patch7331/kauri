@@ -7,9 +7,9 @@ import { CACHE_NODE, CACHE_WORKING_AREA } from "./types";
  * @param id Node id.
  * @param height Node rendered height.
  */
-export const cacheNode = (id: number, height: number) => ({
+export const cacheNode = (id: number, attrs: object) => ({
   type: CACHE_NODE,
-  payload: { id, height },
+  payload: { id, ...attrs },
 });
 
 /**

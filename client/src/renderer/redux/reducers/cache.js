@@ -20,10 +20,13 @@ export function nodesById(state = {}, action) {
   }
 }
 
-export function workingArea(state = {}, action) {
+export function workingArea(state = { didInvalidate: true }, action) {
   switch (action.type) {
     case CACHE_WORKING_AREA:
-      return { ...action.payload };
+      return {
+        ...action.payload,
+        didInvalidate: false,
+      };
     default:
       return state;
   }

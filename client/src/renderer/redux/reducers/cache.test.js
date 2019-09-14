@@ -35,10 +35,10 @@ describe("cache working area reducer", () => {
     };
     const expected = { width: 10, height: 10 };
 
-    expect(workingAreaReducer(state, action)).toEqual(expected);
+    expect(workingAreaReducer(state, action)).toMatchObject(expected);
   });
 
-  it("should overrite width and height", () => {
+  it("should override width and height", () => {
     const state = { width: 4, height: 4 };
     const action = {
       type: CACHE_WORKING_AREA,
@@ -46,6 +46,6 @@ describe("cache working area reducer", () => {
     };
 
     const expected = { width: 15, height: 15 };
-    expect(workingAreaReducer(state, action)).toEqual(expected);
+    expect(workingAreaReducer(state, action)).toMatchObject(expected);
   });
 });

@@ -13,7 +13,7 @@ describe("cache node action creator", () => {
       },
     };
 
-    expect(cacheNode(1, 150)).toEqual(expected);
+    expect(cacheNode(1, { height: 150 })).toEqual(expected);
   });
 });
 

@@ -8,4 +8,5 @@ export enum RenderMode {
   DESIGN,
 }
 
-export { default } from "./KDFRenderer";
+export * from "./content";
+export * from "./styles";
