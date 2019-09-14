@@ -9,8 +9,7 @@ import { CACHE_NODE, CACHE_WORKING_AREA } from "./types";
  */
 export const cacheNode = (id: number, height: number) => ({
   type: CACHE_NODE,
-  id,
-  height,
+  payload: { id, height },
 });
 
 /**
@@ -20,6 +19,5 @@ export const cacheNode = (id: number, height: number) => ({
  */
 export const cacheWorkingArea = (width: number, height: number) => ({
   type: CACHE_WORKING_AREA,
-  width,
-  height,
+  payload: { width, height },
 });
