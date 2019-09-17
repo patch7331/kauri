@@ -18,25 +18,7 @@ class ShortcutListener extends Component {
   }
 
   handleKeyPress(event) {
-    //exits if key is a modifier
-    if (
-      event.key === "Control" ||
-      event.key === "Shift" ||
-      event.key === "Alt" ||
-      event.key === "Meta"
-    )
-      return;
-
-    //exits if a modifier is not pressed
-    if (
-      !event.modifierState("Ctrl") &&
-      !event.modifierState("Shift") &&
-      !event.modifierState("Alt") &&
-      !event.modifierState("Meta")
-    )
-      return;
-
-    //otherwise checks if pressed keys match keyboard shortcut,
+    //checks if pressed keys match keyboard shortcut,
     //and fires callback if it does
     const shortcuts = Object.values(this.props.shortcuts.byIds);
     const commands = this.props.commands.byId;

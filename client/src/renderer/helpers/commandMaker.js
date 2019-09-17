@@ -38,7 +38,7 @@ export default class Command {
     shortcut["isMeta"] = modifiers.contains("meta");
     shortcut["isShift"] = modifiers.contains("shift");
     shortcut["key"] = modifiers[modifiers.length - 1];
-    
+
     return shortcut;
   }
 
