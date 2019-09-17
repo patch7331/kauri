@@ -11,7 +11,7 @@ export default class Command {
 
   createShortcut(definition) {
     if (typeof definition === "string") {
-      definition = parseShortcut(definition);
+      definition = this.parseShortcut(definition);
     }
 
     this.shortcuts.push({
@@ -33,10 +33,10 @@ export default class Command {
     const shortcut = {};
     const modifiers = str.toLowerCase().split("+");
 
-    shortcut["isAlt"] = modifiers.contains("alt");
-    shortcut["isCtrl"] = modifiers.contains("control");
-    shortcut["isMeta"] = modifiers.contains("meta");
-    shortcut["isShift"] = modifiers.contains("shift");
+    shortcut["isAlt"] = modifiers.includes("alt");
+    shortcut["isCtrl"] = modifiers.includes("control");
+    shortcut["isMeta"] = modifiers.includes("meta");
+    shortcut["isShift"] = modifiers.includes("shift");
     shortcut["key"] = modifiers[modifiers.length - 1];
 
     return shortcut;

@@ -19,10 +19,10 @@ function allCommands(state = [], action) {
 function commandsById(state = {}, action) {
   switch (action.type) {
     case ADD_COMMAND:
-      const { id, name, callback } = action.payload;
+      const { id, name, shortcuts, callback } = action.payload;
       return {
         ...state,
-        [id]: { id, name, callback },
+        [id]: { id, name, shortcuts, callback },
       };
     default:
       return state;
