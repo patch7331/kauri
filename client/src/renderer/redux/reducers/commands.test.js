@@ -13,13 +13,15 @@ describe("command reducer", () => {
           payload: {
             id: "clipboard:copy",
             name: "copy",
-            shortcuts: [{
-              id: 1,
-              isAlt: false,
-              isCtrl: false,
-              isMeta: false,
-              isShift: false,
-            }],
+            shortcuts: [
+              {
+                id: 1,
+                isAlt: false,
+                isCtrl: false,
+                isMeta: false,
+                isShift: false,
+              },
+            ],
             callback: "this.doClipboardCopy",
           },
         },
@@ -30,13 +32,15 @@ describe("command reducer", () => {
         "clipboard:copy": {
           id: "clipboard:copy",
           name: "copy",
-          shortcuts: [{
-            id: 1,
-            isAlt: false,
-            isCtrl: false,
-            isMeta: false,
-            isShift: false,
-          }],
+          shortcuts: [
+            {
+              id: 1,
+              isAlt: false,
+              isCtrl: false,
+              isMeta: false,
+              isShift: false,
+            },
+          ],
           callback: "this.doClipboardCopy",
         },
       },
