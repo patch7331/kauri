@@ -15,7 +15,6 @@ import Command from "../helpers/command";
 class Clipboard extends Component {
   /**
    * Constructs a new Clipboard component
-   * @param {Object} props - Component properties
    */
   constructor(props) {
     super(props);
@@ -65,7 +64,7 @@ class Clipboard extends Component {
   }
   /**
    * Reacts to changes in system clipboard
-   * @listens {text-changed} listens for text change event
+   * @listens {image-changed} listens for image change event
    */
   handleImageChanged() {
     this.setState(prevState => {

@@ -9,6 +9,10 @@ export default class Command {
     this.callback = callback;
   }
 
+  /**
+   * @param {object} definition keyboard shortcut object (made with parseShortcut)
+   * @param {string} definition string describing keyboard shortcut, to be parsed
+   */
   createShortcut(definition) {
     if (typeof definition === "string") {
       definition = this.parseShortcut(definition);
@@ -25,11 +29,15 @@ export default class Command {
   }
 
   /**
-   *
+   * Parse string into shortcut object
+   * @param {string} str string describing shortcut
+   *                        Must be of the form "modifier[+modifier]+key"
+   *                        No spaces, key at end, modifiers in any order
+   *                        Must not be empty
+   * @return {object} keyboard shortcut object
    */
-  //parse string into shortcut object. Expects "modifier<+modifier>+key"
-  //no spaces, full names of modifiers, key at end
   parseShortcut(str) {
+    if (str === "") throw "Cannot create an empty shortcut";
     const shortcut = {};
     const modifiers = str.toLowerCase().split("+");
 
@@ -42,6 +50,9 @@ export default class Command {
     return shortcut;
   }
 
+  /**
+   * @return {object} command object
+   */
   toObj = () => ({
     id: this.id,
     name: this.name,
@@ -49,39 +60,3 @@ export default class Command {
     callback: this.callback,
   });
 }
-
-/*
-output: (stuff to add, that is)
-
-command {
-	allIds: ["clipboard:copy"]
-	byId: {
-		"clipboard:copy": {
-			id: "clipboard:copy",
-			name: "copy",
-			callback: callback
-		}
-	}
-}
-
-keyboardShortcut {
-	const id = genID();
-  allIds: [id]
-	byId: {
-		[id]: {
-			id,
-			isAlt: false,
-			isCtrl: false,
-			isShift: ......,
-			key: "a",
-			callback: "clipboard:copy"
-		}
-	}
-}
-
-on "ctrl+c", do
-	command.byId.[ctrl+c の callback];
-	
-ID = keyboardShortcut.getCallback("ctrl+c")
-command.byId[ID].callback();
-*/

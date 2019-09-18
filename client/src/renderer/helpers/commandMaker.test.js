@@ -14,7 +14,7 @@ describe("parseShortcut", () => {
       key: "c",
     });
   });
-  it("Should recognise shortcuts out of order, as long as it ends in the letter", () => {
+  it("Should ignore order of modifiers, as long as it ends in the letter", () => {
     expect(cmd.parseShortcut("alt+control+meta+shift+w")).toEqual({
       isAlt: true,
       isCtrl: true,
@@ -24,7 +24,7 @@ describe("parseShortcut", () => {
     });
   });
   it("Should ignore case", () => {
-    expect(cmd.parseShortcut("MetA+ALt+coNtRol+a")).toEqual({
+    expect(cmd.parseShortcut("MetA+ALt+coNtRol+A")).toEqual({
       isAlt: true,
       isCtrl: true,
       isMeta: true,
@@ -33,7 +33,9 @@ describe("parseShortcut", () => {
     });
   });
   it("Should throw an error on empty input", () => {
-    expect(parseShortcut("")).toThrow();
+    expect(() => {
+      cmd.parseShortcut("");
+    }).toThrow("Cannot create an empty shortcut");
   });
   it("Should accept just a key", () => {
     expect(cmd.parseShortcut("c")).toEqual({

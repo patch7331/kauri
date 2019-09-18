@@ -3,12 +3,22 @@
 import { Component, h } from "preact";
 import { connect } from "react/redux";
 
+/**
+ * Non-rendering component, responsible for handling keyboard shortcuts
+ * @extends Component
+ */
+
 class ShortcutListener extends Component {
   constructor(props) {
     super(props);
     this.handleKeyPress = this.handleKeyPress.bind(this);
   }
 
+  /**
+   * On mount, add keydown event listener.
+   * On event, handleKeyPress().
+   * On unmount, remove listener.
+   */
   componentDidMount() {
     window.addEventListener("keydown", this.handleKeyPress, true);
   }
@@ -17,12 +27,17 @@ class ShortcutListener extends Component {
     window.removeEventListener("keydown");
   }
 
+  /**
+   * Checks if keys pressed match a registered shortcut.
+   * On a match, fires callback for that shortcut.
+   */
   handleKeyPress(event) {
-    //checks if pressed keys match keyboard shortcut,
-    //and fires callback if it does
+    //shortcuts contains the list of shortcut IDs
+    //commands contains the list of registered shortcut objects
     const shortcuts = Object.values(this.props.shortcuts.byIds);
     const commands = this.props.commands.byId;
 
+    //matches contains the list of shortcuts that match the entered keys
     const matches = shortcuts.filter(
       shortcut =>
         event.altKey === shortcut.isAlt &&
@@ -32,9 +47,7 @@ class ShortcutListener extends Component {
         event.key === shortcut.key,
     );
 
-    //ID = keyboardShortcut.getCallback("control+c");
-    //command.byId[ID].callback();
-
+    //for each match in matches, fire the related callback
     matches.forEach(match => {
       commands[match.commandId].callback();
     });
