@@ -9,4 +9,4 @@ export enum RenderMode {
 }
 
 export * from "./content";
-export * from "./styles";
+export * from "./style";

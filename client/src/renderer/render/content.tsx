@@ -4,16 +4,16 @@ import { h, render } from "preact";
 import { RenderMode } from "./index";
 import { convertToPixels } from "helpers/units";
 import store from "redux/store";
+import { cacheNode, cacheWorkingArea } from "redux/actions/cache";
 
 import * as Nodes from "components/Editor/Nodes";
 import * as Elements from "components/Editor/Elements";
 import Page from "components/Editor/Page";
-import { cacheNode, cacheWorkingArea } from "redux/actions/cache";
 
 /**
  * An interface for describing a page's styles.
  */
-export interface PageStyles {
+export interface PageStyle {
   height: string;
   marginBottom: string;
   marginLeft: string;
@@ -27,7 +27,7 @@ export interface PageStyles {
  */
 export interface RendererOptions {
   renderMode: RenderMode;
-  pageStyles: PageStyles;
+  pageStyle: PageStyle;
 }
 
 export interface Node {
@@ -39,7 +39,7 @@ export interface DocumentState {
   allIds: number[];
 }
 
-type Renderable = object | string;
+type Renderable = { type: any; props: {} } | string;
 
 export interface Component {
   [attribute: string]: any;
@@ -99,7 +99,7 @@ export class Renderer {
    * @param options Optional renderer configuration.
    *
    * @example
-   * new Renderer({ pageStyles, renderMode: RenderMode.CONTENT })
+   * new Renderer({ pageStyle, renderMode: RenderMode.CONTENT })
    */
   constructor(private nodes: DocumentState, private options: RendererOptions) {
     const cache = store.getState().cache.workingArea;
@@ -107,13 +107,13 @@ export class Renderer {
     if (cache.didInvalidate) {
       // Calculate available working height and width
       this.workingHeight =
-        convertToPixels(options.pageStyles.height) -
-        convertToPixels(options.pageStyles.marginTop) -
-        convertToPixels(options.pageStyles.marginBottom);
+        convertToPixels(options.pageStyle.height) -
+        convertToPixels(options.pageStyle.marginTop) -
+        convertToPixels(options.pageStyle.marginBottom);
       this.workingWidth =
-        convertToPixels(options.pageStyles.width) -
-        convertToPixels(options.pageStyles.marginLeft) -
-        convertToPixels(options.pageStyles.marginRight);
+        convertToPixels(options.pageStyle.width) -
+        convertToPixels(options.pageStyle.marginLeft) -
+        convertToPixels(options.pageStyle.marginRight);
       store.dispatch(cacheWorkingArea(this.workingWidth, this.workingHeight));
     } else {
       this.workingHeight = cache.height;
@@ -201,8 +201,17 @@ export class Renderer {
 
     // Scratch render any nodes that aren't cached
     renderables.forEach(renderable => {
+      console.log("Rendering", renderable);
       // We only want to deal with Preact Components now.
       if (typeof renderable === "string") {
+        return;
+      }
+
+      // Handle page break
+      if (renderable.type === Nodes.PageBreak) {
+        pages.push(currentPage);
+        currentPage = [];
+        currentHeight = this.workingHeight;
         return;
       }
 
@@ -231,6 +240,7 @@ export class Renderer {
         pages.push(currentPage);
         currentPage = [renderable];
         currentHeight = this.workingHeight - height - marginBottom;
+        console.log(pages);
         return;
       }
 
@@ -240,7 +250,7 @@ export class Renderer {
 
     // Render content to pages
     return pages.map(page => (
-      <Page children={page} style={this.options.pageStyles} />
+      <Page children={page} styles={this.options.pageStyle} />
     ));
   }
 }

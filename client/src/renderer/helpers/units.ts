@@ -10,11 +10,15 @@ const dpi: number = 96;
  * unit string from a CSS value.
  *
  * ^           assert start of string
- * (\d+)       matches one or more numbers
+ * (           matching group
+ *   \d*       zero or more numbers
+ *   .?        an optional decimal point
+ *   \d+       one or more numbers
+ * )
  * ([a-zA-Z]+) matches one or more latin letters
  * $           assert end of string
  */
-const UNIT_REGEX: RegExp = /^(\d+)([a-zA-Z]+)$/;
+const UNIT_REGEX: RegExp = /^(\d*.?\d+)([a-zA-Z]+)$/;
 
 /**
  * Converts a CSS value+unit into a number of pixels.

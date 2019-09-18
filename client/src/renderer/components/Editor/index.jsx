@@ -52,13 +52,13 @@ class Editor extends Component {
     >
       {new Renderer(props.document, {
         renderMode: RenderMode.CONTENT,
-        pageStyles: {
+        pageStyle: {
           marginBottom: "1cm",
           marginLeft: "1cm",
           marginRight: "1cm",
           marginTop: "1cm",
-          height: "170mm",
-          width: "140mm",
+          height: "140mm",
+          width: "120mm",
         },
       }).render()}
     </div>
