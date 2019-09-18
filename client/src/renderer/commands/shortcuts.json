@@ -1,0 +1,22 @@
+{
+	"clipboard": {
+		"copy": [
+        {
+          "isAlt": false,
+          "isCtrl": true,
+          "isMeta": false,
+          "isShift": false,
+          "key": "c",
+        }
+    ],
+    "paste": [
+        {
+          "isAlt": false,
+          "isCtrl": true,
+          "isMeta": false,
+          "isShift": false,
+          "key": "v",
+        }
+    ]
+	}
+}
