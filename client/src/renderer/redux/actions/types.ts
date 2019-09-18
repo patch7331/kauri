@@ -11,3 +11,7 @@ export const FETCH_DOC_SUCCESS = "FETCH_DOC_SUCCESS";
 
 // Metadata
 export const SET_METADATA = "SET_METADATA";
+
+// Render caching
+export const CACHE_NODE = "CACHE_NODE";
+export const CACHE_WORKING_AREA = "CACHE_WORKING_AREA";

@@ -11,7 +11,7 @@ export * from "./Span";
 export * from "./Table";
 
 import { h } from "preact";
-import { renderNodeList, renderStyles } from "dom/render";
+import { renderStyle } from "render";
 
 /**
  * A generic editor element.
@@ -21,13 +21,15 @@ import { renderNodeList, renderStyles } from "dom/render";
 export function Element(props) {
   const Element = props.tag;
   const attributes = props.attributes ? props.attributes : {};
+
   return (
     <Element
       class={props.class && `__editor__${props.class}`}
-      style={renderStyles(props.styles)}
+      style={renderStyle(props.styles)}
+      data-node-id={props.id}
       {...attributes}
     >
-      {renderNodeList(props.children)}
+      {props.renderChildren(props.children)}
     </Element>
   );
 }
