@@ -5,7 +5,7 @@ import { Component, h } from "preact";
 import { connect } from "react-redux";
 import { addCommand } from "redux/actions";
 import clipboard from "electron-clipboard-extended";
-import Command from "../helpers/command";
+import Command from "../commands";
 
 /**
  * Stores and lists contents of system clipboard

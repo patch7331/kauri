@@ -2,7 +2,7 @@
 
 import * as actions from "./actions";
 import * as types from "./actionTypes";
-import Command from "../helpers/commandMaker";
+import Command from "../commands";
 
 describe("actions", () => {
   it("should create an action to add a command", () => {
