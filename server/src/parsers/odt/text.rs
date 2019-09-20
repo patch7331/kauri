@@ -1,5 +1,5 @@
 use super::*;
-use crate::document::node::{ElementCommon, Heading, Hyperlink};
+use crate::document::node::{ElementCommon, Heading, Hyperlink, List, ListItem, Node};
 
 impl ODTParser {
     /// Helper for handle_element_start() to respond to tags with "text" prefix
@@ -65,6 +65,28 @@ impl ODTParser {
                 self.set_children_underline.push(set_children_underline_new);
                 self.document_hierarchy.push(element);
             }
+            "list" => {
+                let style_name = list_begin(attributes);
+                let mut element;
+                if let Some(x) = style_name {
+                    if let Some(x) = self.auto_list_styles.get(&x) {
+                        // if the referenced style is an automatic one just copy it into the list itself
+                        element = List::new(None, Some(x.clone()), None);
+                    } else {
+                        // else assume it is a named style
+                        element = List::new(Some(x), None, None);
+                    }
+                } else {
+                    element = List::new(None, None, None);
+                }
+
+                self.list_depth += 1;
+                self.document_hierarchy.push(Element::List(element));
+            }
+            "list-item" => {
+                let element = self.handle_list_item_start(list_item_begin(attributes));
+                self.document_hierarchy.push(Element::ListItem(element));
+            }
             _ => (),
         }
     }
@@ -117,6 +139,38 @@ impl ODTParser {
                 );
                 child = Some(element);
             }
+            "soft-page-break" => {
+                if self.document_hierarchy.is_empty() {
+                    self.document_root
+                        .content
+                        .push(ChildNode::Node(Node::PageBreak));
+                } else {
+                    self.document_hierarchy
+                        .last_mut()
+                        .unwrap()
+                        .get_common()
+                        .children
+                        .as_mut()
+                        .unwrap()
+                        .push(ChildNode::Node(Node::PageBreak));
+                }
+            }
+            "line-break" => {
+                if self.document_hierarchy.is_empty() {
+                    self.document_root
+                        .content
+                        .push(ChildNode::Node(Node::LineBreak));
+                } else {
+                    self.document_hierarchy
+                        .last_mut()
+                        .unwrap()
+                        .get_common()
+                        .children
+                        .as_mut()
+                        .unwrap()
+                        .push(ChildNode::Node(Node::LineBreak));
+                }
+            }
             _ => (),
         }
         if let Some(element) = child {
@@ -133,6 +187,33 @@ impl ODTParser {
                     .push(ChildNode::Element(element));
             }
         }
+    }
+
+    /// Takes the override style name of the list item and returns a ListItem with the appropriate
+    /// bullet set
+    fn handle_list_item_start(&mut self, override_style_name: Option<String>) -> ListItem {
+        let mut element = ListItem::new(None, None);
+        if let Some(x) = override_style_name {
+            // If the override style name is defined
+            if let Some(x) = self.auto_list_styles.get(&x) {
+                // If the referenced style is an automatic style
+                let bullet = x[(self.list_depth - 1) as usize].clone();
+                element = ListItem::new(None, Some(bullet));
+            } else if let Some(x) = self.document_root.styles.classes.get(&x) {
+                // If the referenced style is a named style
+                if let Some(Element::List(x)) = &x.element {
+                    // If the referenced named style is actually for a list
+                    if let Some(x) = x.get_bullet_cycle() {
+                        // If the referenced named style actually defines a bullet cycle
+                        // (ODT will always define a bullet cycle, so wen don't need to
+                        // look at the single bullet definition here)
+                        let bullet = x[(self.list_depth - 1) as usize].clone();
+                        element = ListItem::new(None, Some(bullet));
+                    }
+                }
+            }
+        }
+        element
     }
 }
 
@@ -315,6 +396,7 @@ fn a_begin(
 ) -> (Element, String) {
     let mut href = String::new();
     let mut style_name = String::new();
+    let mut title: Option<String> = None;
     for i in attributes {
         if let Ok(i) = i {
             let name = std::str::from_utf8(i.key).unwrap_or(":");
@@ -335,6 +417,16 @@ fn a_begin(
                     .unwrap_or("")
                     .to_string();
                 }
+                "office:title" => {
+                    title = Some(
+                        std::str::from_utf8(
+                            &i.unescaped_value()
+                                .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                        )
+                        .unwrap_or("")
+                        .to_string(),
+                    );
+                }
                 _ => (),
             }
         }
@@ -345,9 +437,52 @@ fn a_begin(
         parent_style = Some(parent.get("_parent").unwrap_or(&String::new()).to_string());
     }
     (
-        Element::Hyperlink(Hyperlink::new(parent_style, href)),
+        Element::Hyperlink(Hyperlink::new(parent_style, title, href)),
         style_name,
     )
+}
+
+/// Returns the style name, id, id of the list to continue and whether to continue from the
+/// previous list (only style name for now since KDF doesn't support the rest yet)
+fn list_begin(attributes: Attributes) -> Option<String> {
+    let mut style_name: Option<String> = None;
+    for i in attributes {
+        if let Ok(i) = i {
+            let name = std::str::from_utf8(i.key).unwrap_or(":");
+            if name == "text:style-name" {
+                style_name = Some(
+                    std::str::from_utf8(
+                        &i.unescaped_value()
+                            .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                    )
+                    .unwrap_or("")
+                    .to_string(),
+                );
+            }
+        }
+    }
+    style_name
+}
+
+/// Returns the override style name of the list item
+fn list_item_begin(attributes: Attributes) -> Option<String> {
+    let mut override_style_name: Option<String> = None;
+    for i in attributes {
+        if let Ok(i) = i {
+            let name = std::str::from_utf8(i.key).unwrap_or(":");
+            if name == "text:style-override" {
+                override_style_name = Some(
+                    std::str::from_utf8(
+                        &i.unescaped_value()
+                            .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+                    )
+                    .unwrap_or("")
+                    .to_string(),
+                );
+            }
+        }
+    }
+    override_style_name
 }
 
 /// Takes the set of attributes of a style:text-properties tag in the ODT's content.xml,

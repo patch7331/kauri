@@ -53,6 +53,8 @@ pub enum Element {
     Code(ElementCommon),
     CodeBlock(CodeBlock),
     Hint(Hint),
+    BlockQuote(ElementCommon),
+    BlockQuoteAttribution(ElementCommon),
 }
 
 impl Element {
@@ -65,7 +67,9 @@ impl Element {
             | Element::Table(common)
             | Element::TableRow(common)
             | Element::TableColumnGroup(common)
-            | Element::Code(common) => common,
+            | Element::Code(common)
+            | Element::BlockQuote(common)
+            | Element::BlockQuoteAttribution(common) => common,
             Element::Heading(heading) => &mut heading.common,
             Element::List(list) => &mut list.common,
             Element::ListItem(list_item) => &mut list_item.common,
@@ -177,6 +181,23 @@ impl List {
             bullet,
         }
     }
+
+    /// Constructs a new List element for use as a template in a style class
+    ///
+    /// - `bullet_cycle` Cycle of the bullets.
+    /// - `bullet` Type of the list bullet.
+    pub fn new_template(bullet_cycle: Option<Vec<ListBullet>>, bullet: Option<ListBullet>) -> List {
+        List {
+            common: ElementCommon::new_template(),
+            bullet_cycle,
+            bullet,
+        }
+    }
+
+    /// Returns a reference to the bullet cycle (if any)
+    pub fn get_bullet_cycle(&self) -> &Option<Vec<ListBullet>> {
+        &self.bullet_cycle
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -203,6 +224,8 @@ impl ListBulletCommon {
 pub struct ListBulletVariant {
     #[serde(flatten)]
     common: ListBulletCommon,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    start_index: Option<u32>,
     variant: String,
 }
 
@@ -211,14 +234,17 @@ impl ListBulletVariant {
     ///
     /// - `prefix` Prefix of the bullet.
     /// - `suffix` Suffix of the bullet.
+    /// - `start_index` Where numbering for an ordered list should begin.
     /// - `variant` Variant of the bullet.
     pub fn new(
         prefix: Option<String>,
         suffix: Option<String>,
+        start_index: Option<u32>,
         variant: String,
     ) -> ListBulletVariant {
         ListBulletVariant {
             common: ListBulletCommon::new(prefix, suffix),
+            start_index,
             variant,
         }
     }
@@ -226,22 +252,27 @@ impl ListBulletVariant {
 
 #[derive(Serialize, Deserialize, Clone)]
 #[cfg_attr(debug_assertions, derive(Debug))]
-pub struct ListBulletString {
+pub struct ListBulletCharacter {
     #[serde(flatten)]
     common: ListBulletCommon,
-    string: String,
+    #[serde(rename = "char")]
+    character: String,
 }
 
-impl ListBulletString {
+impl ListBulletCharacter {
     /// Constructs a new ListBulletString struct
     ///
     /// - `prefix` Prefix of the bullet.
     /// - `suffix` Suffix of the bullet.
-    /// - `string` String content of the bullet.
-    pub fn new(prefix: Option<String>, suffix: Option<String>, string: String) -> ListBulletString {
-        ListBulletString {
+    /// - `character` The bullet character.
+    pub fn new(
+        prefix: Option<String>,
+        suffix: Option<String>,
+        character: String,
+    ) -> ListBulletCharacter {
+        ListBulletCharacter {
             common: ListBulletCommon::new(prefix, suffix),
-            string,
+            character,
         }
     }
 }
@@ -273,7 +304,7 @@ impl ListBulletImage {
 #[serde(untagged)]
 pub enum ListBullet {
     Variant(ListBulletVariant),
-    String(ListBulletString),
+    Character(ListBulletCharacter),
     Image(ListBulletImage),
 }
 
@@ -304,6 +335,8 @@ impl ListItem {
 pub struct Hyperlink {
     #[serde(flatten)]
     pub common: ElementCommon,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    title: Option<String>,
     href: String,
 }
 
@@ -311,10 +344,12 @@ impl Hyperlink {
     /// Constructs a new Hyperlink element
     ///
     /// - `class` Style class of the element.
+    /// - `title` Title of the hyperlink.
     /// - `href` Hyperlink reference.
-    pub fn new(class: Option<String>, href: String) -> Hyperlink {
+    pub fn new(class: Option<String>, title: Option<String>, href: String) -> Hyperlink {
         Hyperlink {
             common: ElementCommon::new(class),
+            title,
             href,
         }
     }

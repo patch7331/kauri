@@ -1,7 +1,7 @@
 /** @format */
 
 import { h } from "preact";
-import { renderNodeList, renderStyles } from "dom/render";
+import { Element } from "./index";
 import { kebabize } from "helpers/inflections";
 
 /**
@@ -37,20 +37,14 @@ function determineListStyleType(variant) {
  * An editable list component.
  */
 export function List(props) {
-  // Determine list type
-  const List = props.ordered ? "ol" : "ul";
   const { styles = {} } = props;
 
   // Calculate list style
   styles.listStyleType = determineListStyleType(props.variant);
 
   return (
-    <List style={renderStyles(styles)}>{renderNodeList(props.children)}</List>
+    <Element tag={props.ordered ? "ol" : "ul"} {...props} styles={styles} />
   );
 }
 
-export function ListItem(props) {
-  return (
-    <li style={renderStyles(props.styles)}>{renderNodeList(props.children)}</li>
-  );
-}
+export const ListItem = props => <Element tag="li" {...props} />;

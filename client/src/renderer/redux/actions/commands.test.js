@@ -1,10 +1,9 @@
 /** @format */
 
-import * as actions from "./actions";
-import * as types from "./actionTypes";
-import { createCommand, addShortcut } from "../commands";
+import { createCommand, addShortcut } from "../../commands";
+import * as types from "./types";
 
-describe("actions", () => {
+describe("command actions", () => {
   it("should create an action to add a command", () => {
     const id = "clipboard:copy";
     const name = "copy";

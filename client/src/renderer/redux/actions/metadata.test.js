@@ -1,7 +1,7 @@
 /** @format */
 
-import * as actions from "./actions";
-import * as types from "./actionTypes";
+import * as actions from "./metadata";
+import * as types from "./types";
 
 describe("actions", () => {
   it("should create an action to set metadata", () => {

@@ -3,9 +3,9 @@
 import "./styles.scss";
 
 import { h, Component, createRef } from "preact";
-import { renderNodeList } from "dom/render";
 import { connect } from "react-redux";
 import { updateCaretPos } from "redux/actions";
+import { Renderer, RenderMode } from "render";
 
 /**
  * A document editing component.
@@ -21,11 +21,6 @@ class Editor extends Component {
 
     // Binds
     this.handleDocumentClick = this.handleDocumentClick.bind(this);
-  }
-
-  componentDidMount() {
-    document.execCommand("defaultParagraphSeparator", false, "p");
-    document.execCommand("styleWithCSS", false, true);
   }
 
   /**
@@ -55,12 +50,22 @@ class Editor extends Component {
       contenteditable="true"
       onClick={this.handleDocumentClick}
     >
-      {renderNodeList(props.document)}
+      {new Renderer(props.document, {
+        renderMode: RenderMode.CONTENT,
+        pageStyle: {
+          marginBottom: "1cm",
+          marginLeft: "1cm",
+          marginRight: "1cm",
+          marginTop: "1cm",
+          height: "140mm",
+          width: "120mm",
+        },
+      }).render()}
     </div>
   );
 }
 
 export default connect(
-  state => ({ document: state.document }),
+  state => ({ document: state.document.nodes }),
   { updateCaretPos },
 )(Editor);

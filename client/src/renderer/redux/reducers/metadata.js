@@ -1,6 +1,6 @@
 /** @format */
 
-import { SET_METADATA } from "../actionTypes";
+import { SET_METADATA } from "../actions/types";
 
 const initialState = {};
 

@@ -1,6 +1,6 @@
 /** @format */
 import { combineReducers } from "redux";
-import { ADD_COMMAND } from "../actionTypes";
+import { ADD_COMMAND } from "../actions/types";
 
 export default combineReducers({
   allIds: allCommands,

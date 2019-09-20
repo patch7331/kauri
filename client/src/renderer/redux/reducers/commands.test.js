@@ -1,7 +1,7 @@
 /** @format */
 
 import commandReducer from "./commands";
-import * as types from "../actionTypes";
+import * as types from "../actions/types";
 
 describe("command reducer", () => {
   it("should handle ADD_COMMAND", () => {
