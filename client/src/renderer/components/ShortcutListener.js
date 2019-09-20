@@ -8,7 +8,6 @@ import matchEvent from "../commands/shortcuts.js";
  * Non-rendering component, responsible for handling keyboard shortcuts
  * @extends Component
  */
-
 class ShortcutListener extends Component {
   constructor(props) {
     super(props);
