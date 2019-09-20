@@ -531,6 +531,24 @@ fn text_properties_begin_fo(local_name: &str, value: String, styles: &mut HashMa
         "font-size" => {
             styles.insert("fontSize".to_string(), value);
         }
+        "background-color" => {
+            styles.insert("backgroundColor".to_string(), value);
+        }
+        "font-variant" => {
+            styles.insert("fontVariant".to_string(), value);
+        }
+        "hyphenate" => {
+            text_properties_begin_fo_hyphenate(value, styles);
+        }
+        "letter-spacing" => {
+            styles.insert("letterSpacing".to_string(), value);
+        }
+        "text-shadow" => {
+            styles.insert("textShadow".to_string(), value);
+        }
+        "text-transform" => {
+            styles.insert("textTransform".to_string(), value);
+        }
         _ => (),
     };
 }
@@ -595,5 +613,18 @@ fn text_properties_begin_style_underline_color(
     } else {
         // The other valid values are all in hex format
         styles.insert("textDecorationColor".to_string(), value);
+    }
+}
+
+/// Helper for text_properties_begin_fo() to handle hyphenate
+fn text_properties_begin_fo_hyphenate(value: String, styles: &mut HashMap<String, String>) {
+    match value.as_str() {
+        "true" => {
+            styles.insert("hyphens".to_string(), "auto".to_string());
+        }
+        "false" => {
+            styles.insert("hyphens".to_string(), "none".to_string());
+        }
+        _ => (),
     }
 }
