@@ -6,29 +6,33 @@ import {
   FETCH_DOC_SUCCESS,
 } from "./types";
 
-export function fetchDocRequest() {
-  return { type: FETCH_DOC_REQUEST };
-}
+export const fetchDocRequest = () => ({
+  type: FETCH_DOC_REQUEST
+});
 
-export function fetchDocError(exception) {
-  return { type: FETCH_DOC_ERROR, exception };
-}
+export const fetchDocError = exception => ({
+  type: FETCH_DOC_ERROR,
+  exception
+});
 
-export function fetchDocSuccess(payload) {
-  return { type: FETCH_DOC_SUCCESS, payload };
-}
+export const fetchDocSuccess = payload => ({
+  type: FETCH_DOC_SUCCESS,
+  payload,
+  receivedAt: Date.now(),
+});
 
 export function fetchDoc(path) {
   return dispatch => {
     dispatch(fetchDocRequest());
 
-    fetch(path)
+    fetch("http://localhost:3000/load", {
+      method: "POST",
+      mode: "no-cors",
+      body: path,
+    })
       .then(response => response.json())
-      .then(json =>
-        dispatch(fetchDocSuccess(json)).catch(exception =>
-          dispatch(fetchDocError(exception)),
-        ),
-      );
+      .then(json => dispatch(fetchDocSuccess(json)))
+      .catch(exception => dispatch(fetchDocError(exception)));
   };
 }
 

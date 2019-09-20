@@ -1,14 +1,50 @@
 /** @format */
-import test from "./test.json";
-import { UPDATE_CARET_POSITION } from "../actions/types";
 
-const intialState = {
+import test from "./test.json";
+import {
+  UPDATE_CARET_POSITION,
+  FETCH_DOC_REQUEST,
+  FETCH_DOC_SUCCESS,
+  FETCH_DOC_ERROR,
+} from "../actions/types";
+import { Status } from "../actions";
+
+const initialState = {
+  status: Status.SUCCESS,
   selection: {
     start: 0,
     end: 0,
   },
-  nodes: translate(test),
+  content: translate(test),
 };
+
+export default function documentReducer(state = initialState, action) {
+  switch (action.type) {
+    case FETCH_DOC_REQUEST:
+      return {
+        ...state,
+        status: Status.LOADING,
+      };
+
+    case FETCH_DOC_SUCCESS:
+      return {
+        ...state,
+        status: Status.SUCCESS,
+        content: translate(action.payload.content),
+        lastUpdated: action.receivedAt,
+      };
+
+    case FETCH_DOC_ERROR:
+      return {
+        ...state,
+        status: Status.ERROR,
+        exception: action.exception,
+      };
+
+    default:
+      return state;
+  }
+}
 
 /**
  * Translate KDF nodes into Redux ready objects
@@ -66,5 +102,3 @@ export function caretReducer(state = initialState, action) {
       return state;
   }
 }
-
-export default (state = intialState, action) => state;

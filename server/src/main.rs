@@ -17,6 +17,8 @@ mod controllers;
 mod document;
 mod parsers;
 
+use tiny_http::{Header, Response};
+
 /// Main entry point
 /// Establishes the simple HTTP server, and listens for requests.
 fn main() {
@@ -39,14 +41,15 @@ fn main() {
 
 /// Takes a request and responds accordingly
 fn handle_request(request: tiny_http::Request) {
-    match request.url() {
+    let resp: Response<std::io::Read> = match request.url() {
         "/load" => controllers::load::load_controller(request),
-        _ => {
-            let response = tiny_http::Response::empty(404);
-            if let Err(e) = request.respond(response) {
-                println!("error: {}", e);
-                return;
-            }
-        }
+        _ => Response::empty(404),
+    };
+
+    resp.add_header(Header::from_str("Access-Control-Allow-Origin: *"));
+
+    if let Err(e) = request.respond(resp) {
+        println!("error: {}", e);
+        return;
     }
 }

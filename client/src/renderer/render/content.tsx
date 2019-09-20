@@ -195,6 +195,7 @@ export class Renderer {
     let currentHeight = this.workingHeight;
 
     // Convert each root node into renderables
+    console.log("Nodes", nodes);
     nodes.allIds.forEach(id => {
       renderables.push(this.toRenderable(nodes.byId[id]));
     });

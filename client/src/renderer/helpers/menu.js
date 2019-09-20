@@ -1,6 +1,30 @@
 /** @format */
 
 import { remote } from "electron";
+import { fetchDoc } from "redux/actions";
+import store from "redux/store";
+
+const menuTemplate = [
+  {
+    label: "File",
+    submenu: [
+      {
+        label: "Open",
+        click: () => {
+          const path = remote.dialog.showOpenDialog({ properties: ["openFile"] });
+          store.dispatch(fetchDoc(path));
+        },
+      },
+      process.platform === "darwin" ? { role: "close" } : { role: "quit" },
+    ],
+  }
+]
+
+export function configureMenu() {
+  console.log("Building menu")
+  const menu = remote.Menu.buildFromTemplate(menuTemplate);
+  remote.Menu.setApplicationMenu(menu);
+}
 
 /**
  * Sets up the global application menu.
