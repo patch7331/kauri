@@ -8,7 +8,6 @@ import matchEvent from "../commands/shortcuts.js";
  * Non-rendering component, responsible for handling keyboard shortcuts
  * @extends Component
  */
-
 class ShortcutListener extends Component {
   constructor(props) {
     super(props);
@@ -25,7 +24,7 @@ class ShortcutListener extends Component {
   }
 
   componentWillUnmount() {
-    window.removeEventListener("keydown");
+    window.removeEventListener("keydown", this.handleKeyPress);
   }
 
   /**
