@@ -8,12 +8,12 @@ import {
 
 export const addCommand = command => ({
   type: ADD_COMMAND,
-  payload: command.toObj(),
+  command,
 });
 
 export const addShortcut = command => ({
   type: ADD_SHORTCUT,
-  payload: command.toObj(),
+  command,
 });
 
 export const updateCaretPos = ({ positionStart, positionEnd }) => ({

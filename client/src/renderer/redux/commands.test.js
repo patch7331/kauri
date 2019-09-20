@@ -2,7 +2,7 @@
 
 import * as actions from "./actions";
 import * as types from "./actionTypes";
-import Command from "../commands";
+import { createCommand, addShortcut } from "../commands";
 
 describe("actions", () => {
   it("should create an action to add a command", () => {
@@ -11,12 +11,12 @@ describe("actions", () => {
     const keys = "control+C";
     const callback = "this.doClipboardCopy";
 
-    const cmd = new Command(id, name, callback);
-    cmd.createShortcut(keys);
+    const cmd = createCommand(id, name, callback);
+    addShortcut(cmd, keys);
 
     const expectedAction = {
       type: types.ADD_COMMAND,
-      payload: {
+      command: {
         id,
         name,
         shortcuts: [

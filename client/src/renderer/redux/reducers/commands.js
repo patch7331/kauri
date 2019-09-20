@@ -10,7 +10,7 @@ export default combineReducers({
 function allCommands(state = [], action) {
   switch (action.type) {
     case ADD_COMMAND:
-      return [...state, action.payload.id];
+      return [...state, action.command.id];
     default:
       return state;
   }
@@ -19,7 +19,7 @@ function allCommands(state = [], action) {
 function commandsById(state = {}, action) {
   switch (action.type) {
     case ADD_COMMAND:
-      const { id, name, shortcuts, callback } = action.payload;
+      const { id, name, shortcuts, callback } = action.command;
       return {
         ...state,
         [id]: { id, name, shortcuts, callback },

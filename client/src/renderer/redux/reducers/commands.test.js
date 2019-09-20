@@ -10,7 +10,7 @@ describe("command reducer", () => {
         { allIds: [], byId: {} },
         {
           type: types.ADD_COMMAND,
-          payload: {
+          command: {
             id: "clipboard:copy",
             name: "copy",
             shortcuts: [

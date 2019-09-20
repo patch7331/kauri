@@ -12,7 +12,7 @@ function allShortcuts(state = [], action) {
     case ADD_COMMAND:
       return [
         ...state,
-        ...action.payload.shortcuts.map(shortcut => shortcut.id),
+        ...action.command.shortcuts.map(shortcut => shortcut.id),
       ];
 
     default:
@@ -25,10 +25,10 @@ function shortcutsById(state = {}, action) {
     case ADD_COMMAND:
       const shortcuts = {};
 
-      action.payload.shortcuts.forEach(shortcut => {
+      action.command.shortcuts.forEach(shortcut => {
         shortcuts[shortcut.id] = {
           ...shortcut,
-          commandId: action.payload.id,
+          commandId: action.command.id,
         };
       });
       return { ...state, ...shortcuts };

@@ -1,12 +1,11 @@
 /** @format */
 
-import Command from "./index";
+import createShortcut from "./shortcuts.js";
 
-const cmd = new Command("id", "name", "callback");
-
-describe("parseShortcut", () => {
+describe("createShortcut", () => {
   it("should turn a string to a shortcut object", () => {
-    expect(cmd.parseShortcut("control+c")).toEqual({
+    expect(createShortcut("control+c")).toEqual({
+      id: 1,
       isAlt: false,
       isCtrl: true,
       isMeta: false,
@@ -15,7 +14,8 @@ describe("parseShortcut", () => {
     });
   });
   it("Should ignore order of modifiers, as long as it ends in the letter", () => {
-    expect(cmd.parseShortcut("alt+control+meta+shift+w")).toEqual({
+    expect(createShortcut("alt+control+meta+shift+w")).toEqual({
+      id: 2,
       isAlt: true,
       isCtrl: true,
       isMeta: true,
@@ -24,7 +24,8 @@ describe("parseShortcut", () => {
     });
   });
   it("Should ignore case", () => {
-    expect(cmd.parseShortcut("MetA+ALt+coNtRol+A")).toEqual({
+    expect(createShortcut("MetA+ALt+coNtRol+A")).toEqual({
+      id: 3,
       isAlt: true,
       isCtrl: true,
       isMeta: true,
@@ -34,11 +35,12 @@ describe("parseShortcut", () => {
   });
   it("Should throw an error on empty input", () => {
     expect(() => {
-      cmd.parseShortcut("");
+      createShortcut("");
     }).toThrow("Cannot create an empty shortcut");
   });
   it("Should accept just a key", () => {
-    expect(cmd.parseShortcut("c")).toEqual({
+    expect(createShortcut("c")).toEqual({
+      id: 4,
       isAlt: false,
       isCtrl: false,
       isMeta: false,

@@ -5,7 +5,7 @@ import { Component, h } from "preact";
 import { connect } from "react-redux";
 import { addCommand } from "redux/actions";
 import clipboard from "electron-clipboard-extended";
-import Command from "../commands";
+import {createCommand, addShortcut} from "../commands";
 
 /**
  * Stores and lists contents of system clipboard
@@ -25,8 +25,8 @@ class Clipboard extends Component {
   }
 
   componentDidMount() {
-    const cmd = new Command("Clipboard:Copy", "Copy", this.doClipboardCopy);
-    cmd.createShortcut("control+c");
+    const cmd = createCommand("Clipboard:Copy", "Copy", this.doClipboardCopy);
+    addShortcut(cmd, "control+c");
     this.props.addCommand(cmd);
 
     clipboard.startWatching();

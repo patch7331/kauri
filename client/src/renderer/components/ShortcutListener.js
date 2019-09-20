@@ -2,6 +2,7 @@
 
 import { Component, h } from "preact";
 import { connect } from "react/redux";
+import matchEvent from "../commands/shortcuts.js";
 
 /**
  * Non-rendering component, responsible for handling keyboard shortcuts
@@ -38,14 +39,7 @@ class ShortcutListener extends Component {
     const commands = this.props.commands.byId;
 
     //matches contains the list of shortcuts that match the entered keys
-    const matches = shortcuts.filter(
-      shortcut =>
-        event.altKey === shortcut.isAlt &&
-        event.ctrlKey === shortcut.isCtrl &&
-        event.metaKey === shortcut.isMeta &&
-        event.shiftKey === shortcut.isShift &&
-        event.key === shortcut.key,
-    );
+    const matches = shortcuts.filter(shortcut => matchEvent(shortcut, event));
 
     //for each match in matches, fire the related callback
     matches.forEach(match => {
