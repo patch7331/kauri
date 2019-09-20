@@ -1,13 +1,13 @@
 {
-	"clipboard": {
-		"copy": [
-			{
-				"isAlt": false,
+  "clipboard": {
+    "copy": [
+      {
+        "isAlt": false,
         "isCtrl": true,
         "isMeta": false,
         "isShift": false,
         "key": "c",
-			},
+      },
       {
         "isAlt": false,
         "isCtrl": true,
@@ -15,6 +15,6 @@
         "isShift": false,
         "key": "v",
       }
-		]
-	}
+    ]
+  }
 }

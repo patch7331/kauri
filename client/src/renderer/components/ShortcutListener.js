@@ -38,13 +38,13 @@ class ShortcutListener extends Component {
     const shortcuts = Object.values(this.props.shortcuts.byIds);
     const commands = this.props.commands.byId;
 
-    //matches contains the list of shortcuts that match the entered keys
-    const matches = shortcuts.filter(shortcut => matchEvent(shortcut, event));
-
-    //for each match in matches, fire the related callback
-    matches.forEach(match => {
-      commands[match.commandId].callback();
-    });
+    //generate list of shortcuts that match the entered keys
+    //for each match, fire the related callback
+    shortcuts
+      .filter(shortcut => matchEvent(shortcut, event))
+      .forEach(match => {
+        commands[match.commandId].callback();
+      });
   }
 }
 

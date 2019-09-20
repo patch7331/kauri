@@ -29,6 +29,16 @@ export default function createShortcut(definition) {
  *                        No spaces, key at end, modifiers in any order
  *                        Must not be empty
  * @return {object} keyboard shortcut object
+ *
+ * @example
+ *     parseShortcut("control+c")
+ *     will return {
+ *       "isAlt": false,
+ *       "isCtrl": true,
+ *       "isMeta": false,
+ *       "isShift": false,
+ *       "key": "c",
+ *     }
  */
 export function parseShortcut(str) {
   if (str === "") throw "Cannot create an empty shortcut";
