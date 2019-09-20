@@ -25,13 +25,13 @@ pub fn load_controller(request: &mut Request) -> Response<Cursor<Vec<u8>>> {
     let extension = filepath.split('.').last();
     match extension {
         // Pick a parser depending on the file extension
-        Some("odt") => handle_odt(request, filepath),
+        Some("odt") => handle_odt(filepath),
         _ => create_response("File extension missing or unrecognized".to_string(), true),
     }
 }
 
 /// Handles a request for loading an ODT
-fn handle_odt(request: &Request, filepath: &str) -> Response<Cursor<Vec<u8>>> {
+fn handle_odt(filepath: &str) -> Response<Cursor<Vec<u8>>> {
     let mut parser = ODTParser::new();
     let parsed_odt = parser.parse(filepath);
     if let Err(e) = parsed_odt {
