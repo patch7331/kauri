@@ -24,7 +24,7 @@ class ShortcutListener extends Component {
   }
 
   componentWillUnmount() {
-    window.removeEventListener("keydown");
+    window.removeEventListener("keydown", this.handleKeyPress);
   }
 
   /**
