@@ -597,6 +597,14 @@ fn text_properties_begin_style(
             text_properties_begin_style_underline_color(value, styles);
             false
         }
+        "letter-kerning" => {
+            text_properties_begin_style_letter_kerning(value, styles);
+            false
+        }
+        "text-position" => {
+            text_properties_begin_style_text_position(value, styles);
+            false
+        }
         _ => false,
     }
 }
@@ -647,5 +655,34 @@ fn text_properties_begin_fo_hyphenate(value: String, styles: &mut HashMap<String
             styles.insert("hyphens".to_string(), "none".to_string());
         }
         _ => (),
+    }
+}
+
+/// Helper for text_properties_begin_style() to handle letter kerning
+fn text_properties_begin_style_letter_kerning(value: String, styles: &mut HashMap<String, String>) {
+    match value.as_str() {
+        "true" => {
+            styles.insert("fontKerning".to_string(), "normal".to_string());
+        }
+        "false" => {
+            styles.insert("fontKerning".to_string(), "none".to_string());
+        }
+        _ => (),
+    }
+}
+
+/// Helper for text_properties_begin_style to handle text position (superscript and subscript)
+fn text_properties_begin_style_text_position(value: String, styles: &mut HashMap<String, String>) {
+    let mut split_values = value.split_whitespace();
+    // The first parameter specifies how high/low the text is (mandatory)
+    if let Some(vertical_align) = split_values.next() {
+        styles.insert("verticalAlign".to_string(), vertical_align.to_string());
+    }
+    // The second one specifies how small the text is (optional)
+    if let Some(font_size) = split_values.next() {
+        styles.insert("fontSize".to_string(), font_size.to_string());
+    } else {
+        // The ODT spec does not specify an explicit default, this is what LibreOffice uses
+        styles.insert("fontSize".to_string(), "58%".to_string());
     }
 }
