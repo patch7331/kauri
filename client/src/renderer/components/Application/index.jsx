@@ -11,9 +11,7 @@ import Editor from "components/Editor";
  * Root application component.
  */
 export default class Application extends Component {
-  componentDidMount() {
-    configureMenu();
-  }
+  componentDidMount = () => configureMenu();
 
   render = () => (
     <div class="app">
