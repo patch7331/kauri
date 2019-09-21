@@ -7,12 +7,12 @@ import {
 } from "./types";
 
 export const fetchDocRequest = () => ({
-  type: FETCH_DOC_REQUEST
+  type: FETCH_DOC_REQUEST,
 });
 
 export const fetchDocError = exception => ({
   type: FETCH_DOC_ERROR,
-  exception
+  exception,
 });
 
 export const fetchDocSuccess = payload => ({
