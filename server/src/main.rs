@@ -17,7 +17,7 @@ mod controllers;
 mod document;
 mod parsers;
 
-use tiny_http::{Header, Response};
+use tiny_http::Response;
 
 /// Main entry point
 /// Establishes the simple HTTP server, and listens for requests.
@@ -40,15 +40,29 @@ fn main() {
 }
 
 /// Takes a request and responds accordingly
-fn handle_request(request: tiny_http::Request) {
-    let resp: Response<std::io::Read> = match request.url() {
-        "/load" => controllers::load::load_controller(request),
-        _ => Response::empty(404),
+fn handle_request(mut request: tiny_http::Request) {
+    let mut resp_normal: Option<Response<std::io::Cursor<Vec<u8>>>> = None;
+    let mut resp_error: Option<Response<std::io::Empty>> = None;
+    match request.url() {
+        "/load" => resp_normal = Some(controllers::load::load_controller(&mut request)),
+        _ => resp_error = Some(Response::empty(404)),
     };
 
-    resp.add_header(Header::from_str("Access-Control-Allow-Origin: *"));
+    if let Some(mut resp) = resp_normal {
+        // Disable CORS for normal responses
+        resp.add_header(
+            tiny_http::Header::from_bytes(&b"Access-Control-Allow-Origin"[..], &b"*"[..]).unwrap(),
+        );
+        send_response(request, resp);
+    } else {
+        // No need to disable CORS here, since the response has no data associated with it
+        send_response(request, resp_error.unwrap());
+    }
+}
 
-    if let Err(e) = request.respond(resp) {
+/// Attempts to send the response for the given request, will print an error message if it fails
+fn send_response<T: std::io::Read>(request: tiny_http::Request, response: tiny_http::Response<T>) {
+    if let Err(e) = request.respond(response) {
         println!("error: {}", e);
         return;
     }

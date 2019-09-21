@@ -27,7 +27,6 @@ export function fetchDoc(path) {
 
     fetch("http://localhost:3000/load", {
       method: "POST",
-      mode: "no-cors",
       body: path,
     })
       .then(response => response.json())

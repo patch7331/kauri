@@ -23,7 +23,6 @@ const menuTemplate = [
 ];
 
 export function configureMenu() {
-  console.log("Building menu");
   const menu = remote.Menu.buildFromTemplate(menuTemplate);
   remote.Menu.setApplicationMenu(menu);
 }

@@ -12,7 +12,6 @@ import Editor from "components/Editor";
  */
 export default class Application extends Component {
   componentDidMount() {
-    console.log("Mounted");
     configureMenu();
   }
 
