@@ -20,8 +20,17 @@ describe("fetchDocError", () => {
 
 describe("fetchDocSuccess", () => {
   it("should return document fetch success action + payload", () => {
+    jest
+      .spyOn(global.Date, "now")
+      .mockImplementationOnce(() => new Date("2019-09-21 13:28:00"));
+
     const payload = "json";
-    const expectedAction = { type: types.FETCH_DOC_SUCCESS, payload };
+    const expectedAction = {
+      type: types.FETCH_DOC_SUCCESS,
+      payload,
+      receivedAt: new Date("2019-09-21 13:28:00"),
+    };
+
     expect(actions.fetchDocSuccess(payload)).toEqual(expectedAction);
   });
 });
