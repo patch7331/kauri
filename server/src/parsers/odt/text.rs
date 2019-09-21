@@ -525,6 +525,18 @@ fn text_properties_begin_fo(local_name: &str, value: String, styles: &mut HashMa
             // `backslant` is not valid in CSS, but all the other ones are
             styles.insert("fontStyle".to_string(), value);
         }
+        "font-family" => {
+            if let Some(font_name) = styles.remove("fontFamily") {
+                // If the font name is there already then prepend the font family to it
+                styles.insert(
+                    "fontFamily".to_string(),
+                    format!("{}, {}", value, font_name),
+                );
+            } else {
+                // Otherwise just put the font family there
+                styles.insert("fontFamily".to_string(), value);
+            }
+        }
         "color" => {
             styles.insert("color".to_string(), value);
         }
@@ -565,7 +577,16 @@ fn text_properties_begin_style(
     match local_name {
         "text-underline-type" if value == "double" => true,
         "font-name" => {
-            styles.insert("fontFamily".to_string(), value);
+            if let Some(font_family) = styles.remove("fontFamily") {
+                // If the font family was already set previously then append the font name
+                styles.insert(
+                    "fontFamily".to_string(),
+                    format!("{}, {}", font_family, value),
+                );
+            } else {
+                // Otherwise just put the font name there
+                styles.insert("fontFamily".to_string(), value);
+            }
             false
         }
         "text-underline-style" => {
