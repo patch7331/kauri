@@ -525,11 +525,41 @@ fn text_properties_begin_fo(local_name: &str, value: String, styles: &mut HashMa
             // `backslant` is not valid in CSS, but all the other ones are
             styles.insert("fontStyle".to_string(), value);
         }
+        "font-family" => {
+            if let Some(font_name) = styles.remove("fontFamily") {
+                // If the font name is there already then prepend the font family to it
+                styles.insert(
+                    "fontFamily".to_string(),
+                    format!("{}, {}", value, font_name),
+                );
+            } else {
+                // Otherwise just put the font family there
+                styles.insert("fontFamily".to_string(), value);
+            }
+        }
         "color" => {
             styles.insert("color".to_string(), value);
         }
         "font-size" => {
             styles.insert("fontSize".to_string(), value);
+        }
+        "background-color" => {
+            styles.insert("backgroundColor".to_string(), value);
+        }
+        "font-variant" => {
+            styles.insert("fontVariant".to_string(), value);
+        }
+        "hyphenate" => {
+            text_properties_begin_fo_hyphenate(value, styles);
+        }
+        "letter-spacing" => {
+            styles.insert("letterSpacing".to_string(), value);
+        }
+        "text-shadow" => {
+            styles.insert("textShadow".to_string(), value);
+        }
+        "text-transform" => {
+            styles.insert("textTransform".to_string(), value);
         }
         _ => (),
     };
@@ -547,7 +577,16 @@ fn text_properties_begin_style(
     match local_name {
         "text-underline-type" if value == "double" => true,
         "font-name" => {
-            styles.insert("fontFamily".to_string(), value);
+            if let Some(font_family) = styles.remove("fontFamily") {
+                // If the font family was already set previously then append the font name
+                styles.insert(
+                    "fontFamily".to_string(),
+                    format!("{}, {}", font_family, value),
+                );
+            } else {
+                // Otherwise just put the font name there
+                styles.insert("fontFamily".to_string(), value);
+            }
             false
         }
         "text-underline-style" => {
@@ -556,6 +595,14 @@ fn text_properties_begin_style(
         }
         "text-underline-color" => {
             text_properties_begin_style_underline_color(value, styles);
+            false
+        }
+        "letter-kerning" => {
+            text_properties_begin_style_letter_kerning(value, styles);
+            false
+        }
+        "text-position" => {
+            text_properties_begin_style_text_position(value, styles);
             false
         }
         _ => false,
@@ -595,5 +642,47 @@ fn text_properties_begin_style_underline_color(
     } else {
         // The other valid values are all in hex format
         styles.insert("textDecorationColor".to_string(), value);
+    }
+}
+
+/// Helper for text_properties_begin_fo() to handle hyphenate
+fn text_properties_begin_fo_hyphenate(value: String, styles: &mut HashMap<String, String>) {
+    match value.as_str() {
+        "true" => {
+            styles.insert("hyphens".to_string(), "auto".to_string());
+        }
+        "false" => {
+            styles.insert("hyphens".to_string(), "none".to_string());
+        }
+        _ => (),
+    }
+}
+
+/// Helper for text_properties_begin_style() to handle letter kerning
+fn text_properties_begin_style_letter_kerning(value: String, styles: &mut HashMap<String, String>) {
+    match value.as_str() {
+        "true" => {
+            styles.insert("fontKerning".to_string(), "normal".to_string());
+        }
+        "false" => {
+            styles.insert("fontKerning".to_string(), "none".to_string());
+        }
+        _ => (),
+    }
+}
+
+/// Helper for text_properties_begin_style to handle text position (superscript and subscript)
+fn text_properties_begin_style_text_position(value: String, styles: &mut HashMap<String, String>) {
+    let mut split_values = value.split_whitespace();
+    // The first parameter specifies how high/low the text is (mandatory)
+    if let Some(vertical_align) = split_values.next() {
+        styles.insert("verticalAlign".to_string(), vertical_align.to_string());
+    }
+    // The second one specifies how small the text is (optional)
+    if let Some(font_size) = split_values.next() {
+        styles.insert("fontSize".to_string(), font_size.to_string());
+    } else {
+        // The ODT spec does not specify an explicit default, this is what LibreOffice uses
+        styles.insert("fontSize".to_string(), "58%".to_string());
     }
 }
