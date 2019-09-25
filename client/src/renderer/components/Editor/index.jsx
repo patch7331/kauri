@@ -4,7 +4,7 @@ import "./styles.scss";
 
 import { h, Component, createRef } from "preact";
 import { connect } from "react-redux";
-import { updateCaretPos } from "redux/actions";
+import { moveSelection } from "redux/actions";
 import { Renderer, RenderMode } from "render";
 
 /**
@@ -33,14 +33,14 @@ class Editor extends Component {
     preSelectionRange.setEnd(range.startContainer, range.startOffset);
     const positionStart = preSelectionRange.toString().length;
     const positionEnd = positionStart + range.toString().length;
-    return { positionStart, positionEnd };
+    return [positionStart, positionEnd];
   }
 
   /**
    * Handles clicks to the document element.
    */
   handleDocumentClick() {
-    this.props.updateCaretPos(this.getCaretPos());
+    this.props.moveSelection(...this.getCaretPos());
   }
 
   render = props => (
@@ -67,5 +67,5 @@ class Editor extends Component {
 
 export default connect(
   state => ({ document: state.document.content }),
-  { updateCaretPos },
+  { moveSelection },
 )(Editor);
