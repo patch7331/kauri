@@ -4,8 +4,10 @@ import "./styles.scss";
 
 import { h, Component, createRef } from "preact";
 import { connect } from "react-redux";
-import { moveSelection } from "redux/actions";
+import { moveSelection, Status } from "redux/actions";
 import { Renderer, RenderMode } from "render";
+
+import Error from "components/Error"
 
 /**
  * A document editing component.
@@ -43,29 +45,47 @@ class Editor extends Component {
     this.props.moveSelection(...this.getCaretPos());
   }
 
-  render = props => (
-    <div
-      ref={this.contentEditableDiv}
-      class="editor"
-      contenteditable="true"
-      onClick={this.handleDocumentClick}
-    >
-      {new Renderer(props.document, {
-        renderMode: RenderMode.CONTENT,
-        pageStyle: {
-          marginBottom: "1cm",
-          marginLeft: "1cm",
-          marginRight: "1cm",
-          marginTop: "1cm",
-          height: "140mm",
-          width: "120mm",
-        },
-      }).render()}
-    </div>
-  );
+  render(props) {
+    let content;
+
+    switch (props.document.status) {
+      case Status.ERROR:
+        content = <Error exception={props.document.exception} />;
+        break;
+      default:
+        const pages = new Renderer(props.document.content, {
+          renderMode: RenderMode.CONTENT,
+          pageStyle: {
+            marginBottom: "1cm",
+            marginLeft: "1cm",
+            marginRight: "1cm",
+            marginTop: "1cm",
+            height: "140mm",
+            width: "120mm",
+          },
+        }).render();
+        
+        console.log("Pages", pages);
+        console.log("Props", props);
+
+        content = (
+          <div
+            ref={this.contentEditableDiv}
+            class="editor"
+            contenteditable="true"
+            onClick={this.handleDocumentClick}
+          >
+            {pages}
+          </div>
+        );
+        break;
+    }
+
+    return content;
+  } 
 }
 
 export default connect(
-  state => ({ document: state.document.content }),
+  state => ({ document: state.document }),
   { moveSelection },
 )(Editor);
