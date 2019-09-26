@@ -783,6 +783,15 @@ fn paragraph_properties(attributes: Attributes, styles: &mut HashMap<String, Str
             }
         }
     }
+    if let Some(mut bg_alpha) = styles.remove("_bgAlpha") {
+        bg_alpha.pop(); // Remove the percent sign from the end
+        let mut bg_alpha = 100.0 - bg_alpha.parse::<f64>().unwrap_or(0.0); // Assuming 100% transparency means 0% alpha (can't test this, because LO doesn't even use it)
+        bg_alpha = bg_alpha / 100.0 * 255.0;
+        if let Some(mut bg) = styles.remove("backgroundColor") {
+            bg = format!("{}{:X}", bg, bg_alpha as u32); // Append the alpha as a hex value to the original background
+            styles.insert("backgroundColor".to_string(), bg);
+        }
+    }
 }
 
 /// Helper for paragraph_properties() to handle attributes with "fo" prefix
