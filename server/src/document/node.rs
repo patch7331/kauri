@@ -155,6 +155,7 @@ impl Heading {
 
 #[derive(Serialize, Deserialize, Clone)]
 #[cfg_attr(debug_assertions, derive(Debug))]
+#[serde(rename_all = "camelCase")]
 pub struct List {
     #[serde(flatten)]
     pub common: ElementCommon,
@@ -221,6 +222,7 @@ impl ListBulletCommon {
 
 #[derive(Serialize, Deserialize, Clone)]
 #[cfg_attr(debug_assertions, derive(Debug))]
+#[serde(rename_all = "camelCase")]
 pub struct ListBulletVariant {
     #[serde(flatten)]
     common: ListBulletCommon,
@@ -379,6 +381,7 @@ impl TableColumn {
 
 #[derive(Serialize, Deserialize, Clone)]
 #[cfg_attr(debug_assertions, derive(Debug))]
+#[serde(rename_all = "camelCase")]
 pub struct TableCell {
     #[serde(flatten)]
     pub common: ElementCommon,
@@ -405,6 +408,7 @@ impl TableCell {
 
 #[derive(Serialize, Deserialize, Clone)]
 #[cfg_attr(debug_assertions, derive(Debug))]
+#[serde(rename_all = "camelCase")]
 pub struct CodeBlock {
     #[serde(flatten)]
     pub common: ElementCommon,

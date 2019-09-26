@@ -136,6 +136,10 @@ impl ODTParser {
             "text:list-level-style-image" => {
                 level_and_bullet = Some(list_style_image_begin(attributes));
             }
+            "style:page-layout-properties" if !self.loaded_page_style => {
+                self.loaded_page_style = true;
+                page_layout(attributes, &mut self.document_root.styles.page);
+            }
             _ => (),
         }
         if let Some((level, bullet)) = level_and_bullet {
@@ -205,6 +209,10 @@ impl ODTParser {
             }
             "text:list-level-style-image" => {
                 level_and_bullet = Some(list_style_image_begin(attributes));
+            }
+            "style:page-layout-properties" if !self.loaded_page_style => {
+                self.loaded_page_style = true;
+                page_layout(attributes, &mut self.document_root.styles.page);
             }
             _ => (),
         }
@@ -624,7 +632,7 @@ fn list_style_number_begin(attributes: Attributes) -> (u32, ListBullet) {
 /// Converts ODT number format to KDF numbering variant
 fn list_style_number_begin_helper(format: &str) -> (String, bool) {
     let mut is_number = true;
-    let mut variant;
+    let variant;
     match format {
         "1" => variant = "decimal".to_string(),
         "a" => variant = "lowerLatin".to_string(),
@@ -672,4 +680,70 @@ fn list_style_image_begin(attributes: Attributes) -> (u32, ListBullet) {
 
     let bullet = ListBulletImage::new(None, None, href);
     (level, ListBullet::Image(bullet))
+}
+
+fn page_layout(attributes: Attributes, page_style: &mut HashMap<String, String>) {
+    for i in attributes {
+        if let Ok(i) = i {
+            let name = std::str::from_utf8(i.key).unwrap_or(":");
+            let (prefix, local_name) = name.split_at(name.find(':').unwrap_or(0));
+            let local_name = &local_name[1..];
+            let value = std::str::from_utf8(
+                &i.unescaped_value()
+                    .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+            )
+            .unwrap_or("")
+            .to_string();
+            if prefix == "fo" {
+                // There are a number of attributes prefixed with "style", but none are supported
+                // by KDF at the moment
+                page_layout_fo(local_name, value, page_style);
+            }
+        }
+    }
+}
+
+fn page_layout_fo(local_name: &str, value: String, page_style: &mut HashMap<String, String>) {
+    match local_name {
+        "background-color" => {
+            page_style.insert("backgroundColor".to_string(), value);
+        }
+        "border" => {
+            page_style.insert("border".to_string(), value);
+        }
+        "border-left" => {
+            page_style.insert("borderLeft".to_string(), value);
+        }
+        "border-right" => {
+            page_style.insert("borderRight".to_string(), value);
+        }
+        "border-top" => {
+            page_style.insert("borderTop".to_string(), value);
+        }
+        "border-bottom" => {
+            page_style.insert("borderBottom".to_string(), value);
+        }
+        "margin" => {
+            page_style.insert("margin".to_string(), value);
+        }
+        "margin-left" => {
+            page_style.insert("marginLeft".to_string(), value);
+        }
+        "margin-right" => {
+            page_style.insert("marginRight".to_string(), value);
+        }
+        "margin-top" => {
+            page_style.insert("marginTop".to_string(), value);
+        }
+        "margin-bottom" => {
+            page_style.insert("marginBottom".to_string(), value);
+        }
+        "page-height" => {
+            page_style.insert("height".to_string(), value);
+        }
+        "page-width" => {
+            page_style.insert("width".to_string(), value);
+        }
+        _ => (),
+    };
 }

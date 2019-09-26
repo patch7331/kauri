@@ -498,7 +498,7 @@ pub fn text_properties_begin(attributes: Attributes, map: &mut HashMap<String, S
                 &i.unescaped_value()
                     .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
             )
-            .unwrap_or("what")
+            .unwrap_or("")
             .to_string();
             if prefix == "fo" {
                 text_properties_begin_fo(local_name, value, map);
