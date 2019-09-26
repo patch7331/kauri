@@ -65,8 +65,6 @@ class Editor extends Component {
           },
         }).render();
         
-        console.log("Pages", pages);
-        console.log("Props", props);
 
         content = (
           <div
