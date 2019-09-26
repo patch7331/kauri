@@ -46,6 +46,7 @@ pub struct ODTParser {
     table_row_default_style_names: Vec<Vec<String>>,
     in_list_style: bool,
     list_depth: u32,
+    loaded_page_style: bool,
 }
 
 impl ODTParser {
@@ -71,6 +72,7 @@ impl ODTParser {
             table_row_default_style_names: Vec::new(),
             in_list_style: false,
             list_depth: 0,
+            loaded_page_style: false,
         }
     }
 
