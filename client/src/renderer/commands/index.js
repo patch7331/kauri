@@ -1,5 +1,6 @@
 /** @format */
 import createShortcut from "./shortcuts.js";
+import * as fs from "fs";
 
 /**
  * Construct a new command object
@@ -12,9 +13,9 @@ import createShortcut from "./shortcuts.js";
  * @example
  *     createCommand("Clipboard:Copy", "Copy", Clipboard.doCopy)
  *     will return {
- *       shortcuts: [],
  *       id: "Clipboard:Copy"
  *       name: "Copy",
+ *       shortcuts: [],
  *       callback: Clipboard.doCopy,
  *     }
  */
@@ -46,4 +47,29 @@ export function createCommand(id, name, callback) {
  */
 export function addShortcut(command, definition) {
   command.shortcuts.push(createShortcut(definition));
+}
+
+/**
+ * get contents of JSON
+ *   open filestream
+ *   get file contents
+ *   put file contents into string
+ *   JSON.parse string into object
+ * search store for commands matching namespace:name
+ * for each namespace:name
+ *   get shortcut
+ *   pass shortcut to relevand command
+ */
+export function getJSON() {
+  const keybinds;
+  fs.readFileSync("./src/renderer/commands/keybinds.json", (err, data) => {
+    if (err) throw err;
+    console.log(data);
+    //keybinds = JSON.parse(data);
+    //console.log(keybinds);
+  });
+  //console.log(keybinds);
+  return "hello";
+  //keybinds["clipboard"].forEach(copy => console.log(copy));
+  //return keybinds["clipboard"]["paste"];
 }

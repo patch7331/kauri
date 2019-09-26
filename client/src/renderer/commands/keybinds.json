@@ -15,6 +15,22 @@
         "isShift": false,
         "key": "v",
       }
+    ],
+    "paste": [
+      {
+        "isAlt": false,
+        "isCtrl": true,
+        "isMeta": false,
+        "isShift": true,
+        "key": "c",
+      },
+      {
+        "isAlt": false,
+        "isCtrl": true,
+        "isMeta": false,
+        "isShift": true,
+        "key": "v",
+      }
     ]
   }
 }
