@@ -6,7 +6,7 @@ impl ODTParser {
     pub fn handle_element_start_text(&mut self, local_name: &str, attributes: Attributes) {
         match local_name {
             "h" => {
-                let (element, set_children_underline_new, ensure_children_no_underline_new) =
+                let (mut element, set_children_underline_new, ensure_children_no_underline_new) =
                     check_underline(
                         heading_begin(attributes, &mut self.auto_styles),
                         &self.auto_styles,
@@ -18,10 +18,13 @@ impl ODTParser {
                 self.ensure_children_no_underline
                     .push(ensure_children_no_underline_new);
                 self.set_children_underline.push(set_children_underline_new);
+                if let Some(_) = element.get_common().styles.remove("_pageBreakBefore") {
+                    self.insert_break(true);
+                }
                 self.document_hierarchy.push(element);
             }
             "p" => {
-                let (element, set_children_underline_new, ensure_children_no_underline_new) =
+                let (mut element, set_children_underline_new, ensure_children_no_underline_new) =
                     check_underline(
                         paragraph_begin(attributes, &mut self.auto_styles),
                         &self.auto_styles,
@@ -33,6 +36,9 @@ impl ODTParser {
                 self.ensure_children_no_underline
                     .push(ensure_children_no_underline_new);
                 self.set_children_underline.push(set_children_underline_new);
+                if let Some(_) = element.get_common().styles.remove("_pageBreakBefore") {
+                    self.insert_break(true);
+                }
                 self.document_hierarchy.push(element);
             }
             "span" => {
@@ -67,7 +73,7 @@ impl ODTParser {
             }
             "list" => {
                 let style_name = list_begin(attributes);
-                let mut element;
+                let element;
                 if let Some(x) = style_name {
                     if let Some(x) = self.auto_list_styles.get(&x) {
                         // if the referenced style is an automatic one just copy it into the list itself
@@ -96,7 +102,7 @@ impl ODTParser {
         let mut child: Option<Element> = None;
         match local_name {
             "h" => {
-                let (element, ..) = check_underline(
+                let (mut element, ..) = check_underline(
                     heading_begin(attributes, &mut self.auto_styles),
                     &self.auto_styles,
                     !self.set_children_underline.is_empty()
@@ -104,10 +110,13 @@ impl ODTParser {
                     !self.ensure_children_no_underline.is_empty()
                         && *self.ensure_children_no_underline.last().unwrap(),
                 );
+                if let Some(_) = element.get_common().styles.remove("_pageBreakBefore") {
+                    self.insert_break(true);
+                }
                 child = Some(element);
             }
             "p" => {
-                let (element, ..) = check_underline(
+                let (mut element, ..) = check_underline(
                     paragraph_begin(attributes, &mut self.auto_styles),
                     &self.auto_styles,
                     !self.set_children_underline.is_empty()
@@ -115,6 +124,9 @@ impl ODTParser {
                     !self.ensure_children_no_underline.is_empty()
                         && *self.ensure_children_no_underline.last().unwrap(),
                 );
+                if let Some(_) = element.get_common().styles.remove("_pageBreakBefore") {
+                    self.insert_break(true);
+                }
                 child = Some(element);
             }
             "span" => {
@@ -139,38 +151,8 @@ impl ODTParser {
                 );
                 child = Some(element);
             }
-            "soft-page-break" => {
-                if self.document_hierarchy.is_empty() {
-                    self.document_root
-                        .content
-                        .push(ChildNode::Node(Node::PageBreak));
-                } else {
-                    self.document_hierarchy
-                        .last_mut()
-                        .unwrap()
-                        .get_common()
-                        .children
-                        .as_mut()
-                        .unwrap()
-                        .push(ChildNode::Node(Node::PageBreak));
-                }
-            }
-            "line-break" => {
-                if self.document_hierarchy.is_empty() {
-                    self.document_root
-                        .content
-                        .push(ChildNode::Node(Node::LineBreak));
-                } else {
-                    self.document_hierarchy
-                        .last_mut()
-                        .unwrap()
-                        .get_common()
-                        .children
-                        .as_mut()
-                        .unwrap()
-                        .push(ChildNode::Node(Node::LineBreak));
-                }
-            }
+            "soft-page-break" => self.insert_break(true),
+            "line-break" => self.insert_break(false),
             _ => (),
         }
         if let Some(element) = child {
@@ -214,6 +196,28 @@ impl ODTParser {
             }
         }
         element
+    }
+
+    /// Inserts a page break into the next position in the document
+    pub fn insert_break(&mut self, page: bool) {
+        let node;
+        if page {
+            node = Node::PageBreak;
+        } else {
+            node = Node::LineBreak;
+        }
+        if self.document_hierarchy.is_empty() {
+            self.document_root.content.push(ChildNode::Node(node));
+        } else {
+            self.document_hierarchy
+                .last_mut()
+                .unwrap()
+                .get_common()
+                .children
+                .as_mut()
+                .unwrap()
+                .push(ChildNode::Node(node));
+        }
     }
 }
 
