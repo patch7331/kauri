@@ -7,7 +7,7 @@ import { connect } from "react-redux";
 import { moveSelection, Status } from "redux/actions";
 import { Renderer, RenderMode } from "render";
 
-import Error from "components/Error"
+import Error from "components/Error";
 
 /**
  * A document editing component.
@@ -20,7 +20,6 @@ class Editor extends Component {
   constructor(props) {
     super(props);
     this.contentEditableDiv = createRef();
-    this.state = { test: 0 };
 
     // Binds
     this.handleDocumentClick = this.handleDocumentClick.bind(this);
@@ -97,7 +96,7 @@ class Editor extends Component {
             width: "120mm",
           },
         }).render();
-        
+
         content = (
           <div
             ref={this.contentEditableDiv}
@@ -113,7 +112,7 @@ class Editor extends Component {
     }
 
     return content;
-  } 
+  }
 }
 
 export default connect(
