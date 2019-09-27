@@ -1,70 +1,78 @@
 /** @format */
-import test from "./test.json";
-import { UPDATE_CARET_POSITION } from "../actions/types";
 
-const intialState = {
+import debugDocument from "./test.json";
+import {
+  MOVE_SELECTION,
+  FETCH_DOCUMENT_REQUEST,
+  FETCH_DOCUMENT_SUCCESS,
+  FETCH_DOCUMENT_ERROR,
+} from "../actions/types";
+import { Status } from "../actions";
+import { translateKDF } from "helpers/translateKDF";
+
+const initialState = {
+  status: Status.SUCCESS,
   selection: {
     start: 0,
     end: 0,
   },
-  nodes: translate(test),
+  content: translateKDF(debugDocument),
 };
 
 /**
- * Translate KDF nodes into Redux ready objects
- * Recursively traverses json tree, storing them in an array after
- * they have been assigned an ID
- * @param {Object[]} nodes An array of KDF nodes.
+ * A reducer for document content.
+ * @param {object} state Current state.
+ * @param {object} action Action to perform.
  */
-function translate(nodes) {
-  let id = 0;
-  const byId = {};
-
-  // Recursive callbacks
-  const nextId = () => id++;
-  const addToById = node => (byId[node.id] = node);
-  const allIds = nodes.map(node => translateNode(node, nextId, addToById));
-  return { byId, allIds };
-}
-
-/**
- * Translate a KDF node into a Redux ready object
- * Flattens nodes and assigns them IDs, recursively travels to
- * child nodes
- * @param {Object} node
- * @param {function(): number} nextId A callback to generate a new id.
- * @param {function(node: Object)} addToById Adds nodes to byID map
- */
-function translateNode(node, nextId, addToById) {
-  //Handles text shorthand
-  if (typeof node === "string") {
-    node = {
-      type: "text",
-      content: node,
-    };
-  }
-
-  node.id = nextId();
-  if (node.children) {
-    node.children = node.children.map(node =>
-      translateNode(node, nextId, addToById),
-    );
-  }
-
-  addToById(node);
-  return node.id;
-}
-
-export function caretReducer(state = initialState, action) {
+export default function documentReducer(state = initialState, action) {
   switch (action.type) {
-    case UPDATE_CARET_POSITION:
+    case FETCH_DOCUMENT_REQUEST:
       return {
         ...state,
-        ...action.payload,
+        status: Status.LOADING,
       };
+
+    case FETCH_DOCUMENT_SUCCESS:
+      return {
+        ...state,
+        status: Status.SUCCESS,
+        content: translateKDF(action.payload.content),
+        lastUpdated: action.receivedAt,
+      };
+
+    case FETCH_DOCUMENT_ERROR:
+      return {
+        ...state,
+        status: Status.ERROR,
+        exception: action.exception,
+      };
+
+    case MOVE_SELECTION:
+      return {
+        ...state,
+        selection: selectionReducer(state.selection, action),
+      };
+
     default:
       return state;
   }
 }
 
-export default (state = intialState, action) => state;
+/**
+ * A reducer for document selection.
+ * @param {object} state Current state.
+ * @param {object} action Action to perform on state.
+ */
+export function selectionReducer(state = { start: 0, end: 0 }, action) {
+  switch (action.type) {
+    case MOVE_SELECTION:
+      return {
+        ...state,
+        start: action.start,
+        end: action.end,
+      };
+
+    default:
+      return state;
+  }
+}
