@@ -1,7 +1,7 @@
 /** @format */
 
 import { createCommand, addShortcut } from "../../commands";
-import * as actions from "./commands"
+import * as actions from "./commands";
 import * as types from "./types";
 
 describe("command actions", () => {

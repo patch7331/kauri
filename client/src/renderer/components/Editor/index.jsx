@@ -7,7 +7,7 @@ import { connect } from "react-redux";
 import { moveSelection, Status } from "redux/actions";
 import { Renderer, RenderMode } from "render";
 
-import Error from "components/Error"
+import Error from "components/Error";
 
 /**
  * A document editing component.
@@ -23,6 +23,7 @@ class Editor extends Component {
 
     // Binds
     this.handleDocumentClick = this.handleDocumentClick.bind(this);
+    this.logKeyPress = this.logKeyPress.bind(this);
   }
 
   /**
@@ -39,10 +40,41 @@ class Editor extends Component {
   }
 
   /**
+   * Used to queue actions that need fire after React's call stack has completely resolved
+   * @param {function()} callback
+   */
+  onNextFrame(callback) {
+    setTimeout(function() {
+      requestAnimationFrame(callback);
+    });
+  }
+
+  /**
    * Handles clicks to the document element.
    */
   handleDocumentClick() {
-    this.props.moveSelection(...this.getCaretPos());
+    this.onNextFrame(() => {
+      this.props.moveSelection(...this.getCaretPos());
+    });
+  }
+
+  /**
+   * Listens to keyboard presses
+   * @param {number} e
+   */
+  logKeyPress(e) {
+    console.log(e);
+    switch (e.keyCode) {
+      //arrow keys
+      case 37:
+      case 39:
+      case 38:
+      case 40:
+        this.onNextFrame(() => {
+          this.props.moveSelection(...this.getCaretPos());
+        });
+        break;
+    }
   }
 
   render(props) {
@@ -64,7 +96,6 @@ class Editor extends Component {
             width: "120mm",
           },
         }).render();
-        
 
         content = (
           <div
@@ -72,6 +103,7 @@ class Editor extends Component {
             class="editor"
             contenteditable="true"
             onClick={this.handleDocumentClick}
+            onkeyDown={this.logKeyPress}
           >
             {pages}
           </div>
@@ -80,7 +112,7 @@ class Editor extends Component {
     }
 
     return content;
-  } 
+  }
 }
 
 export default connect(

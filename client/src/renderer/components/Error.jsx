@@ -1,3 +1,5 @@
+/** @format */
+
 import { h } from "preact";
 
 /**
@@ -16,7 +18,7 @@ export default function Error(props) {
       message:
         "Unable to connect to remote server. Please check your " +
         "internet connection and try again.",
-    }
+    };
   }
 
   return (
@@ -34,5 +36,5 @@ export default function Error(props) {
         <p class="error__message">{props.exception.message}</p>
       )}
     </div>
-  )
+  );
 }
