@@ -1,7 +1,6 @@
 /** @format */
 
 import { remote } from "electron";
-import { fetchDoc } from "redux/actions";
 import store from "redux/store";
 
 const menuTemplate = [

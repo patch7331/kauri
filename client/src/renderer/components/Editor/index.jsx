@@ -4,7 +4,7 @@ import "./styles.scss";
 
 import { h, Component, createRef } from "preact";
 import { connect } from "react-redux";
-import { updateCaretPos } from "redux/actions";
+import { moveSelection } from "redux/actions";
 import { Renderer, RenderMode } from "render";
 
 /**
@@ -18,9 +18,11 @@ class Editor extends Component {
   constructor(props) {
     super(props);
     this.contentEditableDiv = createRef();
+    this.state = {test: 0};
 
     // Binds
     this.handleDocumentClick = this.handleDocumentClick.bind(this);
+    this.logKeyPress = this.logKeyPress.bind(this);
   }
 
   /**
@@ -37,10 +39,37 @@ class Editor extends Component {
   }
 
   /**
+   * Used to queue actions that need fire after React's call stack has completely resolved
+   * @param {function()} callback 
+   */
+  onNextFrame(callback) {
+    setTimeout(function () {
+      requestAnimationFrame(callback)
+    })
+  }
+
+  /**
    * Handles clicks to the document element.
    */
   handleDocumentClick() {
-    this.props.updateCaretPos(this.getCaretPos());
+    this.onNextFrame(() => {this.props.moveSelection(this.getCaretPos())})
+  }
+
+  /**
+   * Listens to keyboard presses
+   * @param {number} e 
+   */
+  logKeyPress(e) {
+    console.log(e);
+    switch (e.keyCode) {
+      //arrow keys
+      case 37:
+      case 39:
+      case 38:
+      case 40:
+          this.onNextFrame(() => {this.props.moveSelection(this.getCaretPos())})
+          break;
+    }
   }
 
   render = props => (
@@ -49,6 +78,7 @@ class Editor extends Component {
       class="editor"
       contenteditable="true"
       onClick={this.handleDocumentClick}
+      onkeydown={this.logKeyPress}
     >
       {new Renderer(props.document, {
         renderMode: RenderMode.CONTENT,
@@ -67,5 +97,5 @@ class Editor extends Component {
 
 export default connect(
   state => ({ document: state.document.content }),
-  { updateCaretPos },
+  { moveSelection },
 )(Editor);
