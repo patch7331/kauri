@@ -15,7 +15,6 @@ import * as fs from "fs";
  *     will return {
  *       id: "Clipboard:Copy"
  *       name: "Copy",
- *       shortcuts: [],
  *       callback: Clipboard.doCopy,
  *     }
  */
@@ -66,5 +65,5 @@ export function getJSON() {
       const keybinds = JSON.parse(data);
       resolve(keybinds["clipboard"]["paste"]);
     });
-  })
+  });
 }

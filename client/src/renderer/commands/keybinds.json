@@ -1,6 +1,8 @@
 {
-  "clipboard": {
-    "copy": [
+  "clipboard":
+  {
+    "copy":
+    [
       {
         "isAlt": false,
         "isCtrl": true,
@@ -16,7 +18,8 @@
         "key": "v"
       }
     ],
-    "paste": [
+    "paste":
+    [
       {
         "isAlt": false,
         "isCtrl": true,

@@ -3,6 +3,9 @@
 // Command
 export const ADD_COMMAND = "ADD_COMMAND";
 
+// Shortcut
+export const ADD_SHORTCUT = "ADD_SHORTCUT";
+
 // Document
 export const UPDATE_CARET_POSITION = "UPDATE_CARET_POSITION";
 export const FETCH_DOC_REQUEST = "FETCH_DOC_REQUEST";
