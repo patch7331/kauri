@@ -4,8 +4,10 @@ import "./styles.scss";
 
 import { h, Component, createRef } from "preact";
 import { connect } from "react-redux";
-import { moveSelection } from "redux/actions";
+import { moveSelection, Status } from "redux/actions";
 import { Renderer, RenderMode } from "render";
+
+import Error from "components/Error"
 
 /**
  * A document editing component.
@@ -35,7 +37,7 @@ class Editor extends Component {
     preSelectionRange.setEnd(range.startContainer, range.startOffset);
     const positionStart = preSelectionRange.toString().length;
     const positionEnd = positionStart + range.toString().length;
-    return { positionStart, positionEnd };
+    return [positionStart, positionEnd];
   }
 
   /**
@@ -53,7 +55,7 @@ class Editor extends Component {
    */
   handleDocumentClick() {
     this.onNextFrame(() => {
-      this.props.moveSelection(this.getCaretPos());
+      this.props.moveSelection(...this.getCaretPos());
     });
   }
 
@@ -70,36 +72,51 @@ class Editor extends Component {
       case 38:
       case 40:
         this.onNextFrame(() => {
-          this.props.moveSelection(this.getCaretPos());
+          this.props.moveSelection(...this.getCaretPos());
         });
         break;
     }
   }
 
-  render = props => (
-    <div
-      ref={this.contentEditableDiv}
-      class="editor"
-      contenteditable="true"
-      onClick={this.handleDocumentClick}
-      onkeydown={this.logKeyPress}
-    >
-      {new Renderer(props.document, {
-        renderMode: RenderMode.CONTENT,
-        pageStyle: {
-          marginBottom: "1cm",
-          marginLeft: "1cm",
-          marginRight: "1cm",
-          marginTop: "1cm",
-          height: "140mm",
-          width: "120mm",
-        },
-      }).render()}
-    </div>
-  );
+  render(props) {
+    let content;
+
+    switch (props.document.status) {
+      case Status.ERROR:
+        content = <Error exception={props.document.exception} />;
+        break;
+      default:
+        const pages = new Renderer(props.document.content, {
+          renderMode: RenderMode.CONTENT,
+          pageStyle: {
+            marginBottom: "1cm",
+            marginLeft: "1cm",
+            marginRight: "1cm",
+            marginTop: "1cm",
+            height: "140mm",
+            width: "120mm",
+          },
+        }).render();
+        
+        content = (
+          <div
+            ref={this.contentEditableDiv}
+            class="editor"
+            contenteditable="true"
+            onClick={this.handleDocumentClick}
+            onkeyDown={this.logKeyPress}
+          >
+            {pages}
+          </div>
+        );
+        break;
+    }
+
+    return content;
+  } 
 }
 
 export default connect(
-  state => ({ document: state.document.content }),
+  state => ({ document: state.document }),
   { moveSelection },
 )(Editor);

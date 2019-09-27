@@ -2,12 +2,7 @@
 
 import { ADD_COMMAND } from "./types";
 
-export const addCommand = (id, name, keys, behaviour) => ({
+export const addCommand = (command) => ({
   type: ADD_COMMAND,
-  payload: {
-    id,
-    name,
-    keys,
-    behaviour,
-  },
+  command,
 });

@@ -46,6 +46,7 @@ pub struct ODTParser {
     table_row_default_style_names: Vec<Vec<String>>,
     in_list_style: bool,
     list_depth: u32,
+    loaded_page_style: bool,
 }
 
 impl ODTParser {
@@ -71,6 +72,7 @@ impl ODTParser {
             table_row_default_style_names: Vec::new(),
             in_list_style: false,
             list_depth: 0,
+            loaded_page_style: false,
         }
     }
 
@@ -347,6 +349,12 @@ impl ODTParser {
                             && *self.ensure_children_no_underline.last().unwrap(),
                     );
                 }
+                let mut page_break_after = false;
+                if let Some(_) = child.get_common().styles.remove("_pageBreakAfter") {
+                    // Need to keep track of this in a variable since the element will be moved to
+                    // the document structure
+                    page_break_after = true;
+                }
                 if self.document_hierarchy.is_empty() {
                     self.document_root.content.push(ChildNode::Element(child));
                 } else {
@@ -358,6 +366,9 @@ impl ODTParser {
                         .as_mut()
                         .unwrap()
                         .push(ChildNode::Element(child));
+                }
+                if page_break_after {
+                    self.insert_break(true);
                 }
             } else if prefix == "table" {
                 self.handle_element_end_table(local_name);

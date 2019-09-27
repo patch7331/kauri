@@ -576,6 +576,8 @@ fn table_begin(
         .get(&style_name)
         .unwrap_or(&HashMap::new())
         .clone();
+    // This is only used by the children, so get rid of it in the copy here
+    element.styles.remove("_parent");
     // Caption is always the first child of a table in HTML if it exists, and colgroup always comes after if it is there too,
     // so we add it in in order to have a definitive position as to where the colgroup will come
     element

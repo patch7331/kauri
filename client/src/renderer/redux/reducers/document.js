@@ -36,7 +36,7 @@ export default function documentReducer(state = initialState, action) {
       return {
         ...state,
         status: Status.SUCCESS,
-        content: translate(action.payload.content),
+        content: translateKDF(action.payload.content),
         lastUpdated: action.receivedAt,
       };
 
