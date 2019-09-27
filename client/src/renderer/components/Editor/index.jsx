@@ -18,7 +18,7 @@ class Editor extends Component {
   constructor(props) {
     super(props);
     this.contentEditableDiv = createRef();
-    this.state = {test: 0};
+    this.state = { test: 0 };
 
     // Binds
     this.handleDocumentClick = this.handleDocumentClick.bind(this);
@@ -40,24 +40,26 @@ class Editor extends Component {
 
   /**
    * Used to queue actions that need fire after React's call stack has completely resolved
-   * @param {function()} callback 
+   * @param {function()} callback
    */
   onNextFrame(callback) {
-    setTimeout(function () {
-      requestAnimationFrame(callback)
-    })
+    setTimeout(function() {
+      requestAnimationFrame(callback);
+    });
   }
 
   /**
    * Handles clicks to the document element.
    */
   handleDocumentClick() {
-    this.onNextFrame(() => {this.props.moveSelection(this.getCaretPos())})
+    this.onNextFrame(() => {
+      this.props.moveSelection(this.getCaretPos());
+    });
   }
 
   /**
    * Listens to keyboard presses
-   * @param {number} e 
+   * @param {number} e
    */
   logKeyPress(e) {
     console.log(e);
@@ -67,8 +69,10 @@ class Editor extends Component {
       case 39:
       case 38:
       case 40:
-          this.onNextFrame(() => {this.props.moveSelection(this.getCaretPos())})
-          break;
+        this.onNextFrame(() => {
+          this.props.moveSelection(this.getCaretPos());
+        });
+        break;
     }
   }
 
