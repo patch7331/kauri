@@ -6,14 +6,14 @@
         "isCtrl": true,
         "isMeta": false,
         "isShift": false,
-        "key": "c",
+        "key": "c"
       },
       {
         "isAlt": false,
         "isCtrl": true,
         "isMeta": false,
         "isShift": false,
-        "key": "v",
+        "key": "v"
       }
     ],
     "paste": [
@@ -22,14 +22,14 @@
         "isCtrl": true,
         "isMeta": false,
         "isShift": true,
-        "key": "c",
+        "key": "c"
       },
       {
         "isAlt": false,
         "isCtrl": true,
         "isMeta": false,
         "isShift": true,
-        "key": "v",
+        "key": "v"
       }
     ]
   }

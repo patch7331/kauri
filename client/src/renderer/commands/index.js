@@ -23,7 +23,6 @@ export function createCommand(id, name, callback) {
   return {
     id,
     name,
-    shortcuts: [],
     callback,
   };
 }
@@ -61,15 +60,11 @@ export function addShortcut(command, definition) {
  *   pass shortcut to relevand command
  */
 export function getJSON() {
-  const keybinds;
-  fs.readFileSync("./src/renderer/commands/keybinds.json", (err, data) => {
-    if (err) throw err;
-    console.log(data);
-    //keybinds = JSON.parse(data);
-    //console.log(keybinds);
-  });
-  //console.log(keybinds);
-  return "hello";
-  //keybinds["clipboard"].forEach(copy => console.log(copy));
-  //return keybinds["clipboard"]["paste"];
+  return new Promise((resolve, reject) => {
+    fs.readFile("./src/renderer/commands/keybinds.json", (err, data) => {
+      if (err) throw reject(err);
+      const keybinds = JSON.parse(data);
+      resolve(keybinds["clipboard"]["paste"]);
+    });
+  })
 }
