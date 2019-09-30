@@ -12,10 +12,12 @@ shortcuts: {
     "clipboard.copy":
     [
       {
+        id: "clipboard.copy",
         modifiers: ["control"],
         key: "c",
       }
       {
+        id: "clipboard.copy",
         modifiers: ["control", "shift"],
         key: "c",
       }
@@ -40,6 +42,24 @@ keybinds: {
  * 1. remove addShortcut() from command
  * 2. remove shortcuts from commands
  * 3. shortcut.id = command.id
+ *     read through JSON until an array is found, then the id is the parents, the shortcuts are the children
  * 4. put JSON into redux             priority 1
  * 5. have commands define defaults   priority 2
+ */
+
+/**
+ * DONE:
+ * 1.
+ * modify command action/reducer
+ * modify shortcut action/reducer
+ * modify shortcut listener
+ * significantly shorten createSHortcut()
+ * modify parseShortcut()
+ * add createDefaultShortcut
+ * significantly shorten JSON
+ */
+
+/**
+ * CHECK:
+ * commands/index.js, createShortcut(): should this just be 
  */

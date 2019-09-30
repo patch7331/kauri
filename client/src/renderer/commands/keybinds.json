@@ -4,34 +4,22 @@
     "copy":
     [
       {
-        "isAlt": false,
-        "isCtrl": true,
-        "isMeta": false,
-        "isShift": false,
+        "modifiers": ["control"],
         "key": "c"
       },
       {
-        "isAlt": false,
-        "isCtrl": true,
-        "isMeta": false,
-        "isShift": false,
+        "modifiers": ["control"],
         "key": "v"
       }
     ],
     "paste":
     [
       {
-        "isAlt": false,
-        "isCtrl": true,
-        "isMeta": false,
-        "isShift": true,
+        "modifiers": ["control", "shift"],
         "key": "c"
       },
       {
-        "isAlt": false,
-        "isCtrl": true,
-        "isMeta": false,
-        "isShift": true,
+        "modifiers": ["control", "shift"],
         "key": "v"
       }
     ]

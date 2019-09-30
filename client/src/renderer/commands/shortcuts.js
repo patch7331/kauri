@@ -2,56 +2,27 @@
 import { genId } from "../helpers/uniqueIdGen.js";
 
 /**
- * Construct new shortcut object
- * @param {object} definition keyboard shortcut object (made with parseShortcut)
- * @param {string} definition string describing keyboard shortcut, to be parsed
- * @return {object} keyboard shortcut object
+ * Create a shortcut object
+ * @param  {command} command  command to which shortcut is to be linked
+ * @param  {shortcut} shortcut shortcut object
+ *                             Must be of the form:
+ *                             {
+ *                               modifiers: ["modifier"<, "modifier">],
+ *                               key: "key",
+ *                             }
+ * @return {shortcut}          complete shortcut object, linked to a command
  */
-export default function createShortcut(definition) {
-  if (typeof definition === "string") {
-    definition = parseShortcut(definition);
-  }
-
-  return {
-    id: genId(),
-    isAlt: false,
-    isCtrl: false,
-    isMeta: false,
-    isShift: false,
-    ...definition,
-  };
+export function parseShortcut(command, shortcut) {
+  return ({
+    id: command.id,
+    ...shortcut,
+  })
 }
 
-/**
- * Parse string into shortcut object
- * @param {string} str string describing shortcut
- *                        Must be of the form "modifier[+modifier]+key"
- *                        No spaces, key at end, modifiers in any order
- *                        Must not be empty
- * @return {object} keyboard shortcut object
- *
- * @example
- *     parseShortcut("control+c")
- *     will return {
- *       "isAlt": false,
- *       "isCtrl": true,
- *       "isMeta": false,
- *       "isShift": false,
- *       "key": "c",
- *     }
- */
-export function parseShortcut(str) {
-  if (str === "") throw "Cannot create an empty shortcut";
-
-  const modifiers = str.toLowerCase().split("+");
-
-  return {
-    isAlt: modifiers.includes("alt"),
-    isCtrl: modifiers.includes("control"),
-    isMeta: modifiers.includes("meta"),
-    isShift: modifiers.includes("shift"),
-    key: modifiers[modifiers.length - 1],
-  };
+export function createDefaultShortcut(command, definition) {
+  if (false) {    //if shortcut already exists
+    this.props.addShortcut(parseShortcut(command, definition));
+  }
 }
 
 /**
@@ -61,11 +32,12 @@ export function parseShortcut(str) {
  * @return {boolean}        true if keydown event matches shortcut description
  */
 export function matchEvent(shortcut, event) {
+  const modifiers = shortcut.modifiers;
   return (
-    event.altKey === shortcut.isAlt &&
-    event.ctrlKey === shortcut.isCtrl &&
-    event.metaKey === shortcut.isMeta &&
-    event.shiftKey === shortcut.isShift &&
+    event.altKey === modifiers.contains("alt")      &&
+    event.ctrlKey === modifiers.contains("ctrl")    &&
+    event.metaKey === modifiers.contains("meta")    &&
+    event.shiftKey === modifiers.contains("shift")  &&
     event.key === shortcut.key
   );
 }

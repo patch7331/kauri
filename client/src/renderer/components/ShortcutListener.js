@@ -34,7 +34,7 @@ class ShortcutListener extends Component {
   handleKeyPress(event) {
     //shortcuts contains the list of shortcut IDs
     //commands contains the list of registered shortcut objects
-    const shortcuts = Object.values(this.props.shortcuts.byIds);
+    const shortcuts = Object.values(this.props.shortcuts.byId);
     const commands = this.props.commands.byId;
 
     //generate list of shortcuts that match the entered keys

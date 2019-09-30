@@ -4,20 +4,14 @@ import { getJSON } from "./index.js";
 
 const expectedJSON = [
   {
-    isAlt: false,
-    isCtrl: true,
-    isMeta: false,
-    isShift: true,
-    key: "c",
+    "modifiers": ["control", "shift"],
+    "key": "c"
   },
   {
-    isAlt: false,
-    isCtrl: true,
-    isMeta: false,
-    isShift: true,
-    key: "v",
-  },
-];
+    "modifiers": ["control", "shift"],
+    "key": "v"
+  }
+]
 
 describe("getJSON", () => {
   it("should return the paste array", () => {

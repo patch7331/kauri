@@ -28,7 +28,7 @@ function shortcutsById(state = {}, action) {
       action.command.shortcuts.forEach(shortcut => {
         shortcuts[shortcut.id] = {
           ...shortcut,
-          commandId: action.command.id,
+          commandId: shortcut.id,
         };
       });
       return { ...state, ...shortcuts };
