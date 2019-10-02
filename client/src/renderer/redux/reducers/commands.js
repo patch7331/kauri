@@ -24,7 +24,8 @@ function commandsById(state = {}, action) {
         [action.id]: {
           id: action.id,
           name: action.name,
-          callback: action.callback },
+          callback: action.callback,
+        },
       };
     default:
       return state;

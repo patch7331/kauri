@@ -52,7 +52,7 @@ class ShortcutListener extends Component {
    * @param  {event}    event     caught keydown event
    * @return {boolean}            true if keydown event matches shortcut description
    */
-  export function matchEvent(shortcut, event) {
+  matchEvent(shortcut, event) {
     const modifiers = shortcut.modifiers;
     return (
       event.altKey === modifiers.contains("alt") &&

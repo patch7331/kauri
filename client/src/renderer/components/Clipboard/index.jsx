@@ -26,11 +26,7 @@ class Clipboard extends Component {
   }
 
   componentDidMount() {
-    this.props.addCommand(
-      "Clipboard.Copy",
-      "Copy",
-      this.doClipboardCopy
-    );
+    this.props.addCommand("Clipboard.Copy", "Copy", this.doClipboardCopy);
     this.props.createDefaultShortcut({
       id: "clipboard.copy",
       modifiers: ["control"],

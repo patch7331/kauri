@@ -21,5 +21,5 @@ export default function createCommand(id, name, callback) {
     id,
     name,
     callback,
-  }
+  };
 }

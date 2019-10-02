@@ -16,7 +16,7 @@ describe("shortcuts", () => {
               modifiers: ["control"],
               key: "c",
             },
-          ]
+          ],
         },
       ),
     ).toEqual({
@@ -26,7 +26,7 @@ describe("shortcuts", () => {
           {
             modifiers: ["control"],
             key: "c",
-          }
+          },
         ],
       },
     });
