@@ -10,11 +10,9 @@ describe("command reducer", () => {
         { allIds: [], byId: {} },
         {
           type: types.ADD_COMMAND,
-          command: {
-            id: "clipboard:copy",
-            name: "copy",
-            callback: "this.doClipboardCopy",
-          },
+          id: "clipboard:copy",
+          name: "copy",
+          callback: "this.doClipboardCopy",
         },
       ),
     ).toEqual({

@@ -1,17 +1,20 @@
 /** @format */
 
-import {parseShortcut} from "./shortcuts.js";
-import createCommand from "./";
+import { readJSON } from "./shortcuts.js";
 
-const command = createCommand("clipboard.copy", "copy", "callback");
-const shortcut = {modifiers: ["control"], key: "c"};
-
-describe("parseShortcut", () => {
-  it("should return a complete shortcut object from a command and a shortcut description", () => {
-    expect(parseShortcut(command, shortcut)).toEqual({
-      id: "clipboard.copy",
-      modifiers: ["control"],
-      key: "c",
-    });
+describe("readJSON", () => {
+  it("should return an object containing the shortcuts and their ids in the JSON", () => {
+    const expectedJSON = {
+      "clipboard.copy": [
+        { modifiers: ["control"], key: "c", },
+        { modifiers: ["control"], key: "v", },
+      ],
+      "clipboard.paste": [
+        { modifiers: ["control", "shift"], key: "c" },
+        { modifiers: ["control", "shift"], key: "v" }
+      ]
+    };
+    expect.assertions(1);
+    return readJSON().then(json => expect(json).toEqual(expectedJSON));
   });
 });

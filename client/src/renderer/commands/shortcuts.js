@@ -1,43 +1,47 @@
 /** @format */
-import { genId } from "../helpers/uniqueIdGen.js";
+import { addShortcut } from "redux/actions";
+import * as fs from "fs";
 
 /**
- * Create a shortcut object
- * @param  {command} command  command to which shortcut is to be linked
- * @param  {shortcut} shortcut shortcut object
- *                             Must be of the form:
- *                             {
- *                               modifiers: ["modifier"<, "modifier">],
- *                               key: "key",
- *                             }
- * @return {shortcut}          complete shortcut object, linked to a command
+ * get contents of JSON
+ *   open filestream
+ *   get file contents
+ *   put file contents into string
+ *   JSON.parse string into object
+ * search store for commands matching namespace:name
+ * for each namespace:name
+ *   get shortcut
+ *   pass shortcut to relevand command
  */
-export function parseShortcut(command, shortcut) {
-  return ({
-    id: command.id,
-    ...shortcut,
+export function readJSON() {
+  return new Promise((resolve, reject) => {
+    fs.readFile("./src/renderer/commands/keybinds.json", (err, data) => {
+      if (err) throw reject(err);
+
+      resolve(parseBindings(JSON.parse(data)));
+    });
+  });
+}
+
+export function parseBindings(keybinds) {
+  const parsed = {};
+  const addBinding = (id, binding) => { parsed[id] = binding };
+
+  parseBindingsRecursively(keybinds, addBinding);
+  return parsed;
+}
+
+function parseBindingsRecursively(obj, addBinding, path = []) {
+  Object.keys(obj).forEach(key => {
+    const value = obj[key];
+
+    //recurse if value is not an array (i.e. value is a namespace or name)
+    if (value.constructor === Object) {
+      parseBindingsRecursively(value, addBinding, [...path, key]);
+      return;
+    }
+
+    const id = [...path, key].join(".");
+    addBinding(id, value);
   })
-}
-
-export function createDefaultShortcut(command, definition) {
-  if (false) {    //if shortcut already exists
-    this.props.addShortcut(parseShortcut(command, definition));
-  }
-}
-
-/**
- * Compare registered shortcut with keydown event
- * @param  {shortcut}       shortcut registered shortcut object
- * @param  {event} event    caught keydown event
- * @return {boolean}        true if keydown event matches shortcut description
- */
-export function matchEvent(shortcut, event) {
-  const modifiers = shortcut.modifiers;
-  return (
-    event.altKey === modifiers.contains("alt")      &&
-    event.ctrlKey === modifiers.contains("ctrl")    &&
-    event.metaKey === modifiers.contains("meta")    &&
-    event.shiftKey === modifiers.contains("shift")  &&
-    event.key === shortcut.key
-  );
 }

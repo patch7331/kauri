@@ -1,6 +1,5 @@
 /** @format */
 
-import { createCommand, addShortcut } from "../../commands";
 import * as actions from "./commands";
 import * as types from "./types";
 
@@ -10,16 +9,13 @@ describe("command actions", () => {
     const name = "copy";
     const callback = "this.doClipboardCopy";
 
-    const cmd = createCommand(id, name, callback);
-
     const expectedAction = {
       type: types.ADD_COMMAND,
-      command: {
-        id,
-        name,
-        callback,
-      },
+      id,
+      name,
+      callback,
     };
-    expect(actions.addCommand(cmd)).toEqual(expectedAction);
+
+    expect(actions.addCommand(id, name, callback)).toEqual(expectedAction);
   });
 });

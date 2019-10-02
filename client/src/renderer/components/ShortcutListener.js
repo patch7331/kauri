@@ -1,8 +1,8 @@
 /** @format */
 
 import { Component, h } from "preact";
-import { connect } from "react/redux";
-import matchEvent from "../commands/shortcuts.js";
+import { connect } from "react-redux";
+import readJSON from "../commands/shortcuts.js";
 
 /**
  * Non-rendering component, responsible for handling keyboard shortcuts
@@ -42,8 +42,25 @@ class ShortcutListener extends Component {
     shortcuts
       .filter(shortcut => matchEvent(shortcut, event))
       .forEach(match => {
-        commands[match.commandId].callback();
+        commands[match.id].callback();
       });
+  }
+
+  /**
+   * Compare registered shortcut with keydown event
+   * @param  {shortcut} shortcut  registered shortcut object
+   * @param  {event}    event     caught keydown event
+   * @return {boolean}            true if keydown event matches shortcut description
+   */
+  export function matchEvent(shortcut, event) {
+    const modifiers = shortcut.modifiers;
+    return (
+      event.altKey === modifiers.contains("alt") &&
+      event.ctrlKey === modifiers.contains("ctrl") &&
+      event.metaKey === modifiers.contains("meta") &&
+      event.shiftKey === modifiers.contains("shift") &&
+      event.key === shortcut.key
+    );
   }
 }
 

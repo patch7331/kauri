@@ -1,8 +1,9 @@
 /** @format */
 
-import { ADD_SHORTCUT } from "./types";
+import { ADD_DEFAULT_SHORTCUT } from "./types";
 
-export const addShortcut = shortcut => ({
-  type: ADD_SHORTCUT,
-  shortcut,
+export const ADD_DEFAULT_SHORTCUT = (id, shortcuts = []) => ({
+  type: ADD_DEFAULT_SHORTCUT,
+  id,
+  shortcuts,
 });
