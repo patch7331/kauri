@@ -2,10 +2,12 @@
 
 import "./styles.scss";
 
-import { h, Component, createRef } from "preact";
+import { h, Component, createRef, Fragment } from "preact";
+import Helmet from "preact-helmet";
 import { connect } from "react-redux";
 import { moveSelection, Status } from "redux/actions";
 import { Renderer, RenderMode } from "render";
+import { renderStyle } from "render/style";
 
 import Error from "components/Error";
 
@@ -98,15 +100,25 @@ class Editor extends Component {
         }).render();
 
         content = (
-          <div
-            ref={this.contentEditableDiv}
-            class="editor"
-            contenteditable="true"
-            onClick={this.handleDocumentClick}
-            onkeyDown={this.logKeyPress}
-          >
-            {pages}
-          </div>
+          <Fragment>
+            <Helmet
+              style={[
+                {
+                  type: "text/css",
+                  cssText: renderStyle(props.styles),
+                },
+              ]}
+            />
+            <div
+              ref={this.contentEditableDiv}
+              class="editor"
+              contenteditable="true"
+              onClick={this.handleDocumentClick}
+              onkeyDown={this.logKeyPress}
+            >
+              {pages}
+            </div>
+          </Fragment>
         );
         break;
     }
@@ -116,6 +128,6 @@ class Editor extends Component {
 }
 
 export default connect(
-  state => ({ document: state.document }),
+  state => ({ document: state.document, styles: state.styles }),
   { moveSelection },
 )(Editor);
