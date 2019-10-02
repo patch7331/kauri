@@ -201,7 +201,6 @@ export class Renderer {
 
     // Scratch render any nodes that aren't cached
     renderables.forEach(renderable => {
-      console.log("Rendering", renderable);
       // We only want to deal with Preact Components now.
       if (typeof renderable === "string") {
         return;
@@ -240,7 +239,6 @@ export class Renderer {
         pages.push(currentPage);
         currentPage = [renderable];
         currentHeight = this.workingHeight - height - marginBottom;
-        console.log(pages);
         return;
       }
 
