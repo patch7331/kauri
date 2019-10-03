@@ -2,7 +2,7 @@
 
 import { ADD_DEFAULT_SHORTCUT } from "./types";
 
-export const ADD_DEFAULT_SHORTCUT = (id, shortcuts = []) => ({
+export const addDefaultShortcut = (id, ...shortcuts) => ({
   type: ADD_DEFAULT_SHORTCUT,
   id,
   shortcuts,

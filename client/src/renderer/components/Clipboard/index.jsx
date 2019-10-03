@@ -3,10 +3,8 @@
 import "./styles.scss";
 import { Component, h } from "preact";
 import { connect } from "react-redux";
-import { addCommand, addShortcut } from "redux/actions";
+import { addCommand, addDefaultShortcut } from "redux/actions";
 import clipboard from "electron-clipboard-extended";
-import { createCommand } from "../../commands";
-import { addDefaultShortcut } from "../../commands/shortcuts.js";
 
 /**
  * Stores and lists contents of system clipboard
@@ -27,8 +25,7 @@ class Clipboard extends Component {
 
   componentDidMount() {
     this.props.addCommand("Clipboard.Copy", "Copy", this.doClipboardCopy);
-    this.props.createDefaultShortcut({
-      id: "clipboard.copy",
+    this.props.addDefaultShortcut("clipboard.copy", {
       modifiers: ["control"],
       key: "c",
     });

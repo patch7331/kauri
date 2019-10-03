@@ -30,6 +30,7 @@ class ShortcutListener extends Component {
   /**
    * Checks if keys pressed match a registered shortcut.
    * On a match, fires callback for that shortcut.
+   * @param {event} event keydown event
    */
   handleKeyPress(event) {
     //shortcuts contains the list of shortcut IDs

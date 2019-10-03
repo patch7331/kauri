@@ -23,6 +23,11 @@ export function readJSON() {
   });
 }
 
+/**
+ * Parse keybinds into an array of shortcuts
+ * @param  {JSON} keybinds keybinds, parsed from keybinds.JSON
+ * @return {Array}          shortcuts, extracted from keybinds object
+ */
 export function parseBindings(keybinds) {
   const parsed = {};
   const addBinding = (id, binding) => {
@@ -33,6 +38,13 @@ export function parseBindings(keybinds) {
   return parsed;
 }
 
+/**
+ * Recursively traverse keybinds, extracting shortcut objects
+ * @param  {Object} obj        parsed JSON
+ * @param  {callback} addBinding callback function, adds binding to list of shortcuts
+ * @param  {Array}  path       ordered list of namespaces of shortcut
+ *                               e.g. ["clipboard", "copy"]
+ */
 function parseBindingsRecursively(obj, addBinding, path = []) {
   Object.keys(obj).forEach(key => {
     const value = obj[key];
