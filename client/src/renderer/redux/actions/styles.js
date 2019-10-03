@@ -2,8 +2,7 @@
 
 import { SET_STYLES } from "./types";
 
-export const setStyles = (key, value) => ({
+export const setStyles = payload => ({
   type: SET_STYLES,
-  key,
-  value,
+  payload,
 });

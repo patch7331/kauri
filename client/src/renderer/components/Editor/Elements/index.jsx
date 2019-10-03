@@ -11,7 +11,7 @@ export * from "./Span";
 export * from "./Table";
 
 import { h } from "preact";
-import { renderStyle } from "render";
+import { toCSS } from "render";
 
 /**
  * A generic editor element.
@@ -25,7 +25,7 @@ export function Element(props) {
   return (
     <Element
       class={props.class && `__editor__${props.class}`}
-      style={renderStyle(props.styles)}
+      style={toCSS(props.styles)}
       data-node-id={props.id}
       {...attributes}
     >

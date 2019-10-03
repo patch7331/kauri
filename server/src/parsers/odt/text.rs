@@ -6,7 +6,7 @@ impl ODTParser {
     pub fn handle_element_start_text(&mut self, local_name: &str, attributes: Attributes) {
         match local_name {
             "h" => {
-                let (element, set_children_underline_new, ensure_children_no_underline_new) =
+                let (mut element, set_children_underline_new, ensure_children_no_underline_new) =
                     check_underline(
                         heading_begin(attributes, &mut self.auto_styles),
                         &self.auto_styles,
@@ -18,10 +18,13 @@ impl ODTParser {
                 self.ensure_children_no_underline
                     .push(ensure_children_no_underline_new);
                 self.set_children_underline.push(set_children_underline_new);
+                if let Some(_) = element.get_common().styles.remove("_pageBreakBefore") {
+                    self.insert_break(true);
+                }
                 self.document_hierarchy.push(element);
             }
             "p" => {
-                let (element, set_children_underline_new, ensure_children_no_underline_new) =
+                let (mut element, set_children_underline_new, ensure_children_no_underline_new) =
                     check_underline(
                         paragraph_begin(attributes, &mut self.auto_styles),
                         &self.auto_styles,
@@ -33,6 +36,9 @@ impl ODTParser {
                 self.ensure_children_no_underline
                     .push(ensure_children_no_underline_new);
                 self.set_children_underline.push(set_children_underline_new);
+                if let Some(_) = element.get_common().styles.remove("_pageBreakBefore") {
+                    self.insert_break(true);
+                }
                 self.document_hierarchy.push(element);
             }
             "span" => {
@@ -67,7 +73,7 @@ impl ODTParser {
             }
             "list" => {
                 let style_name = list_begin(attributes);
-                let mut element;
+                let element;
                 if let Some(x) = style_name {
                     if let Some(x) = self.auto_list_styles.get(&x) {
                         // if the referenced style is an automatic one just copy it into the list itself
@@ -96,7 +102,7 @@ impl ODTParser {
         let mut child: Option<Element> = None;
         match local_name {
             "h" => {
-                let (element, ..) = check_underline(
+                let (mut element, ..) = check_underline(
                     heading_begin(attributes, &mut self.auto_styles),
                     &self.auto_styles,
                     !self.set_children_underline.is_empty()
@@ -104,10 +110,13 @@ impl ODTParser {
                     !self.ensure_children_no_underline.is_empty()
                         && *self.ensure_children_no_underline.last().unwrap(),
                 );
+                if let Some(_) = element.get_common().styles.remove("_pageBreakBefore") {
+                    self.insert_break(true);
+                }
                 child = Some(element);
             }
             "p" => {
-                let (element, ..) = check_underline(
+                let (mut element, ..) = check_underline(
                     paragraph_begin(attributes, &mut self.auto_styles),
                     &self.auto_styles,
                     !self.set_children_underline.is_empty()
@@ -115,6 +124,9 @@ impl ODTParser {
                     !self.ensure_children_no_underline.is_empty()
                         && *self.ensure_children_no_underline.last().unwrap(),
                 );
+                if let Some(_) = element.get_common().styles.remove("_pageBreakBefore") {
+                    self.insert_break(true);
+                }
                 child = Some(element);
             }
             "span" => {
@@ -139,38 +151,8 @@ impl ODTParser {
                 );
                 child = Some(element);
             }
-            "soft-page-break" => {
-                if self.document_hierarchy.is_empty() {
-                    self.document_root
-                        .content
-                        .push(ChildNode::Node(Node::PageBreak));
-                } else {
-                    self.document_hierarchy
-                        .last_mut()
-                        .unwrap()
-                        .get_common()
-                        .children
-                        .as_mut()
-                        .unwrap()
-                        .push(ChildNode::Node(Node::PageBreak));
-                }
-            }
-            "line-break" => {
-                if self.document_hierarchy.is_empty() {
-                    self.document_root
-                        .content
-                        .push(ChildNode::Node(Node::LineBreak));
-                } else {
-                    self.document_hierarchy
-                        .last_mut()
-                        .unwrap()
-                        .get_common()
-                        .children
-                        .as_mut()
-                        .unwrap()
-                        .push(ChildNode::Node(Node::LineBreak));
-                }
-            }
+            "soft-page-break" => self.insert_break(true),
+            "line-break" => self.insert_break(false),
             _ => (),
         }
         if let Some(element) = child {
@@ -214,6 +196,28 @@ impl ODTParser {
             }
         }
         element
+    }
+
+    /// Inserts a page break into the next position in the document
+    pub fn insert_break(&mut self, page: bool) {
+        let node;
+        if page {
+            node = Node::PageBreak;
+        } else {
+            node = Node::LineBreak;
+        }
+        if self.document_hierarchy.is_empty() {
+            self.document_root.content.push(ChildNode::Node(node));
+        } else {
+            self.document_hierarchy
+                .last_mut()
+                .unwrap()
+                .get_common()
+                .children
+                .as_mut()
+                .unwrap()
+                .push(ChildNode::Node(node));
+        }
     }
 }
 
@@ -498,7 +502,7 @@ pub fn text_properties_begin(attributes: Attributes, map: &mut HashMap<String, S
                 &i.unescaped_value()
                     .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
             )
-            .unwrap_or("what")
+            .unwrap_or("")
             .to_string();
             if prefix == "fo" {
                 text_properties_begin_fo(local_name, value, map);
@@ -525,11 +529,41 @@ fn text_properties_begin_fo(local_name: &str, value: String, styles: &mut HashMa
             // `backslant` is not valid in CSS, but all the other ones are
             styles.insert("fontStyle".to_string(), value);
         }
+        "font-family" => {
+            if let Some(font_name) = styles.remove("fontFamily") {
+                // If the font name is there already then prepend the font family to it
+                styles.insert(
+                    "fontFamily".to_string(),
+                    format!("{}, {}", value, font_name),
+                );
+            } else {
+                // Otherwise just put the font family there
+                styles.insert("fontFamily".to_string(), value);
+            }
+        }
         "color" => {
             styles.insert("color".to_string(), value);
         }
         "font-size" => {
             styles.insert("fontSize".to_string(), value);
+        }
+        "background-color" => {
+            styles.insert("backgroundColor".to_string(), value);
+        }
+        "font-variant" => {
+            styles.insert("fontVariant".to_string(), value);
+        }
+        "hyphenate" => {
+            text_properties_begin_fo_hyphenate(value, styles);
+        }
+        "letter-spacing" => {
+            styles.insert("letterSpacing".to_string(), value);
+        }
+        "text-shadow" => {
+            styles.insert("textShadow".to_string(), value);
+        }
+        "text-transform" => {
+            styles.insert("textTransform".to_string(), value);
         }
         _ => (),
     };
@@ -547,7 +581,16 @@ fn text_properties_begin_style(
     match local_name {
         "text-underline-type" if value == "double" => true,
         "font-name" => {
-            styles.insert("fontFamily".to_string(), value);
+            if let Some(font_family) = styles.remove("fontFamily") {
+                // If the font family was already set previously then append the font name
+                styles.insert(
+                    "fontFamily".to_string(),
+                    format!("{}, {}", font_family, value),
+                );
+            } else {
+                // Otherwise just put the font name there
+                styles.insert("fontFamily".to_string(), value);
+            }
             false
         }
         "text-underline-style" => {
@@ -556,6 +599,14 @@ fn text_properties_begin_style(
         }
         "text-underline-color" => {
             text_properties_begin_style_underline_color(value, styles);
+            false
+        }
+        "letter-kerning" => {
+            text_properties_begin_style_letter_kerning(value, styles);
+            false
+        }
+        "text-position" => {
+            text_properties_begin_style_text_position(value, styles);
             false
         }
         _ => false,
@@ -595,5 +646,47 @@ fn text_properties_begin_style_underline_color(
     } else {
         // The other valid values are all in hex format
         styles.insert("textDecorationColor".to_string(), value);
+    }
+}
+
+/// Helper for text_properties_begin_fo() to handle hyphenate
+fn text_properties_begin_fo_hyphenate(value: String, styles: &mut HashMap<String, String>) {
+    match value.as_str() {
+        "true" => {
+            styles.insert("hyphens".to_string(), "auto".to_string());
+        }
+        "false" => {
+            styles.insert("hyphens".to_string(), "none".to_string());
+        }
+        _ => (),
+    }
+}
+
+/// Helper for text_properties_begin_style() to handle letter kerning
+fn text_properties_begin_style_letter_kerning(value: String, styles: &mut HashMap<String, String>) {
+    match value.as_str() {
+        "true" => {
+            styles.insert("fontKerning".to_string(), "normal".to_string());
+        }
+        "false" => {
+            styles.insert("fontKerning".to_string(), "none".to_string());
+        }
+        _ => (),
+    }
+}
+
+/// Helper for text_properties_begin_style to handle text position (superscript and subscript)
+fn text_properties_begin_style_text_position(value: String, styles: &mut HashMap<String, String>) {
+    let mut split_values = value.split_whitespace();
+    // The first parameter specifies how high/low the text is (mandatory)
+    if let Some(vertical_align) = split_values.next() {
+        styles.insert("verticalAlign".to_string(), vertical_align.to_string());
+    }
+    // The second one specifies how small the text is (optional)
+    if let Some(font_size) = split_values.next() {
+        styles.insert("fontSize".to_string(), font_size.to_string());
+    } else {
+        // The ODT spec does not specify an explicit default, this is what LibreOffice uses
+        styles.insert("fontSize".to_string(), "58%".to_string());
     }
 }

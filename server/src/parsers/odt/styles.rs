@@ -136,6 +136,13 @@ impl ODTParser {
             "text:list-level-style-image" => {
                 level_and_bullet = Some(list_style_image_begin(attributes));
             }
+            "style:page-layout-properties" if !self.loaded_page_style => {
+                self.loaded_page_style = true;
+                page_layout(attributes, &mut self.document_root.styles.page);
+            }
+            "style:paragraph-properties" => {
+                paragraph_properties(attributes, &mut style.unwrap().styles)
+            }
             _ => (),
         }
         if let Some((level, bullet)) = level_and_bullet {
@@ -206,6 +213,11 @@ impl ODTParser {
             "text:list-level-style-image" => {
                 level_and_bullet = Some(list_style_image_begin(attributes));
             }
+            "style:page-layout-properties" if !self.loaded_page_style => {
+                self.loaded_page_style = true;
+                page_layout(attributes, &mut self.document_root.styles.page);
+            }
+            "style:paragraph-properties" => paragraph_properties(attributes, &mut style.styles),
             _ => (),
         }
         if let Some((level, bullet)) = level_and_bullet {
@@ -325,6 +337,7 @@ pub fn handle_element_empty_style(
         "table-column-properties" => table_column_properties_begin(attributes, style),
         "table-cell-properties" => table_cell_properties_begin(attributes, style),
         "table-properties" => table_properties_begin(attributes, style),
+        "paragraph-properties" => paragraph_properties(attributes, style),
         _ => (),
     }
 }
@@ -383,6 +396,7 @@ pub fn handle_element_start_style(
         "table-cell-properties" => {
             table_cell_properties_begin(attributes, &mut current_style_value)
         }
+        "paragraph-properties" => paragraph_properties(attributes, &mut current_style_value),
         _ => is_valid = false,
     }
     if is_valid {
@@ -624,7 +638,7 @@ fn list_style_number_begin(attributes: Attributes) -> (u32, ListBullet) {
 /// Converts ODT number format to KDF numbering variant
 fn list_style_number_begin_helper(format: &str) -> (String, bool) {
     let mut is_number = true;
-    let mut variant;
+    let variant;
     match format {
         "1" => variant = "decimal".to_string(),
         "a" => variant = "lowerLatin".to_string(),
@@ -672,4 +686,162 @@ fn list_style_image_begin(attributes: Attributes) -> (u32, ListBullet) {
 
     let bullet = ListBulletImage::new(None, None, href);
     (level, ListBullet::Image(bullet))
+}
+
+/// Handles a style:page-layout-properties tag
+fn page_layout(attributes: Attributes, page_style: &mut HashMap<String, String>) {
+    for i in attributes {
+        if let Ok(i) = i {
+            let name = std::str::from_utf8(i.key).unwrap_or(":");
+            let (prefix, local_name) = name.split_at(name.find(':').unwrap_or(0));
+            let local_name = &local_name[1..];
+            let value = std::str::from_utf8(
+                &i.unescaped_value()
+                    .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+            )
+            .unwrap_or("")
+            .to_string();
+            if prefix == "fo" {
+                // There are a number of attributes prefixed with "style", but none are supported
+                // by KDF at the moment
+                page_layout_fo(local_name, value, page_style);
+            }
+        }
+    }
+}
+
+/// Handle attributes common to block elements (like page layout and paragraphs for example)
+fn general_block_properties(local_name: &str, value: String, styles: &mut HashMap<String, String>) {
+    match local_name {
+        "background-color" => {
+            styles.insert("backgroundColor".to_string(), value);
+        }
+        "border" => {
+            styles.insert("border".to_string(), value);
+        }
+        "border-left" => {
+            styles.insert("borderLeft".to_string(), value);
+        }
+        "border-right" => {
+            styles.insert("borderRight".to_string(), value);
+        }
+        "border-top" => {
+            styles.insert("borderTop".to_string(), value);
+        }
+        "border-bottom" => {
+            styles.insert("borderBottom".to_string(), value);
+        }
+        "margin" => {
+            styles.insert("margin".to_string(), value);
+        }
+        "margin-left" => {
+            styles.insert("marginLeft".to_string(), value);
+        }
+        "margin-right" => {
+            styles.insert("marginRight".to_string(), value);
+        }
+        "margin-top" => {
+            styles.insert("marginTop".to_string(), value);
+        }
+        "margin-bottom" => {
+            styles.insert("marginBottom".to_string(), value);
+        }
+        _ => (),
+    }
+}
+
+/// Helper for page_layout() to handle attributes with "fo" prefix
+fn page_layout_fo(local_name: &str, value: String, page_style: &mut HashMap<String, String>) {
+    match local_name {
+        "page-height" => {
+            page_style.insert("height".to_string(), value);
+        }
+        "page-width" => {
+            page_style.insert("width".to_string(), value);
+        }
+        _ => general_block_properties(local_name, value, page_style),
+    };
+}
+
+/// Handles a "style:paragraph-properties" tag
+fn paragraph_properties(attributes: Attributes, styles: &mut HashMap<String, String>) {
+    for i in attributes {
+        if let Ok(i) = i {
+            let name = std::str::from_utf8(i.key).unwrap_or(":");
+            let (prefix, local_name) = name.split_at(name.find(':').unwrap_or(0));
+            let local_name = &local_name[1..];
+            let value = std::str::from_utf8(
+                &i.unescaped_value()
+                    .unwrap_or_else(|_| std::borrow::Cow::from(vec![])),
+            )
+            .unwrap_or("")
+            .to_string();
+            match prefix {
+                "fo" => paragraph_properties_fo(local_name, value, styles),
+                "style" => paragraph_properties_style(local_name, value, styles),
+                _ => (),
+            }
+        }
+    }
+    if let Some(mut bg_alpha) = styles.remove("_bgAlpha") {
+        bg_alpha.pop(); // Remove the percent sign from the end
+        let mut bg_alpha = 100.0 - bg_alpha.parse::<f64>().unwrap_or(0.0); // Assuming 100% transparency means 0% alpha (can't test this, because LO doesn't even use it)
+        bg_alpha = bg_alpha / 100.0 * 255.0;
+        if let Some(mut bg) = styles.remove("backgroundColor") {
+            bg = format!("{}{:X}", bg, bg_alpha as u32); // Append the alpha as a hex value to the original background
+            styles.insert("backgroundColor".to_string(), bg);
+        }
+    }
+}
+
+/// Helper for paragraph_properties() to handle attributes with "fo" prefix
+fn paragraph_properties_fo(local_name: &str, value: String, styles: &mut HashMap<String, String>) {
+    match local_name {
+        "break-after" if value == "page" => {
+            // Will be converted to the node later
+            styles.insert("_pageBreakAfter".to_string(), "true".to_string());
+        }
+        "break-before" if value == "page" => {
+            styles.insert("_pageBreakBefore".to_string(), "true".to_string());
+        }
+        "line-height" => {
+            styles.insert("lineHeight".to_string(), value);
+        }
+        "orphans" => {
+            styles.insert("orphans".to_string(), value);
+        }
+        "text-align" => {
+            styles.insert("textAlign".to_string(), value);
+        }
+        "text-align-last" => {
+            styles.insert("textAlignLast".to_string(), value);
+        }
+        "text-indent" => {
+            styles.insert("textIndent".to_string(), value);
+        }
+        "widows" => {
+            styles.insert("widows".to_string(), value);
+        }
+        _ => general_block_properties(local_name, value, styles),
+    }
+}
+
+/// Helper for paragraph_properties() to handle attributes with "style" prefix
+fn paragraph_properties_style(
+    local_name: &str,
+    value: String,
+    styles: &mut HashMap<String, String>,
+) {
+    match local_name {
+        "background-transparency" => {
+            styles.insert("_bgAlpha".to_string(), value);
+        }
+        "shadow" => {
+            styles.insert("boxShadow".to_string(), value);
+        }
+        "vertical-align" if value != "auto" => {
+            styles.insert("verticalAlign".to_string(), value);
+        }
+        _ => (),
+    }
 }

@@ -2,10 +2,14 @@
 
 import "./styles.scss";
 
-import { h, Component, createRef } from "preact";
+import { h, Component, createRef, Fragment } from "preact";
+import Helmet from "preact-helmet";
 import { connect } from "react-redux";
-import { updateCaretPos } from "redux/actions";
+import { moveSelection, Status } from "redux/actions";
 import { Renderer, RenderMode } from "render";
+import { renderStyle } from "render/style";
+
+import Error from "components/Error";
 
 /**
  * A document editing component.
@@ -21,6 +25,7 @@ class Editor extends Component {
 
     // Binds
     this.handleDocumentClick = this.handleDocumentClick.bind(this);
+    this.logKeyPress = this.logKeyPress.bind(this);
   }
 
   /**
@@ -33,39 +38,96 @@ class Editor extends Component {
     preSelectionRange.setEnd(range.startContainer, range.startOffset);
     const positionStart = preSelectionRange.toString().length;
     const positionEnd = positionStart + range.toString().length;
-    return { positionStart, positionEnd };
+    return [positionStart, positionEnd];
+  }
+
+  /**
+   * Used to queue actions that need fire after React's call stack has completely resolved
+   * @param {function()} callback
+   */
+  onNextFrame(callback) {
+    setTimeout(function() {
+      requestAnimationFrame(callback);
+    });
   }
 
   /**
    * Handles clicks to the document element.
    */
   handleDocumentClick() {
-    this.props.updateCaretPos(this.getCaretPos());
+    this.onNextFrame(() => {
+      this.props.moveSelection(...this.getCaretPos());
+    });
   }
 
-  render = props => (
-    <div
-      ref={this.contentEditableDiv}
-      class="editor"
-      contenteditable="true"
-      onClick={this.handleDocumentClick}
-    >
-      {new Renderer(props.document, {
-        renderMode: RenderMode.CONTENT,
-        pageStyle: {
-          marginBottom: "1cm",
-          marginLeft: "1cm",
-          marginRight: "1cm",
-          marginTop: "1cm",
-          height: "140mm",
-          width: "120mm",
-        },
-      }).render()}
-    </div>
-  );
+  /**
+   * Listens to keyboard presses
+   * @param {number} e
+   */
+  logKeyPress(e) {
+    console.log(e);
+    switch (e.keyCode) {
+      //arrow keys
+      case 37:
+      case 39:
+      case 38:
+      case 40:
+        this.onNextFrame(() => {
+          this.props.moveSelection(...this.getCaretPos());
+        });
+        break;
+    }
+  }
+
+  render(props) {
+    let content;
+
+    switch (props.document.status) {
+      case Status.ERROR:
+        content = <Error exception={props.document.exception} />;
+        break;
+      default:
+        const pages = new Renderer(props.document.content, {
+          renderMode: RenderMode.CONTENT,
+          pageStyle: {
+            marginBottom: "1cm",
+            marginLeft: "1cm",
+            marginRight: "1cm",
+            marginTop: "1cm",
+            height: "140mm",
+            width: "120mm",
+          },
+        }).render();
+
+        content = (
+          <Fragment>
+            <Helmet
+              style={[
+                {
+                  type: "text/css",
+                  cssText: renderStyle(props.styles),
+                },
+              ]}
+            />
+            <div
+              ref={this.contentEditableDiv}
+              class="editor"
+              contenteditable="true"
+              onClick={this.handleDocumentClick}
+              onkeyDown={this.logKeyPress}
+            >
+              {pages}
+            </div>
+          </Fragment>
+        );
+        break;
+    }
+
+    return content;
+  }
 }
 
 export default connect(
-  state => ({ document: state.document.nodes }),
-  { updateCaretPos },
+  state => ({ document: state.document, styles: state.styles }),
+  { moveSelection },
 )(Editor);
