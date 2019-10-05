@@ -1,71 +1,57 @@
 /** @format */
-import { genId } from "../helpers/uniqueIdGen.js";
+import { addShortcut } from "redux/actions";
+import * as fs from "fs";
 
 /**
- * Construct new shortcut object
- * @param {object} definition keyboard shortcut object (made with parseShortcut)
- * @param {string} definition string describing keyboard shortcut, to be parsed
- * @return {object} keyboard shortcut object
+ * Get contents of keybinds.JSON
+ * @return {Promise} data extracted from file, parsed as:
+ * {
+ *   id: {shortcut},
+ *   id: {shortcut},
+ *   ...
+ * }
  */
-export default function createShortcut(definition) {
-  if (typeof definition === "string") {
-    definition = parseShortcut(definition);
-  }
-
-  return {
-    id: genId(),
-    isAlt: false,
-    isCtrl: false,
-    isMeta: false,
-    isShift: false,
-    ...definition,
-  };
+export function readJSON() {
+  return new Promise((resolve, reject) => {
+    fs.readFile("./src/renderer/commands/keybinds.json", (err, data) => {
+      if (err) throw reject(err);
+      resolve(parseBindings(JSON.parse(data)));
+    });
+  });
 }
 
 /**
- * Parse string into shortcut object
- * @param {string} str string describing shortcut
- *                        Must be of the form "modifier[+modifier]+key"
- *                        No spaces, key at end, modifiers in any order
- *                        Must not be empty
- * @return {object} keyboard shortcut object
- *
- * @example
- *     parseShortcut("control+c")
- *     will return {
- *       "isAlt": false,
- *       "isCtrl": true,
- *       "isMeta": false,
- *       "isShift": false,
- *       "key": "c",
- *     }
+ * Parse keybinds into an array of shortcuts
+ * @param  {JSON}   keybinds  keybinds, parsed from keybinds.JSON
+ * @return {Array}            shortcuts, extracted from keybinds object
  */
-export function parseShortcut(str) {
-  if (str === "") throw "Cannot create an empty shortcut";
+export function parseBindings(keybinds) {
+  const parsed = {};
+  const addBinding = (id, binding) => parsed[id] = binding;
 
-  const modifiers = str.toLowerCase().split("+");
-
-  return {
-    isAlt: modifiers.includes("alt"),
-    isCtrl: modifiers.includes("control"),
-    isMeta: modifiers.includes("meta"),
-    isShift: modifiers.includes("shift"),
-    key: modifiers[modifiers.length - 1],
-  };
+  parseBindingsRecursively(keybinds, addBinding);
+  return parsed;
 }
 
 /**
- * Compare registered shortcut with keydown event
- * @param  {shortcut}       shortcut registered shortcut object
- * @param  {event} event    caught keydown event
- * @return {boolean}        true if keydown event matches shortcut description
+ * Recursively traverse keybinds, extracting shortcut objects
+ * @param  {Object}     obj        parsed JSON
+ * @param  {function(id: string, binding: Object)} addBinding
+ *                                 callback function, add binding to array of shortcuts
+ * @param  {string[]}   path       ordered list of namespaces of shortcut
+ *                                   e.g. ["clipboard", "copy"]
  */
-export function matchEvent(shortcut, event) {
-  return (
-    event.altKey === shortcut.isAlt &&
-    event.ctrlKey === shortcut.isCtrl &&
-    event.metaKey === shortcut.isMeta &&
-    event.shiftKey === shortcut.isShift &&
-    event.key === shortcut.key
-  );
+function parseBindingsRecursively(obj, addBinding, path = []) {
+  Object.keys(obj).forEach(key => {
+    const value = obj[key];
+
+    //recurse if value is not an array (i.e. value is a namespace or name)
+    if (value.constructor === Object) {
+      parseBindingsRecursively(value, addBinding, [...path, key]);
+      return;
+    }
+
+    const id = [...path, key].join(".");
+    addBinding(id, value);
+  });
 }
