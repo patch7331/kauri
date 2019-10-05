@@ -42,9 +42,7 @@ class ShortcutListener extends Component {
     //for each match, fire the related callback
     shortcuts
       .filter(shortcut => matchEvent(shortcut, event))
-      .forEach(match => {
-        commands[match.id].callback();
-      });
+      .forEach(match => commands[match.id].callback());
   }
 
   /**
@@ -53,15 +51,14 @@ class ShortcutListener extends Component {
    * @param  {event}    event     caught keydown event
    * @return {boolean}            true if keydown event matches shortcut description
    */
-  matchEvent(shortcut, event) {
-    const modifiers = shortcut.modifiers;
-    return (
-      event.altKey === modifiers.contains("alt") &&
-      event.ctrlKey === modifiers.contains("ctrl") &&
-      event.metaKey === modifiers.contains("meta") &&
-      event.shiftKey === modifiers.contains("shift") &&
-      event.key === shortcut.key
-    );
+  matchEvent = ({id, modifiers}, event) => {
+    const eventModifiers = [];
+    event.altKey    && eventModifiers.push("alt");
+    event.ctrlKey   && eventModifiers.push("ctrl");
+    event.metaKey   && eventModifiers.push("meta");
+    event.shiftKey  && eventModifiers.push("shift");
+
+    return (eventModifiers === modifiers && event.key === shortcut.key);
   }
 }
 

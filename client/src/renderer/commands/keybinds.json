@@ -4,22 +4,22 @@
     "copy":
     [
       {
-        "modifiers": ["control"],
+        "modifiers": ["ctrl"],
         "key": "c"
       },
       {
-        "modifiers": ["control"],
+        "modifiers": ["ctrl"],
         "key": "v"
       }
     ],
     "paste":
     [
       {
-        "modifiers": ["control", "shift"],
+        "modifiers": ["ctrl", "shift"],
         "key": "c"
       },
       {
-        "modifiers": ["control", "shift"],
+        "modifiers": ["ctrl", "shift"],
         "key": "v"
       }
     ]

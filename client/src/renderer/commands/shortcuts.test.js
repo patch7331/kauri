@@ -6,12 +6,12 @@ describe("readJSON", () => {
   it("should return an object containing the shortcuts and their ids in the JSON", () => {
     const expectedJSON = {
       "clipboard.copy": [
-        { modifiers: ["control"], key: "c" },
-        { modifiers: ["control"], key: "v" },
+        { modifiers: ["ctrl"], key: "c" },
+        { modifiers: ["ctrl"], key: "v" },
       ],
       "clipboard.paste": [
-        { modifiers: ["control", "shift"], key: "c" },
-        { modifiers: ["control", "shift"], key: "v" },
+        { modifiers: ["ctrl", "shift"], key: "c" },
+        { modifiers: ["ctrl", "shift"], key: "v" },
       ],
     };
     expect.assertions(1);

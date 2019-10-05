@@ -3,21 +3,18 @@ import { addShortcut } from "redux/actions";
 import * as fs from "fs";
 
 /**
- * get contents of JSON
- *   open filestream
- *   get file contents
- *   put file contents into string
- *   JSON.parse string into object
- * search store for commands matching namespace:name
- * for each namespace:name
- *   get shortcut
- *   pass shortcut to relevand command
+ * Get contents of keybinds.JSON
+ * @return {Promise} data extracted from file, parsed as:
+ * {
+ *   id: {shortcut},
+ *   id: {shortcut},
+ *   ...
+ * }
  */
 export function readJSON() {
   return new Promise((resolve, reject) => {
     fs.readFile("./src/renderer/commands/keybinds.json", (err, data) => {
       if (err) throw reject(err);
-
       resolve(parseBindings(JSON.parse(data)));
     });
   });
@@ -25,14 +22,12 @@ export function readJSON() {
 
 /**
  * Parse keybinds into an array of shortcuts
- * @param  {JSON} keybinds keybinds, parsed from keybinds.JSON
- * @return {Array}          shortcuts, extracted from keybinds object
+ * @param  {JSON}   keybinds  keybinds, parsed from keybinds.JSON
+ * @return {Array}            shortcuts, extracted from keybinds object
  */
 export function parseBindings(keybinds) {
   const parsed = {};
-  const addBinding = (id, binding) => {
-    parsed[id] = binding;
-  };
+  const addBinding = (id, binding) => parsed[id] = binding;
 
   parseBindingsRecursively(keybinds, addBinding);
   return parsed;
@@ -40,10 +35,11 @@ export function parseBindings(keybinds) {
 
 /**
  * Recursively traverse keybinds, extracting shortcut objects
- * @param  {Object} obj        parsed JSON
- * @param  {callback} addBinding callback function, adds binding to list of shortcuts
- * @param  {Array}  path       ordered list of namespaces of shortcut
- *                               e.g. ["clipboard", "copy"]
+ * @param  {Object}     obj        parsed JSON
+ * @param  {function(id: string, binding: Object)} addBinding
+ *                                 callback function, add binding to array of shortcuts
+ * @param  {string[]}   path       ordered list of namespaces of shortcut
+ *                                   e.g. ["clipboard", "copy"]
  */
 function parseBindingsRecursively(obj, addBinding, path = []) {
   Object.keys(obj).forEach(key => {
