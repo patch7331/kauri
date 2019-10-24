@@ -1,6 +1,7 @@
 use crate::document::Document;
+use serde::ser::Serialize;
 use serde_json::error::Error;
-use serde_json::ser::to_string;
+use serde_json::ser::{to_string, to_string_pretty};
 use std::fs::File;
 use std::io::BufWriter;
 use std::io::Write;
@@ -16,19 +17,29 @@ pub fn save(document: &Document, path: &Path) -> Result<(), String> {
     }
     let created_file = BufWriter::new(created_file);
     let mut writer = ZipWriter::new(created_file);
-    let mut res = store_in_archive(&mut writer, "content.json", to_string(&document.content));
+    let mut res = store_in_archive(&mut writer, "content.json", to_json(&document.content));
     if res.is_err() {
         return res;
     }
-    res = store_in_archive(&mut writer, "styles.json", to_string(&document.styles));
+    res = store_in_archive(&mut writer, "styles.json", to_json(&document.styles));
     if res.is_err() {
         return res;
     }
-    res = store_in_archive(&mut writer, "meta.json", to_string(&document.meta));
+    res = store_in_archive(&mut writer, "meta.json", to_json(&document.meta));
     if res.is_err() {
         return res;
     }
     Ok(())
+}
+
+#[cfg(debug_assertions)]
+fn to_json<T: Serialize>(value: &T) -> Result<String, Error> {
+    to_string_pretty(value)
+}
+
+#[cfg(not(debug_assertions))]
+fn to_json<T: Serialize>(value: &T) -> Result<String, Error> {
+    to_string(value)
 }
 
 fn store_in_archive(

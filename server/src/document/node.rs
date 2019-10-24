@@ -86,11 +86,14 @@ impl Element {
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct ElementCommon {
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     class: Option<String>,
     #[serde(skip_serializing_if = "HashMap::is_empty")]
+    #[serde(default)]
     pub styles: HashMap<String, String>,
     // Children is optional here because this may be used as a template in a style class, which would not have it
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     pub children: Option<Vec<ChildNode>>,
     #[serde(skip)]
     // This is meant to store attributes that can only be processed after all of this Element's children has been accounted for,
@@ -160,8 +163,10 @@ pub struct List {
     #[serde(flatten)]
     pub common: ElementCommon,
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     bullet_cycle: Option<Vec<ListBullet>>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     bullet: Option<ListBullet>,
 }
 
@@ -205,8 +210,10 @@ impl List {
 #[cfg_attr(debug_assertions, derive(Debug))]
 struct ListBulletCommon {
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     prefix: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     suffix: Option<String>,
 }
 
@@ -227,6 +234,7 @@ pub struct ListBulletVariant {
     #[serde(flatten)]
     common: ListBulletCommon,
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     start_index: Option<u32>,
     variant: String,
 }
@@ -316,6 +324,7 @@ pub struct ListItem {
     #[serde(flatten)]
     pub common: ElementCommon,
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     bullet: Option<ListBullet>,
 }
 
@@ -338,6 +347,7 @@ pub struct Hyperlink {
     #[serde(flatten)]
     pub common: ElementCommon,
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     title: Option<String>,
     href: String,
 }
@@ -363,6 +373,7 @@ pub struct TableColumn {
     #[serde(flatten)]
     pub common: ElementCommon,
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     span: Option<u32>,
 }
 
@@ -386,8 +397,10 @@ pub struct TableCell {
     #[serde(flatten)]
     pub common: ElementCommon,
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     row_span: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     col_span: Option<u32>,
 }
 
@@ -413,9 +426,11 @@ pub struct CodeBlock {
     #[serde(flatten)]
     pub common: ElementCommon,
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     language: Option<String>,
     line_numbers: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     file_name: Option<String>,
 }
 
