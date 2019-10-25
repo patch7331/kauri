@@ -2,7 +2,9 @@ use std::io::Cursor;
 use tiny_http::{Request, Response};
 
 /// Create a response with the given message as the body, and if is_error is true
-/// then the HTTP status code is set to 500, otherwise it will be 200
+/// then the HTTP status code is set to 400, otherwise it will be 200
+/// (Note that if there was an unexpected error where this function was never called
+/// then tiny_http will return 500 instead)
 pub fn create_response(msg: String, is_error: bool) -> Response<Cursor<Vec<u8>>> {
     let mut response = Response::from_string(msg);
     if is_error {
