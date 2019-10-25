@@ -27,7 +27,7 @@ export function readJSON() {
  */
 export function parseBindings(keybinds) {
   const parsed = {};
-  const addBinding = (id, binding) => parsed[id] = binding;
+  const addBinding = (id, binding) => (parsed[id] = binding);
 
   parseBindingsRecursively(keybinds, addBinding);
   return parsed;

@@ -51,15 +51,15 @@ class ShortcutListener extends Component {
    * @param  {event}    event     caught keydown event
    * @return {boolean}            true if keydown event matches shortcut description
    */
-  matchEvent = ({id, modifiers}, event) => {
+  matchEvent = ({ id, modifiers }, event) => {
     const eventModifiers = [];
-    event.altKey    && eventModifiers.push("alt");
-    event.ctrlKey   && eventModifiers.push("ctrl");
-    event.metaKey   && eventModifiers.push("meta");
-    event.shiftKey  && eventModifiers.push("shift");
+    event.altKey && eventModifiers.push("alt");
+    event.ctrlKey && eventModifiers.push("ctrl");
+    event.metaKey && eventModifiers.push("meta");
+    event.shiftKey && eventModifiers.push("shift");
 
-    return (eventModifiers === modifiers && event.key === shortcut.key);
-  }
+    return eventModifiers === modifiers && event.key === shortcut.key;
+  };
 }
 
 export default connect(state => ({ ...state.shortcuts }))(ShortcutListener);

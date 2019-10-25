@@ -16,4 +16,4 @@
  *       callback: Clipboard.doCopy,
  *     }
  */
-export default (id, name, callback) => ({id, name, callback});
+export default (id, name, callback) => ({ id, name, callback });
