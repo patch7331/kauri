@@ -70,7 +70,10 @@ export default function documentReducer(state = initialState, action) {
  * @param {object} state Current state.
  * @param {object} action Action to perform on state.
  */
-export function selectionReducer(state = { startPos: 0, endPos: 0, startId: 0, endId: 0 }, action) {
+export function selectionReducer(
+  state = { startPos: 0, endPos: 0, startId: 0, endId: 0 },
+  action,
+) {
   switch (action.type) {
     case MOVE_SELECTION:
       return {
@@ -96,9 +99,12 @@ export function contentReducer(state, action) {
           ...state.byId,
           [key]: {
             ...state.byId[key],
-            content: state.byId[key].content.substring(0, action.position) + action.text + state.byId[key].content.substring(action.position),
-          }
-        }
+            content:
+              state.byId[key].content.substring(0, action.position) +
+              action.text +
+              state.byId[key].content.substring(action.position),
+          },
+        },
       };
 
     case CREATE_NODE:

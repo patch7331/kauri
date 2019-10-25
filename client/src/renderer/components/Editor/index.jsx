@@ -37,14 +37,14 @@ class Editor extends Component {
     this.logKeyPress = this.logKeyPress.bind(this);
     this.pushBufferToStore = this.pushBufferToStore.bind(this);
     this.addToBuffer = this.addToBuffer.bind(this);
-    this.createNewDataNode= this.createNewDataNode.bind(this);
+    this.createNewDataNode = this.createNewDataNode.bind(this);
   }
 
   /**
    * Returns absolute values of caret's start/end positions
    */
   getAbsolutePos() {
-    const range = document.getSelection().getRangeAt(0); 
+    const range = document.getSelection().getRangeAt(0);
     const preSelectionRange = range.cloneRange();
     preSelectionRange.selectNodeContents(this.contentEditableDiv.current);
     preSelectionRange.setEnd(range.startContainer, range.startOffset);
@@ -59,8 +59,12 @@ class Editor extends Component {
     const endPos = selection.endOffset;
     console.log(selection.endContainer);
     console.log(startPos);
-    const startId = parseInt(selection.startContainer.parentElement.getAttribute("data-node-id"));
-    const endId = parseInt(selection.endContainer.parentElement.getAttribute("data-node-id"));
+    const startId = parseInt(
+      selection.startContainer.parentElement.getAttribute("data-node-id"),
+    );
+    const endId = parseInt(
+      selection.endContainer.parentElement.getAttribute("data-node-id"),
+    );
     return [startPos, endPos, startId, endId];
   }
 
@@ -100,11 +104,11 @@ class Editor extends Component {
           this.props.moveSelection(...this.getRelativePos());
         });
         break;
-      
+
       //Special cases
       case "Backspace":
       case "Delete":
-        //create deletion method
+      //create deletion method
       case "Enter":
         this.createNewDataNode();
         break;
@@ -114,7 +118,7 @@ class Editor extends Component {
       case "Alt":
         //push to store?
         break;
-      
+
       //add to buffer
       default:
         this.addToBuffer(e);
@@ -124,7 +128,7 @@ class Editor extends Component {
 
   addToBuffer(e) {
     //stores the starting position + ID for string concat in redux
-    if(this.buffer.length === 0) {
+    if (this.buffer.length === 0) {
       const relativePos = this.getRelativePos();
       this.bufferStartPos = relativePos[0];
       this.bufferStartId = relativePos[2];
@@ -132,13 +136,21 @@ class Editor extends Component {
     clearTimeout(this.bufferTimeout);
     this.buffer.push(e.key);
     console.log(this.buffer);
-    this.bufferTimeout = setTimeout(this.pushBufferToStore, this.bufferTimeoutValue);
+    this.bufferTimeout = setTimeout(
+      this.pushBufferToStore,
+      this.bufferTimeoutValue,
+    );
   }
 
   pushBufferToStore() {
-    if(this.buffer.length != 0) {
-      console.log("Push buffer triggered, Startpos:" + this.bufferStartPos + " ID: " + this.bufferStartId);
-      const editString = this.buffer.join('');
+    if (this.buffer.length != 0) {
+      console.log(
+        "Push buffer triggered, Startpos:" +
+          this.bufferStartPos +
+          " ID: " +
+          this.bufferStartId,
+      );
+      const editString = this.buffer.join("");
       console.log(editString);
       this.props.editNode(this.bufferStartId, this.bufferStartPos, editString);
       this.buffer = [];
@@ -149,7 +161,11 @@ class Editor extends Component {
   createNewDataNode() {
     const parent = document.getSelection().anchorNode.parentNode;
     const grandparent = parent.parentElement;
-    console.log(parent.getAttribute("data-node-id") + " , " + grandparent.getAttribute("data-node-id"));
+    console.log(
+      parent.getAttribute("data-node-id") +
+        " , " +
+        grandparent.getAttribute("data-node-id"),
+    );
     //get node type ... default to text node??
     //send node type + prev node id to store
   }
