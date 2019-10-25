@@ -1,28 +1,35 @@
 /** @format */
 
-import { combineReducers } from "redux";
 import { SET_STYLES } from "../actions/types";
 
-export default combineReducers({
-  allIds: allStyles,
-  byId: stylesById,
-});
+const initialState = {
+  body: {
+    display: "Body Text",
+    styles: {
+      fontFamily: "Inter, sans-serif",
+      fontSize: "12pt",
+      color: "#333",
+      lineHeight: "1.4",
+    },
+  },
+  h1: {
+    display: "Heading 1",
+    styles: {
+      color: "#111",
+      fontSize: "2em",
+      lineHeight: "1",
+      fontWeight: "600",
+      padding: "4em 0 1em",
+    },
+  },
+};
 
-function allStyles(state = [], action) {
-  switch (action.type) {
-    case SET_STYLES:
-      return [...state, action.key];
-    default:
-      return state;
-  }
-}
-
-function stylesById(state = {}, action) {
+export default function styles(state = initialState, action) {
   switch (action.type) {
     case SET_STYLES:
       return {
         ...state,
-        [action.key]: action.value,
+        ...action.payload,
       };
     default:
       return state;

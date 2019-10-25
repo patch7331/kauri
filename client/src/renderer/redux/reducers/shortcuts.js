@@ -1,6 +1,6 @@
 /** @format */
 import { combineReducers } from "redux";
-import { ADD_COMMAND } from "../actionTypes";
+import { ADD_DEFAULT_SHORTCUT } from "../actions/types";
 
 export default combineReducers({
   allIds: allShortcuts,
@@ -9,11 +9,13 @@ export default combineReducers({
 
 function allShortcuts(state = [], action) {
   switch (action.type) {
-    case ADD_COMMAND:
-      return [
-        ...state,
-        ...action.command.shortcuts.map(shortcut => shortcut.id),
-      ];
+    case ADD_DEFAULT_SHORTCUT:
+      //checks if shortcut already exists
+      if (state.includes(action.id)) {
+        return state;
+      }
+
+      return [...state, action.id];
 
     default:
       return state;
@@ -22,16 +24,16 @@ function allShortcuts(state = [], action) {
 
 function shortcutsById(state = {}, action) {
   switch (action.type) {
-    case ADD_COMMAND:
-      const shortcuts = {};
+    case ADD_DEFAULT_SHORTCUT:
+      //checks if shortcut already exists
+      if (Object.keys(state).includes(action.id)) {
+        return state;
+      }
 
-      action.command.shortcuts.forEach(shortcut => {
-        shortcuts[shortcut.id] = {
-          ...shortcut,
-          commandId: action.command.id,
-        };
-      });
-      return { ...state, ...shortcuts };
+      return {
+        ...state,
+        [action.id]: action.shortcuts,
+      };
 
     default:
       return state;

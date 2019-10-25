@@ -3,11 +3,16 @@
 // Command
 export const ADD_COMMAND = "ADD_COMMAND";
 
+// Shortcut
+export const ADD_DEFAULT_SHORTCUT = "ADD_DEFAULT_SHORTCUT";
+
 // Document
 export const FETCH_DOCUMENT_REQUEST = "FETCH_DOCUMENT_REQUEST";
 export const FETCH_DOCUMENT_ERROR = "FETCH_DOCUMENT_ERROR";
 export const FETCH_DOCUMENT_SUCCESS = "FETCH_DOCUMENT_SUCCESS";
 export const MOVE_SELECTION = "MOVE_SELECTION";
+export const UPDATE_CONTENT = "UPDATE_CONTENT";
+export const CREATE_NODE = "CREATE_NODE";
 
 // Metadata
 export const SET_METADATA = "SET_METADATA";

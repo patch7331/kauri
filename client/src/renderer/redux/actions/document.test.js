@@ -37,14 +37,18 @@ describe("fetch document success action creator", () => {
 
 describe("move selection action creator", () => {
   it("should return an action to move the selection", () => {
-    const start = 0;
-    const end = 5;
+    const startPos = 0;
+    const endPos = 5;
+    const startId = 3;
+    const endId = 3;
     const expectedAction = {
       type: types.MOVE_SELECTION,
-      start,
-      end,
+      startPos,
+      endPos,
+      startId,
+      endId,
     };
 
-    expect(actions.moveSelection(start, end)).toEqual(expectedAction);
+    expect(actions.moveSelection(startPos, endPos, startId, endId)).toEqual(expectedAction);
   });
 });
