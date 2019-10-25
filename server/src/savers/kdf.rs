@@ -1,7 +1,10 @@
 use crate::document::Document;
 use serde::ser::Serialize;
 use serde_json::error::Error;
-use serde_json::ser::{to_string, to_string_pretty};
+#[cfg(not(debug_assertions))]
+use serde_json::ser::to_string;
+#[cfg(debug_assertions)]
+use serde_json::ser::to_string_pretty;
 use std::fs::File;
 use std::io::BufWriter;
 use std::io::Write;

@@ -1,4 +1,5 @@
 use super::util::{create_response, get_request_body};
+use crate::parsers::kdf;
 use crate::parsers::odt::ODTParser;
 use std::io::Cursor;
 use tiny_http::{Request, Response};
@@ -20,6 +21,7 @@ pub fn load_controller(request: &mut Request) -> Response<Cursor<Vec<u8>>> {
     match extension {
         // Pick a parser depending on the file extension
         Some("odt") => handle_odt(filepath.as_str()),
+        Some("kdf") => handle_kdf(filepath.as_str()),
         _ => create_response("File extension missing or unrecognized".to_string(), true),
     }
 }
@@ -32,4 +34,12 @@ fn handle_odt(filepath: &str) -> Response<Cursor<Vec<u8>>> {
         return create_response(e.to_string(), true);
     }
     create_response(parsed_odt.unwrap(), false)
+}
+
+fn handle_kdf(filepath: &str) -> Response<Cursor<Vec<u8>>> {
+    let output = kdf::load(filepath);
+    if let Err(e) = output {
+        return create_response(e, true);
+    }
+    create_response(output.unwrap(), false)
 }
