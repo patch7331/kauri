@@ -16,6 +16,7 @@ extern crate tiny_http;
 mod controllers;
 mod document;
 mod parsers;
+mod savers;
 
 use tiny_http::Response;
 
@@ -45,6 +46,7 @@ fn handle_request(mut request: tiny_http::Request) {
     let mut resp_error: Option<Response<std::io::Empty>> = None;
     match request.url() {
         "/load" => resp_normal = Some(controllers::load::load_controller(&mut request)),
+        "/save" => resp_normal = Some(controllers::save::save_controller(&mut request)),
         _ => resp_error = Some(Response::empty(404)),
     };
 
