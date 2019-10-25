@@ -3,6 +3,9 @@
 // Command
 export const ADD_COMMAND = "ADD_COMMAND";
 
+// Shortcut
+export const ADD_DEFAULT_SHORTCUT = "ADD_DEFAULT_SHORTCUT";
+
 // Document
 export const FETCH_DOCUMENT_REQUEST = "FETCH_DOCUMENT_REQUEST";
 export const FETCH_DOCUMENT_ERROR = "FETCH_DOCUMENT_ERROR";

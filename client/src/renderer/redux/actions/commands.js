@@ -2,7 +2,9 @@
 
 import { ADD_COMMAND } from "./types";
 
-export const addCommand = command => ({
+export const addCommand = (id, name, callback) => ({
   type: ADD_COMMAND,
-  command,
+  id,
+  name,
+  callback,
 });

@@ -1,19 +1,26 @@
 {
-  "clipboard": {
-    "copy": [
+  "clipboard":
+  {
+    "copy":
+    [
       {
-        "isAlt": false,
-        "isCtrl": true,
-        "isMeta": false,
-        "isShift": false,
-        "key": "c",
+        "modifiers": ["ctrl"],
+        "key": "c"
       },
       {
-        "isAlt": false,
-        "isCtrl": true,
-        "isMeta": false,
-        "isShift": false,
-        "key": "v",
+        "modifiers": ["ctrl"],
+        "key": "v"
+      }
+    ],
+    "paste":
+    [
+      {
+        "modifiers": ["ctrl", "shift"],
+        "key": "c"
+      },
+      {
+        "modifiers": ["ctrl", "shift"],
+        "key": "v"
       }
     ]
   }
