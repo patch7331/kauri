@@ -47,6 +47,7 @@ export function translateKDFNode(node, nextId, addToById) {
     node = {
       type: "text",
       content: node,
+      endPos: node
     };
   }
 

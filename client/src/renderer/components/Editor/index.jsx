@@ -4,10 +4,11 @@ import "./styles.scss";
 
 import { h, Component, createRef } from "preact";
 import { connect } from "react-redux";
-import { moveSelection, Status } from "redux/actions";
+import { moveSelection, Status, editNode } from "redux/actions";
 import { Renderer, RenderMode } from "render";
 
 import Error from "components/Error";
+import { nodeInternals } from "stack-utils";
 
 /**
  * A document editing component.
@@ -21,22 +22,44 @@ class Editor extends Component {
     super(props);
     this.contentEditableDiv = createRef();
 
+    //text buffer
+    this.buffer = [];
+    this.bufferTimeout;
+    this.bufferTimeoutValue = 1000;
+    this.maxBufferSize = 10;
+    this.bufferStartPos = 0;
+    this.bufferStartId = 0;
+
     // Binds
     this.handleDocumentClick = this.handleDocumentClick.bind(this);
     this.logKeyPress = this.logKeyPress.bind(this);
+    this.pushBufferToStore = this.pushBufferToStore.bind(this);
+    this.addToBuffer = this.addToBuffer.bind(this);
+    this.createNewDataNode= this.createNewDataNode.bind(this);
   }
 
   /**
    * Returns absolute values of caret's start/end positions
    */
-  getCaretPos() {
-    const range = document.getSelection().getRangeAt(0);
+  getAbsolutePos() {
+    const range = document.getSelection().getRangeAt(0); 
     const preSelectionRange = range.cloneRange();
     preSelectionRange.selectNodeContents(this.contentEditableDiv.current);
     preSelectionRange.setEnd(range.startContainer, range.startOffset);
     const positionStart = preSelectionRange.toString().length;
     const positionEnd = positionStart + range.toString().length;
     return [positionStart, positionEnd];
+  }
+
+  getRelativePos() {
+    const selection = document.getSelection().getRangeAt(0);
+    const startPos = selection.startOffset;
+    const endPos = selection.endOffset;
+    console.log(selection.endContainer);
+    console.log(startPos);
+    const startId = parseInt(selection.startContainer.parentElement.getAttribute("data-node-id"));
+    const endId = parseInt(selection.endContainer.parentElement.getAttribute("data-node-id"));
+    return [startPos, endPos, startId, endId];
   }
 
   /**
@@ -54,7 +77,7 @@ class Editor extends Component {
    */
   handleDocumentClick() {
     this.onNextFrame(() => {
-      this.props.moveSelection(...this.getCaretPos());
+      this.props.moveSelection(...this.getRelativePos());
     });
   }
 
@@ -64,17 +87,69 @@ class Editor extends Component {
    */
   logKeyPress(e) {
     console.log(e);
-    switch (e.keyCode) {
-      //arrow keys
-      case 37:
-      case 39:
-      case 38:
-      case 40:
+    switch (e.key) {
+      //Positioning keys
+      case "ArrowLeft":
+      case "ArrowRight":
+      case "ArrowUp":
+      case "ArrowDown":
+      case "Tab":
         this.onNextFrame(() => {
-          this.props.moveSelection(...this.getCaretPos());
+          this.props.moveSelection(...this.getRelativePos());
         });
         break;
+      
+      //Special cases
+      case "Backspace":
+      case "Delete":
+        //create deletion method
+      case "Enter":
+        this.createNewDataNode();
+        break;
+      case "Insert":
+      case "Shift":
+      case "Control":
+      case "Alt":
+        //push to store?
+        break;
+      
+      //add to buffer
+      default:
+        this.addToBuffer(e);
+        break;
     }
+  }
+
+  addToBuffer(e) {
+    //stores the starting position + ID for string concat in redux
+    if(this.buffer.length === 0) {
+      const relativePos = this.getRelativePos();
+      this.bufferStartPos = relativePos[0];
+      this.bufferStartId = relativePos[2];
+    }
+    clearTimeout(this.bufferTimeout);
+    this.buffer.push(e.key);
+    console.log(this.buffer);
+    this.bufferTimeout = setTimeout(this.pushBufferToStore, this.bufferTimeoutValue);
+  }
+
+  pushBufferToStore() {
+    if(this.buffer.length != 0) {
+      console.log("Push buffer triggered, Startpos:" + this.bufferStartPos + " ID: " + this.bufferStartId);
+      const editString = this.buffer.join('');
+      console.log(editString);
+      this.props.editNode(this.bufferStartId, this.bufferStartPos, editString);
+      this.buffer = [];
+    }
+  }
+
+  //not finished
+  createNewDataNode() {
+    const parent = document.getSelection().anchorNode.parentNode;
+    const grandparent = parent.parentElement;
+    console.log(parent.getAttribute("data-node-id") + " , " + grandparent.getAttribute("data-node-id"));
+    //get node type ... default to text node??
+    //send node type + prev node id to store
   }
 
   render(props) {
@@ -117,5 +192,5 @@ class Editor extends Component {
 
 export default connect(
   state => ({ document: state.document }),
-  { moveSelection },
+  { moveSelection, editNode },
 )(Editor);

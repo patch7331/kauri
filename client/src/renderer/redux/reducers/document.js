@@ -6,6 +6,7 @@ import {
   FETCH_DOCUMENT_REQUEST,
   FETCH_DOCUMENT_SUCCESS,
   FETCH_DOCUMENT_ERROR,
+  UPDATE_CONTENT,
 } from "../actions/types";
 import { Status } from "../actions";
 import { translateKDF } from "helpers/translateKDF";
@@ -53,6 +54,12 @@ export default function documentReducer(state = initialState, action) {
         selection: selectionReducer(state.selection, action),
       };
 
+    case UPDATE_CONTENT:
+      return {
+        ...state,
+        content: contentReducer(state.content, action),
+      };
+
     default:
       return state;
   }
@@ -63,14 +70,38 @@ export default function documentReducer(state = initialState, action) {
  * @param {object} state Current state.
  * @param {object} action Action to perform on state.
  */
-export function selectionReducer(state = { start: 0, end: 0 }, action) {
+export function selectionReducer(state = { startPos: 0, endPos: 0, startId: 0, endId: 0 }, action) {
   switch (action.type) {
     case MOVE_SELECTION:
       return {
         ...state,
-        start: action.start,
-        end: action.end,
+        startPos: action.startPos,
+        endPos: action.endPos,
+        startId: action.startId,
+        endId: action.endId,
       };
+
+    default:
+      return state;
+  }
+}
+
+export function contentReducer(state, action) {
+  switch (action.type) {
+    case UPDATE_CONTENT:
+      const key = action.id;
+      return {
+        ...state,
+        byId: {
+          ...state.byId,
+          [key]: {
+            ...state.byId[key],
+            content: state.byId[key].content.substring(0, action.position) + action.text + state.byId[key].content.substring(action.position),
+          }
+        }
+      };
+
+    case CREATE_NODE:
 
     default:
       return state;

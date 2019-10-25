@@ -5,6 +5,8 @@ import {
   FETCH_DOCUMENT_REQUEST,
   FETCH_DOCUMENT_SUCCESS,
   MOVE_SELECTION,
+  UPDATE_CONTENT,
+  CREATE_NODE,
 } from "./types";
 import { Status } from "./index";
 
@@ -79,8 +81,24 @@ export function fetchDocumentIfShould(path) {
  * @param {number} start Start position.
  * @param {number} end End position.
  */
-export const moveSelection = (start, end) => ({
+export const moveSelection = (startPos, endPos, startId, endId) => ({
   type: MOVE_SELECTION,
-  start,
-  end,
+  startPos,
+  endPos,
+  startId,
+  endId,
+});
+
+//Update content in store?
+export const editNode = (id, position, text) => ({
+  type: UPDATE_CONTENT,
+  id,
+  position,
+  text,
+});
+
+export const createNode = (type, prevNodeId) => ({
+  type: CREATE_NODE,
+  type,
+  prevNodeId,
 });
