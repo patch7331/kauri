@@ -45,7 +45,7 @@ export function translateKDFNode(node, nextId, addToById) {
   // Handle text shorthand
   if (typeof node === "string") {
     node = {
-      type: "text",
+      type: "Text",
       content: node,
     };
   }
