@@ -3,7 +3,7 @@
 import { remote } from "electron";
 import { fetchDocument } from "redux/actions";
 import store from "redux/store";
-import { saveDocument } from "helpers/document"
+import { saveDocument } from "helpers/document";
 
 const menuTemplate = [
   // Application menu for macOS
@@ -33,8 +33,8 @@ const menuTemplate = [
         label: "Open",
         click: () => {
           const path = remote.dialog.showOpenDialog({
-            properties: ["openFile"]
-          })
+            properties: ["openFile"],
+          });
           store.dispatch(fetchDocument(path));
         },
       },
@@ -43,7 +43,7 @@ const menuTemplate = [
         click: () => {
           const path = remote.dialog.showSaveDialog();
           saveDocument(path);
-        }
+        },
       },
       process.platform === "darwin" ? { role: "close" } : { role: "quit" },
     ],

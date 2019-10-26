@@ -7,8 +7,7 @@ const initialState = {};
 const metadataReducer = (state = initialState, action) => {
   switch (action.type) {
     case FETCH_DOCUMENT_SUCCESS:
-      console.log(action.payload)
-      return action.payload.meta
+      return action.payload.meta;
 
     case SET_METADATA:
       return {

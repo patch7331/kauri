@@ -1,3 +1,5 @@
+/** @format */
+
 import store from "redux/store";
 
 function rebuildNode(node, content) {
@@ -7,8 +9,10 @@ function rebuildNode(node, content) {
   }
 
   delete node.id;
-  node.children = node.children.map(id => rebuildNode(content.byId[id], content))
-  return node
+  node.children = node.children.map(id =>
+    rebuildNode(content.byId[id], content),
+  );
+  return node;
 }
 
 export function saveDocument(path) {
@@ -24,12 +28,13 @@ export function saveDocument(path) {
         page: {},
       },
       meta: state.metadata,
-    }
+    },
   };
-  console.log(body);
 
   fetch("http://localhost:3000/save", {
     method: "POST",
-    body: JSON.stringify(body), 
-  }).then(console.log).catch(console.error);
+    body: JSON.stringify(body),
+  })
+    .then(console.log)
+    .catch(console.error);
 }

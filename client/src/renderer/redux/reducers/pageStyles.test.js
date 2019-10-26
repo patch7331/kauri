@@ -16,7 +16,7 @@ describe("page style reducer", () => {
       type: types.SET_PAGE_STYLES,
       key: "size",
       value: "A4",
-    }
+    };
 
     const expected = {
       size: "A4",
@@ -24,7 +24,7 @@ describe("page style reducer", () => {
       margin: "2cm 3cm",
       borderWidth: "1px",
       borderStyle: "solid",
-    }
+    };
 
     expect(pageStylesReducer(state, action)).toEqual(expected);
   });
