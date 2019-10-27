@@ -430,7 +430,9 @@ pub struct CodeBlock {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
     language: Option<String>,
-    line_numbers: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    line_numbers: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
     file_name: Option<String>,
@@ -446,7 +448,7 @@ impl CodeBlock {
     pub fn new(
         class: Option<String>,
         language: Option<String>,
-        line_numbers: bool,
+        line_numbers: Option<bool>,
         file_name: Option<String>,
     ) -> CodeBlock {
         CodeBlock {
@@ -481,6 +483,7 @@ impl Hint {
 
 #[derive(Serialize, Deserialize, Clone)]
 #[cfg_attr(debug_assertions, derive(Debug))]
+#[serde(rename_all = "camelCase")]
 pub enum HintVariant {
     Information,
     Success,
