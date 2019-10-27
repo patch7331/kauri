@@ -5,14 +5,14 @@ import { translateKDFNode } from "./translateKDF";
 describe("translate KDF node", () => {
   it("should translate a KDF text node", () => {
     const node = {
-      type: "Text",
+      type: "text",
       content: "Hello, world!",
     };
 
     const expectedId = 1;
     const expected = {
       id: expectedId,
-      type: "Text",
+      type: "text",
       content: "Hello, world!",
     };
 
@@ -27,7 +27,7 @@ describe("translate KDF node", () => {
     const expectedId = 1;
     const expected = {
       id: expectedId,
-      type: "Text",
+      type: "text",
       content: "Hello, world!",
     };
 
@@ -39,7 +39,7 @@ describe("translate KDF node", () => {
 
   it("should handle nested KDF nodes", () => {
     const node = {
-      type: "Paragraph",
+      type: "paragraph",
       children: [
         "The quick brown fox ",
         {
@@ -54,7 +54,7 @@ describe("translate KDF node", () => {
     const expectedId = 0;
     const expected = {
       id: expectedId,
-      type: "Paragraph",
+      type: "paragraph",
       children: [1, 2, 4],
     };
 
