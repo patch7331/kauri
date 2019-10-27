@@ -2,17 +2,26 @@
 
 import store from "redux/store";
 
+/**
+ * Takes a node from the KDF store, and makes it a valid KDF node for the server
+ * 
+ * This process involves adding any children back into the node, and removing
+ * any added attributes, such as a node ID.
+ * 
+ * @param {Object} node A KDF node from the redux store.
+ * @param {Object} content Document content from the redux store.
+ */
 function rebuildNode(node, content) {
-  if (!node.hasOwnProperty("children")) {
-    delete node.id;
-    return node;
+  const clone = { ...node };
+
+  if (clone.hasOwnProperty("children")) {
+    clone.children = clone.children.map(id =>
+      rebuildNode(content.byId[id], content),
+    );
   }
 
-  delete node.id;
-  node.children = node.children.map(id =>
-    rebuildNode(content.byId[id], content),
-  );
-  return node;
+  delete clone.id;
+  return clone;
 }
 
 export function saveDocument(path) {
