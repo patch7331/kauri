@@ -1,5 +1,15 @@
 use super::*;
 
+enum MetaType {
+    Title,
+    Author,
+    CreatedAt,
+    UpdatedAt,
+    EditDuration,
+    Custom(String),
+    Unknown,
+}
+
 impl ODTParser {
     pub fn parse_meta(
         &mut self,
@@ -76,11 +86,31 @@ impl ODTParser {
             }
         }
 
-        let mut meta = Meta::new(title, authors, created_at, updated_at, edit_duration);
+        let authors_opt;
+        if authors.is_empty() {
+            authors_opt = None;
+        } else {
+            authors_opt = Some(authors);
+        }
+        let mut meta = Meta::new(
+            string_to_opt(title),
+            authors_opt,
+            string_to_opt(created_at),
+            string_to_opt(updated_at),
+            string_to_opt(edit_duration),
+        );
         meta.additional = additional;
         self.document_root.meta = Some(meta);
 
         Ok(())
+    }
+}
+
+fn string_to_opt(input: String) -> Option<String> {
+    if input == "" {
+        None
+    } else {
+        Some(input)
     }
 }
 

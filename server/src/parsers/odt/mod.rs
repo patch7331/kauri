@@ -20,16 +20,6 @@ use quick_xml::Reader;
 use std::collections::HashMap;
 use std::io::BufReader;
 
-enum MetaType {
-    Title,
-    Author,
-    CreatedAt,
-    UpdatedAt,
-    EditDuration,
-    Custom(String),
-    Unknown,
-}
-
 pub struct ODTParser {
     body_begin: bool,
     styles_begin: bool,
