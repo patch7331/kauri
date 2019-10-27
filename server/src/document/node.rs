@@ -28,6 +28,7 @@ pub enum ChildNode {
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(tag = "type")]
 #[cfg_attr(debug_assertions, derive(Debug))]
+#[serde(rename_all = "camelCase")]
 pub enum Node {
     Text(Text),
     LineBreak,
@@ -37,6 +38,7 @@ pub enum Node {
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(tag = "type")]
 #[cfg_attr(debug_assertions, derive(Debug))]
+#[serde(rename_all = "camelCase")]
 pub enum Element {
     Heading(Heading),
     Paragraph(ElementCommon),
