@@ -116,6 +116,7 @@ class Editor extends Component {
       case "Shift":
       case "Control":
       case "Alt":
+      case "CapsLock":
         //push to store?
         break;
 
@@ -150,6 +151,10 @@ class Editor extends Component {
           " ID: " +
           this.bufferStartId,
       );
+      //update store position before re-render
+      this.onNextFrame(() => {
+        this.props.moveSelection(...this.getRelativePos());
+      });
       const editString = this.buffer.join("");
       console.log(editString);
       this.props.editNode(this.bufferStartId, this.bufferStartPos, editString);
@@ -192,14 +197,16 @@ class Editor extends Component {
 
         content = (
           <Fragment>
-            <Helmet
-              style={[
-                {
-                  type: "text/css",
-                  cssText: renderStyle(props.styles),
-                },
-              ]}
-            />
+            <div>
+              <Helmet
+                style={[
+                  {
+                    type: "text/css",
+                    cssText: renderStyle(props.styles),
+                  },
+                ]}
+              />
+            </div>
             <div
               ref={this.contentEditableDiv}
               class="editor"
