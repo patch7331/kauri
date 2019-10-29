@@ -116,6 +116,7 @@ class Editor extends Component {
       case "Shift":
       case "Control":
       case "Alt":
+      case "CapsLock":
         //push to store?
         break;
 
@@ -192,14 +193,16 @@ class Editor extends Component {
 
         content = (
           <Fragment>
-            <Helmet
-              style={[
-                {
-                  type: "text/css",
-                  cssText: renderStyle(props.styles),
-                },
-              ]}
-            />
+            <div>
+              <Helmet
+                style={[
+                  {
+                    type: "text/css",
+                    cssText: renderStyle(props.styles),
+                  },
+                ]}
+              />
+            </div>
             <div
               ref={this.contentEditableDiv}
               class="editor"
