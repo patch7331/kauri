@@ -151,10 +151,6 @@ class Editor extends Component {
           " ID: " +
           this.bufferStartId,
       );
-      //update store position before re-render
-      this.onNextFrame(() => {
-        this.props.moveSelection(...this.getRelativePos());
-      });
       const editString = this.buffer.join("");
       console.log(editString);
       this.props.editNode(this.bufferStartId, this.bufferStartPos, editString);
