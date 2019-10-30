@@ -164,6 +164,7 @@ export class Renderer {
    */
   private scratchRender(component: Component): [number, number, number] {
     let scratchArea: HTMLElement = document.querySelector(".__scratch");
+    const clone = { ...component };
 
     if (!scratchArea) {
       scratchArea = document.createElement("div");
@@ -173,10 +174,10 @@ export class Renderer {
       document.body.appendChild(scratchArea);
     }
 
-    render(component, scratchArea);
-    const computedStyles = window.getComputedStyle(component.__e);
+    render(clone, scratchArea);
+    const computedStyles = window.getComputedStyle(clone.__e);
     return [
-      component.__e.getBoundingClientRect().height,
+      clone.__e.getBoundingClientRect().height,
       parseInt(computedStyles.marginTop),
       parseInt(computedStyles.marginBottom),
     ];
@@ -247,7 +248,7 @@ export class Renderer {
     });
 
     // Render content to pages
-    return pages.map(page => (
+    return [...pages, currentPage].map(page => (
       <Page children={page} styles={this.options.pageStyle} />
     ));
   }
