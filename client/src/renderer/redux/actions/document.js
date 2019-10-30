@@ -5,7 +5,7 @@ import {
   FETCH_DOCUMENT_REQUEST,
   FETCH_DOCUMENT_SUCCESS,
   MOVE_SELECTION,
-  UPDATE_CONTENT,
+  ADD_TEXT,
   CREATE_NODE,
 } from "./types";
 import { Status } from "./index";
@@ -90,8 +90,8 @@ export const moveSelection = (startPos, endPos, startId, endId) => ({
 });
 
 //Update content in store?
-export const editNode = (id, position, text) => ({
-  type: UPDATE_CONTENT,
+export const addText = (id, position, text) => ({
+  type: ADD_TEXT,
   id,
   position,
   text,

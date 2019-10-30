@@ -5,6 +5,7 @@ import {
   CACHE_WORKING_AREA,
   CACHE_NODE,
   FETCH_DOCUMENT_SUCCESS,
+  ADD_TEXT,
 } from "../actions/types";
 
 export default combineReducers({ nodesById, workingArea });
@@ -20,6 +21,14 @@ export function nodesById(state = {}, action) {
         [action.payload.id]: {
           ...action.payload,
           didInvalidate: false,
+        },
+      };
+
+    case ADD_TEXT:
+      return {
+        ...state,
+        [action.id]: {
+          didInvalidate: true,
         },
       };
 

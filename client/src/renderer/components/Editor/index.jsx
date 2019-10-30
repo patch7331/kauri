@@ -5,7 +5,7 @@ import "./styles.scss";
 import { h, Component, createRef, Fragment } from "preact";
 import Helmet from "preact-helmet";
 import { connect } from "react-redux";
-import { moveSelection, Status, editNode } from "redux/actions";
+import { moveSelection, Status, addText } from "redux/actions";
 import { Renderer, RenderMode } from "render";
 import { renderStyle } from "render/style";
 
@@ -27,7 +27,7 @@ class Editor extends Component {
     //text buffer
     this.buffer = [];
     this.bufferTimeout;
-    this.bufferTimeoutValue = 1000;
+    this.bufferTimeoutValue = 333;
     this.maxBufferSize = 10;
     this.bufferStartPos = 0;
     this.bufferStartId = 0;
@@ -38,6 +38,7 @@ class Editor extends Component {
     this.pushBufferToStore = this.pushBufferToStore.bind(this);
     this.addToBuffer = this.addToBuffer.bind(this);
     this.createNewDataNode = this.createNewDataNode.bind(this);
+    this.setCursorPosition = this.setCursorPosition.bind(this);
   }
 
   /**
@@ -84,6 +85,23 @@ class Editor extends Component {
   handleDocumentClick() {
     this.onNextFrame(() => {
       this.props.moveSelection(...this.getRelativePos());
+    });
+  }
+
+  setCursorPosition() {
+    console.log(this.props);
+    this.onNextFrame(() => {
+      console.log(this.props);
+      const store = this.props.document.selection;
+      console.log(store);
+      const el = document.querySelector(
+        "[data-node-id='" + store.startId + "']",
+      );
+      const sel = document.getSelection();
+      const range = document.createRange();
+      range.setStart(el.childNodes[0], store.startPos);
+      sel.removeAllRanges();
+      sel.addRange(range);
     });
   }
 
@@ -153,7 +171,7 @@ class Editor extends Component {
       );
       const editString = this.buffer.join("");
       console.log(editString);
-      this.props.editNode(this.bufferStartId, this.bufferStartPos, editString);
+      this.props.addText(this.bufferStartId, this.bufferStartPos, editString);
       this.buffer = [];
     }
   }
@@ -191,6 +209,7 @@ class Editor extends Component {
           },
         }).render();
 
+        this.setCursorPosition();
         content = (
           <Fragment>
             <div>
@@ -223,5 +242,5 @@ class Editor extends Component {
 
 export default connect(
   state => ({ document: state.document, styles: state.styles }),
-  { moveSelection, editNode },
+  { moveSelection, addText },
 )(Editor);
