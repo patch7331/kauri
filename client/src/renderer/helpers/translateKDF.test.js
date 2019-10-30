@@ -43,7 +43,7 @@ describe("translate KDF node", () => {
       children: [
         "The quick brown fox ",
         {
-          type: "span",
+          type: "Span",
           styles: { textDecoration: "underline" },
           children: ["jumps"],
         },
