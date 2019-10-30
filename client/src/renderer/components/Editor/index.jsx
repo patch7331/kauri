@@ -94,7 +94,9 @@ class Editor extends Component {
       console.log(this.props);
       const store = this.props.document.selection;
       console.log(store);
-      const el = document.querySelector("[data-node-id='"+ store.startId +"']");
+      const el = document.querySelector(
+        "[data-node-id='" + store.startId + "']",
+      );
       const sel = document.getSelection();
       const range = document.createRange();
       range.setStart(el.childNodes[0], store.startPos);
@@ -153,10 +155,10 @@ class Editor extends Component {
     clearTimeout(this.bufferTimeout);
     this.buffer.push(e.key);
     console.log(this.buffer);
-      this.bufferTimeout = setTimeout(
-        this.pushBufferToStore,
-        this.bufferTimeoutValue,
-      );
+    this.bufferTimeout = setTimeout(
+      this.pushBufferToStore,
+      this.bufferTimeoutValue,
+    );
   }
 
   pushBufferToStore() {
@@ -170,7 +172,7 @@ class Editor extends Component {
       const editString = this.buffer.join("");
       console.log(editString);
       this.props.addText(this.bufferStartId, this.bufferStartPos, editString);
-      this.buffer = [];     
+      this.buffer = [];
     }
   }
 

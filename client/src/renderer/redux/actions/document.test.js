@@ -49,6 +49,8 @@ describe("move selection action creator", () => {
       endId,
     };
 
-    expect(actions.moveSelection(startPos, endPos, startId, endId)).toEqual(expectedAction);
+    expect(actions.moveSelection(startPos, endPos, startId, endId)).toEqual(
+      expectedAction,
+    );
   });
 });
