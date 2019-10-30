@@ -1,6 +1,6 @@
 /** @format */
 
-import { SET_STYLES } from "../actions/types";
+import { SET_STYLES, FETCH_DOCUMENT_SUCCESS } from "../actions/types";
 
 const initialState = {
   body: {
@@ -19,18 +19,21 @@ const initialState = {
       fontSize: "2em",
       lineHeight: "1",
       fontWeight: "600",
-      padding: "4em 0 1em",
     },
   },
 };
 
 export default function styles(state = initialState, action) {
   switch (action.type) {
+    case FETCH_DOCUMENT_SUCCESS:
+      return action.payload.styles.classes;
+
     case SET_STYLES:
       return {
         ...state,
         ...action.payload,
       };
+
     default:
       return state;
   }
