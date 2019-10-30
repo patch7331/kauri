@@ -6,17 +6,13 @@ import {
   FETCH_DOCUMENT_REQUEST,
   FETCH_DOCUMENT_SUCCESS,
   FETCH_DOCUMENT_ERROR,
-  UPDATE_CONTENT,
+  ADD_TEXT,
 } from "../actions/types";
 import { Status } from "../actions";
 import { translateKDF } from "helpers/translateKDF";
 
 const initialState = {
   status: Status.SUCCESS,
-  selection: {
-    start: 0,
-    end: 0,
-  },
   content: translateKDF(debugDocument),
 };
 
@@ -54,9 +50,10 @@ export default function documentReducer(state = initialState, action) {
         selection: selectionReducer(state.selection, action),
       };
 
-    case UPDATE_CONTENT:
+    case ADD_TEXT:
       return {
         ...state,
+        selection: selectionReducer(state.selection, action),
         content: contentReducer(state.content, action),
       };
 
@@ -83,7 +80,15 @@ export function selectionReducer(
         startId: action.startId,
         endId: action.endId,
       };
-
+    case ADD_TEXT:
+      const pos = action.position + action.text.length;
+      return {
+        ...state,
+        startPos: pos,
+        endPos: pos,
+        startId: action.id,
+        endId: action.id,
+      };
     default:
       return state;
   }
@@ -91,7 +96,7 @@ export function selectionReducer(
 
 export function contentReducer(state, action) {
   switch (action.type) {
-    case UPDATE_CONTENT:
+    case ADD_TEXT:
       const key = action.id;
       return {
         ...state,
