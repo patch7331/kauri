@@ -19,7 +19,6 @@ const initialState = {
       fontSize: "2em",
       lineHeight: "1",
       fontWeight: "600",
-      padding: "4em 0 1em",
     },
   },
 };
