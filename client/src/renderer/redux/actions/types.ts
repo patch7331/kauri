@@ -12,6 +12,8 @@ export const FETCH_DOCUMENT_ERROR = "FETCH_DOCUMENT_ERROR";
 export const FETCH_DOCUMENT_SUCCESS = "FETCH_DOCUMENT_SUCCESS";
 export const MOVE_SELECTION = "MOVE_SELECTION";
 export const ADD_TEXT = "ADD_TEXT";
+export const DELETE_TEXT = "DELETE_TEXT";
+export const DELETE_TEXT_END = "DELETE_TEXT_END";
 export const CREATE_NODE = "CREATE_NODE";
 
 // Metadata
