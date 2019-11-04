@@ -5,7 +5,13 @@ import "./styles.scss";
 import { h, Component, createRef, Fragment } from "preact";
 import Helmet from "preact-helmet";
 import { connect } from "react-redux";
-import { moveSelection, Status, addText } from "redux/actions";
+import {
+  moveSelection,
+  Status,
+  addText,
+  deleteTextEnd,
+  deleteText,
+} from "redux/actions";
 import { Renderer, RenderMode } from "render";
 import { renderStyle } from "render/style";
 
@@ -54,19 +60,20 @@ class Editor extends Component {
     return [positionStart, positionEnd];
   }
 
-  getRelativePos() {
+  getNodeData() {
     const selection = document.getSelection().getRangeAt(0);
     const startPos = selection.startOffset;
     const endPos = selection.endOffset;
-    console.log(selection.endContainer);
-    console.log(startPos);
     const startId = parseInt(
       selection.startContainer.parentElement.getAttribute("data-node-id"),
     );
     const endId = parseInt(
       selection.endContainer.parentElement.getAttribute("data-node-id"),
     );
-    return [startPos, endPos, startId, endId];
+    const length = selection.startContainer.parentElement.textContent.length;
+    console.log("node length:");
+    console.log(length);
+    return [startPos, endPos, startId, endId, length];
   }
 
   /**
@@ -84,7 +91,7 @@ class Editor extends Component {
    */
   handleDocumentClick() {
     this.onNextFrame(() => {
-      this.props.moveSelection(...this.getRelativePos());
+      this.props.moveSelection(...this.getNodeData());
     });
   }
 
@@ -119,14 +126,17 @@ class Editor extends Component {
       case "ArrowDown":
       case "Tab":
         this.onNextFrame(() => {
-          this.props.moveSelection(...this.getRelativePos());
+          this.props.moveSelection(...this.getNodeData());
         });
         break;
 
       //Special cases
       case "Backspace":
+        e.preventDefault();
+        this.deleteTextData();
+        break;
       case "Delete":
-      //create deletion method
+        break;
       case "Enter":
         this.createNewDataNode();
         break;
@@ -148,7 +158,7 @@ class Editor extends Component {
   addToBuffer(e) {
     //stores the starting position + ID for string concat in redux
     if (this.buffer.length === 0) {
-      const relativePos = this.getRelativePos();
+      const relativePos = this.getNodeData();
       this.bufferStartPos = relativePos[0];
       this.bufferStartId = relativePos[2];
     }
@@ -173,6 +183,19 @@ class Editor extends Component {
       console.log(editString);
       this.props.addText(this.bufferStartId, this.bufferStartPos, editString);
       this.buffer = [];
+    }
+  }
+
+  deleteTextData() {
+    this.pushBufferToStore();
+    //need this? everything else updates position
+    const relativePos = this.getNodeData();
+    if (relativePos[0] === relativePos[4]) {
+      this.props.deleteTextEnd(relativePos[2], relativePos[0]);
+    } else if (relativePos[0] === 0) {
+      //delete node instead
+    } else {
+      this.props.deleteText(relativePos[2], relativePos[0]);
     }
   }
 
@@ -242,5 +265,5 @@ class Editor extends Component {
 
 export default connect(
   state => ({ document: state.document, styles: state.styles }),
-  { moveSelection, addText },
+  { moveSelection, addText, deleteTextEnd, deleteText },
 )(Editor);

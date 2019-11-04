@@ -7,6 +7,8 @@ import {
   FETCH_DOCUMENT_SUCCESS,
   FETCH_DOCUMENT_ERROR,
   ADD_TEXT,
+  DELETE_TEXT_END,
+  DELETE_TEXT,
 } from "../actions/types";
 import { Status } from "../actions";
 import { translateKDF } from "helpers/translateKDF";
@@ -57,6 +59,14 @@ export default function documentReducer(state = initialState, action) {
         content: contentReducer(state.content, action),
       };
 
+    case DELETE_TEXT:
+    case DELETE_TEXT_END:
+      return {
+        ...state,
+        selection: selectionReducer(state.selection, action),
+        content: contentReducer(state.content, action),
+      };
+
     default:
       return state;
   }
@@ -89,15 +99,24 @@ export function selectionReducer(
         startId: action.id,
         endId: action.id,
       };
+    case DELETE_TEXT:
+    case DELETE_TEXT_END:
+      return {
+        ...state,
+        startPos: action.position - 1,
+        endPos: action.position - 1,
+        startId: action.id,
+        endId: action.id,
+      };
     default:
       return state;
   }
 }
 
 export function contentReducer(state, action) {
+  const key = action.id;
   switch (action.type) {
     case ADD_TEXT:
-      const key = action.id;
       return {
         ...state,
         byId: {
@@ -112,7 +131,31 @@ export function contentReducer(state, action) {
         },
       };
 
-    case CREATE_NODE:
+    case DELETE_TEXT:
+      return {
+        ...state,
+        byId: {
+          ...state.byId,
+          [key]: {
+            ...state.byId[key],
+            content:
+              state.byId[key].content.substring(0, action.position - 1) +
+              state.byId[key].content.substring(action.position),
+          },
+        },
+      };
+
+    case DELETE_TEXT_END:
+      return {
+        ...state,
+        byId: {
+          ...state.byId,
+          [key]: {
+            ...state.byId[key],
+            content: state.byId[key].content.substring(0, action.position - 1),
+          },
+        },
+      };
 
     default:
       return state;

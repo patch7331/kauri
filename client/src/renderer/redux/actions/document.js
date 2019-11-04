@@ -7,6 +7,8 @@ import {
   MOVE_SELECTION,
   ADD_TEXT,
   CREATE_NODE,
+  DELETE_TEXT_END,
+  DELETE_TEXT,
 } from "./types";
 import { Status } from "./index";
 
@@ -95,6 +97,18 @@ export const addText = (id, position, text) => ({
   id,
   position,
   text,
+});
+
+export const deleteText = (id, position) => ({
+  type: DELETE_TEXT,
+  id,
+  position,
+});
+
+export const deleteTextEnd = (id, position) => ({
+  type: DELETE_TEXT_END,
+  id,
+  position,
 });
 
 export const createNode = (type, prevNodeId) => ({

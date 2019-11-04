@@ -4,10 +4,10 @@ import store from "redux/store";
 
 /**
  * Takes a node from the KDF store, and makes it a valid KDF node for the server
- * 
+ *
  * This process involves adding any children back into the node, and removing
  * any added attributes, such as a node ID.
- * 
+ *
  * @param {Object} node A KDF node from the redux store.
  * @param {Object} content Document content from the redux store.
  */

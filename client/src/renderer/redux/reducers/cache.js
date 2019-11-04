@@ -6,6 +6,8 @@ import {
   CACHE_NODE,
   FETCH_DOCUMENT_SUCCESS,
   ADD_TEXT,
+  DELETE_TEXT_END,
+  DELETE_TEXT,
 } from "../actions/types";
 
 export default combineReducers({ nodesById, workingArea });
@@ -24,6 +26,8 @@ export function nodesById(state = {}, action) {
         },
       };
 
+    case DELETE_TEXT:
+    case DELETE_TEXT_END:
     case ADD_TEXT:
       return {
         ...state,
