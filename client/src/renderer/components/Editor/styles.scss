@@ -1,8 +1,12 @@
 /** @format */
 
 .editor {
-  padding: 0.5rem;
+  align-items: center;
+  display: flex;
+  flex-direction: column;
   white-space: pre-wrap;
+  padding: 2rem;
+  width: 100%;
 
   table,
   td {
@@ -15,10 +19,12 @@
 
   .page {
     background: white;
-    height: 170mm;
+    font-family: "Inter";
+    height: 297mm;
+    margin: 2rem;
     overflow: hidden;
-    padding: 1cm;
-    width: 140mm;
+    padding: 2.5cm;
+    width: 210mm;
 
     > :first-child {
       margin-top: 0;
