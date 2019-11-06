@@ -223,12 +223,12 @@ class Editor extends Component {
         const pages = new Renderer(props.document.content, {
           renderMode: RenderMode.CONTENT,
           pageStyle: {
-            marginBottom: "1cm",
-            marginLeft: "1cm",
-            marginRight: "1cm",
-            marginTop: "1cm",
-            height: "140mm",
-            width: "120mm",
+            marginBottom: "2.5cm",
+            marginLeft: "2.5cm",
+            marginRight: "2.5cm",
+            marginTop: "2.5cm",
+            height: "297mm",
+            width: "210mm",
           },
         }).render();
 
