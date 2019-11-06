@@ -234,27 +234,15 @@ class Editor extends Component {
 
         this.setCursorPosition();
         content = (
-          <Fragment>
-            <div>
-              <Helmet
-                style={[
-                  {
-                    type: "text/css",
-                    cssText: renderStyle(props.styles),
-                  },
-                ]}
-              />
-            </div>
-            <div
-              ref={this.contentEditableDiv}
-              class="editor"
-              contenteditable="true"
-              onClick={this.handleDocumentClick}
-              onkeyDown={this.logKeyPress}
-            >
-              {pages}
-            </div>
-          </Fragment>
+          <div
+            ref={this.contentEditableDiv}
+            class="editor"
+            contenteditable="true"
+            onClick={this.handleDocumentClick}
+            onkeyDown={this.logKeyPress}
+          >
+            {pages}
+          </div>
         );
         break;
     }
